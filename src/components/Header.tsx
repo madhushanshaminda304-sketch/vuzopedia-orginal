@@ -22,6 +22,8 @@ import {
   Trophy,
   CreditCard,
   Layers,
+  Medal,
+  Wallet,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -86,6 +88,8 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'military', label: 'Военные кафедры (ВУЦ)', icon: Shield, desc: 'Нормативы и звания запаса' },
     { id: 'reviews', label: 'Отзывы студентов', icon: Star, desc: 'Реальные оценки и мнения' },
     { id: 'olympiads', label: 'Олимпиады и БВИ', icon: Trophy, desc: 'Перечень РСОШ и льгота 75 баллов' },
+    { id: 'achievements', label: 'Доп. баллы к ЕГЭ', icon: Medal, desc: 'Медаль, ГТО, волонтерство (+10 б.)' },
+    { id: 'student_budget', label: 'Бюджет студента', icon: Wallet, desc: 'Стоимость жизни по городам РФ' },
     { id: 'credit', label: 'Кредит 3% и скидки', icon: CreditCard, desc: 'Господдержка и скидки вузов' },
     { id: 'target', label: 'Целевое обучение', icon: FileCheck, desc: 'Заказчики и квоты 2026' },
     { id: 'fear_map', label: 'С чего начать', icon: Compass, desc: 'Пошаговый гид абитуриента' },

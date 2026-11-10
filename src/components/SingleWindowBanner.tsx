@@ -2,12 +2,12 @@ import React from 'react';
 import { SlidersHorizontal, Bookmark, Calendar, MessageSquare, ArrowRight } from 'lucide-react';
 
 interface SingleWindowBannerProps {
-  onOpenMyPlan: () => void;
+  onOpenMyPlan?: () => void;
   lang?: 'ru' | 'en';
 }
 
 export const SingleWindowBanner: React.FC<SingleWindowBannerProps> = ({
-  onOpenMyPlan,
+  onOpenMyPlan = () => {},
   lang = 'ru',
 }) => {
   return (

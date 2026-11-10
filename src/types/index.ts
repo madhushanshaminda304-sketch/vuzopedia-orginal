@@ -276,3 +276,38 @@ export interface FullProgramItem {
   averageGraduateSalary: string;
   isRemoteAvailable: boolean;
 }
+
+export interface IndividualAchievement {
+  id: string;
+  title: string;
+  category: 'medal' | 'gto' | 'volunteering' | 'essay' | 'olymp_other' | 'sports';
+  categoryLabel: string;
+  maxLegalPoints: number;
+  description: string;
+  universityPoints: Record<string, number>;
+  verificationDoc: string;
+}
+
+export interface TargetCompany {
+  id: string;
+  name: string;
+  industry: string;
+  stipendMonthly: string;
+  partnerUniversities: string[];
+  commitmentYears: number;
+  guaranteedBonus: string;
+  openSpots2026: number;
+  applicationDeadline: string;
+  keySpecialties: string[];
+}
+
+export interface StudentLivingCost {
+  city: string;
+  dormAvgPerMonth: number;
+  rentFlat1kPerMonth: number;
+  foodPerMonth: number;
+  transportPerMonth: number;
+  personalPerMonth: number;
+  averagePartTimePay: number;
+}
+

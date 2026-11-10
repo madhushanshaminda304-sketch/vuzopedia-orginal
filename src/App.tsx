@@ -24,6 +24,8 @@ import { MilitaryDeptView } from './components/MilitaryDeptView';
 import { ReviewsView } from './components/ReviewsView';
 import { OlympiadsView } from './components/OlympiadsView';
 import { CreditCalculatorView } from './components/CreditCalculatorView';
+import { AchievementsCalculatorView } from './components/AchievementsCalculatorView';
+import { StudentBudgetCalculatorView } from './components/StudentBudgetCalculatorView';
 import { MyPlanModal } from './components/MyPlanModal';
 import { UniversityComparisonView } from './components/UniversityComparisonView';
 import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
@@ -242,6 +244,20 @@ export const App: React.FC = () => {
         {currentTab === 'olympiads' && <OlympiadsView />}
 
         {currentTab === 'credit' && <CreditCalculatorView />}
+
+        {currentTab === 'achievements' && (
+          <AchievementsCalculatorView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'student_budget' && (
+          <StudentBudgetCalculatorView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
 
         {currentTab === 'tests' && <CareerTestsView onNavigateTab={setCurrentTab} />}
 
