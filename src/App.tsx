@@ -18,6 +18,12 @@ import { ProforientByEgeView } from './components/ProforientByEgeView';
 import { ProforientBySubjectsView } from './components/ProforientBySubjectsView';
 import { ProforientKlimovView } from './components/ProforientKlimovView';
 import { ProforientOneOfTwoView } from './components/ProforientOneOfTwoView';
+import { ProgramsCatalogView } from './components/ProgramsCatalogView';
+import { DormitoriesView } from './components/DormitoriesView';
+import { MilitaryDeptView } from './components/MilitaryDeptView';
+import { ReviewsView } from './components/ReviewsView';
+import { OlympiadsView } from './components/OlympiadsView';
+import { CreditCalculatorView } from './components/CreditCalculatorView';
 import { MyPlanModal } from './components/MyPlanModal';
 import { UniversityComparisonView } from './components/UniversityComparisonView';
 import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
@@ -183,6 +189,13 @@ export const App: React.FC = () => {
           />
         )}
 
+        {currentTab === 'programs' && (
+          <ProgramsCatalogView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
         {currentTab === 'calculator' && (
           <EgeCalculatorView
             onOpenUniversity={setSelectedVuzDetail}
@@ -204,6 +217,31 @@ export const App: React.FC = () => {
         {currentTab === 'blacklist' && <BlacklistView />}
 
         {currentTab === 'remote' && <RemoteEducationView />}
+
+        {currentTab === 'dorms' && (
+          <DormitoriesView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'military' && (
+          <MilitaryDeptView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'reviews' && (
+          <ReviewsView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'olympiads' && <OlympiadsView />}
+
+        {currentTab === 'credit' && <CreditCalculatorView />}
 
         {currentTab === 'tests' && <CareerTestsView onNavigateTab={setCurrentTab} />}
 

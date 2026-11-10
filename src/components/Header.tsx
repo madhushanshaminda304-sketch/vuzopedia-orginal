@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   GraduationCap,
   MapPin,
@@ -15,6 +15,13 @@ import {
   Compass,
   ShieldAlert,
   Laptop,
+  ChevronDown,
+  Building2,
+  Shield,
+  Star,
+  Trophy,
+  CreditCard,
+  Layers,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -47,22 +54,47 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const servicesDropdownRef = useRef<HTMLDivElement>(null);
 
-  const mainNavItems = [
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        servicesDropdownRef.current &&
+        !servicesDropdownRef.current.contains(event.target as Node)
+      ) {
+        setServicesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const primaryNavItems = [
     { id: 'catalog', label: 'Вузы' },
-    { id: 'calculator', label: 'Калькулятор ЕГЭ', badge: '2026' },
-    { id: 'spo', label: 'Колледжи (СПО)' },
+    { id: 'programs', label: 'Программы', badge: 'Новинка' },
+    { id: 'calculator', label: 'Подбор по ЕГЭ', badge: '2026' },
     { id: 'specialties', label: 'Специальности' },
     { id: 'professions', label: 'Профессии' },
-    { id: 'target', label: 'Целевое' },
-    { id: 'fear_map', label: 'С чего начать' },
-    { id: 'blacklist', label: 'Черный список', isWarning: true },
-    { id: 'remote', label: 'Онлайн-обучение' },
     { id: 'tests', label: 'Профориентация', badge: 'ХИТ' },
-    { id: 'compare', label: 'Сравнение', count: compareCount },
     { id: 'calendar', label: 'Календарь' },
-    { id: 'tracker', label: 'Мои приоритеты', count: favoritesCount },
   ];
+
+  const serviceItems = [
+    { id: 'dorms', label: 'Общежития вузов', icon: Building2, desc: 'Стоимость, места, удалённость' },
+    { id: 'military', label: 'Военные кафедры (ВУЦ)', icon: Shield, desc: 'Нормативы и звания запаса' },
+    { id: 'reviews', label: 'Отзывы студентов', icon: Star, desc: 'Реальные оценки и мнения' },
+    { id: 'olympiads', label: 'Олимпиады и БВИ', icon: Trophy, desc: 'Перечень РСОШ и льгота 75 баллов' },
+    { id: 'credit', label: 'Кредит 3% и скидки', icon: CreditCard, desc: 'Господдержка и скидки вузов' },
+    { id: 'target', label: 'Целевое обучение', icon: FileCheck, desc: 'Заказчики и квоты 2026' },
+    { id: 'fear_map', label: 'С чего начать', icon: Compass, desc: 'Пошаговый гид абитуриента' },
+    { id: 'blacklist', label: 'Черный список вузов', icon: ShieldAlert, desc: 'Лишенные аккредитации' },
+    { id: 'remote', label: 'Онлайн-обучение', icon: Laptop, desc: 'Дистанционные дипломы' },
+    { id: 'spo', label: 'Колледжи (СПО)', icon: School, desc: 'Поступление после 9 и 11 классов' },
+  ];
+
+  const isServiceActive = serviceItems.some((s) => s.id === currentTab);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -135,9 +167,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden xl:flex items-center gap-1">
-            {mainNavItems.map((item) => {
-              const isActive = currentTab === item.id;
+          <nav className="hidden xl:flex items-center gap-0.5">
+            {primaryNavItems.map((item) => {
+              const isActive = currentTab === item.id || (item.id === 'tests' && currentTab.startsWith('proforient'));
               return (
                 <button
                   key={item.id}
@@ -155,11 +187,6 @@ export const Header: React.FC<HeaderProps> = ({
                         {item.badge}
                       </span>
                     )}
-                    {item.count !== undefined && item.count > 0 && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-brand-600 text-white">
-                        {item.count}
-                      </span>
-                    )}
                   </span>
                   {isActive && (
                     <span className="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-brand-600 dark:bg-brand-400 rounded-full" />
@@ -167,6 +194,57 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
+
+            {/* Services Dropdown */}
+            <div className="relative" ref={servicesDropdownRef}>
+              <button
+                onClick={() => setServicesOpen(!servicesOpen)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition ${
+                  isServiceActive || servicesOpen
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 font-bold'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <span>Сервисы</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {servicesOpen && (
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-fadeIn divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Специальные возможности
+                  </div>
+                  <div className="py-1">
+                    {serviceItems.map((s) => {
+                      const Icon = s.icon;
+                      const active = currentTab === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => {
+                            onSelectTab(s.id);
+                            setServicesOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 flex items-start gap-2.5 text-left transition ${
+                            active
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/70'
+                          }`}
+                        >
+                          <div className={`p-1.5 rounded-lg shrink-0 ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold leading-tight">{s.label}</div>
+                            <div className="text-[10px] text-slate-400">{s.desc}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right Action Icons & Assistant Button */}
@@ -266,30 +344,58 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="text-brand-600 cursor-pointer">Изменить</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {mainNavItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onSelectTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`p-3 rounded-xl text-left text-xs font-medium transition ${
-                  currentTab === item.id
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 font-bold border border-brand-200 dark:border-brand-800'
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span>{item.label}</span>
-                  {item.count !== undefined && item.count > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-600 text-white font-bold">
-                      {item.count}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Основные разделы
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {primaryNavItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onSelectTab(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`p-3 rounded-xl text-left text-xs font-medium transition ${
+                      currentTab === item.id
+                        ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 font-bold border border-brand-200 dark:border-brand-800'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Специальные сервисы
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {serviceItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onSelectTab(item.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`p-2.5 rounded-xl text-left text-xs font-medium transition flex items-center gap-2 ${
+                        currentTab === item.id
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 text-blue-500 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}

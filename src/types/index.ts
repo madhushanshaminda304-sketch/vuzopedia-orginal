@@ -191,3 +191,88 @@ export interface RemoteProgram {
   onlineExamProctoring: boolean;
   diplomaType: 'Диплом государственного образца' | 'Диплом установленного образца';
 }
+
+export interface DormitoryItem {
+  id: string;
+  universityShort: string;
+  universityFullName: string;
+  city: string;
+  buildingType: 'Блочный' | 'Коридорный' | 'Квартирный' | 'Гостиничный';
+  costPerMonth: number;
+  placesTotal: number;
+  guaranteedForFirstYear: boolean;
+  distanceToCampusMin: number;
+  metroStation?: string;
+  facilities: string[];
+  address: string;
+  photos: string[];
+}
+
+export interface MilitaryDeptItem {
+  id: string;
+  universityShort: string;
+  universityFullName: string;
+  city: string;
+  ranksTrained: ('Офицер запаса' | 'Сержант запаса' | 'Рядовой запаса')[];
+  specialtiesTrained: string[];
+  physicalRequirements: {
+    pullUps: number;
+    running100mSec: number;
+    running3kmMin: number;
+  };
+  hasContractTraining: boolean;
+  competitionPerSpot: string;
+}
+
+export interface UniversityReview {
+  id: string;
+  universityId: string;
+  authorName: string;
+  courseAndFaculty: string;
+  date: string;
+  ratingOverall: number;
+  ratingEducation: number;
+  ratingDorm: number;
+  ratingDeanery: number;
+  ratingEmployment: number;
+  pros: string;
+  cons: string;
+  verdict: string;
+  isVerifiedStudent: boolean;
+  likesCount: number;
+}
+
+export interface OlympiadItem {
+  id: string;
+  title: string;
+  organizer: string;
+  level: 1 | 2 | 3;
+  subject: string;
+  profileSubjectExam: string;
+  bviBenefit: string;
+  confirmationScore: number;
+  registrationDeadline: string;
+  participatingUniversitiesCount: number;
+  officialSite: string;
+}
+
+export interface FullProgramItem {
+  id: string;
+  code: string;
+  name: string;
+  faculty: string;
+  degree: StudyDegree;
+  universityId: string;
+  universityShort: string;
+  city: string;
+  requiredExams: ExamSubjectId[];
+  minBudgetScore: number;
+  minPaidScore: number;
+  budgetPlaces: number;
+  paidPlaces: number;
+  annualFee: number;
+  durationYears: number;
+  careerProspects: string[];
+  averageGraduateSalary: string;
+  isRemoteAvailable: boolean;
+}
