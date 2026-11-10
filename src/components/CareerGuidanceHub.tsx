@@ -328,7 +328,13 @@ export const CareerGuidanceHub: React.FC<CareerGuidanceHubProps> = ({
 
           {/* Primary Action Button */}
           <button
-            onClick={() => setActiveTool('profession')}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('proforient_interests');
+              } else {
+                setActiveTool('profession');
+              }
+            }}
             className="w-full mt-4 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs tracking-wide transition shadow-sm hover:shadow"
           >
             {texts.takeAdvantage}
@@ -423,7 +429,13 @@ export const CareerGuidanceHub: React.FC<CareerGuidanceHubProps> = ({
 
           {/* Primary Action Button */}
           <button
-            onClick={() => setActiveTool('ege')}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('proforient_ege');
+              } else {
+                setActiveTool('ege');
+              }
+            }}
             className="w-full mt-4 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs tracking-wide transition shadow-sm hover:shadow"
           >
             {texts.takeAdvantage}
@@ -504,7 +516,13 @@ export const CareerGuidanceHub: React.FC<CareerGuidanceHubProps> = ({
 
           {/* Primary Action Button */}
           <button
-            onClick={() => setActiveTool('subjects')}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('proforient_subjects');
+              } else {
+                setActiveTool('subjects');
+              }
+            }}
             className="w-full mt-4 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs tracking-wide transition shadow-sm hover:shadow"
           >
             {texts.takeAdvantage}
@@ -586,7 +604,13 @@ export const CareerGuidanceHub: React.FC<CareerGuidanceHubProps> = ({
 
           {/* Primary Action Button */}
           <button
-            onClick={() => setActiveTool('klimov')}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('proforient_klimov');
+              } else {
+                setActiveTool('klimov');
+              }
+            }}
             className="w-full mt-4 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs tracking-wide transition shadow-sm hover:shadow"
           >
             {texts.takeAdvantage}
@@ -655,7 +679,13 @@ export const CareerGuidanceHub: React.FC<CareerGuidanceHubProps> = ({
 
           {/* Primary Action Button */}
           <button
-            onClick={() => setActiveTool('one_of_two')}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('proforient_one_of_two');
+              } else {
+                setActiveTool('one_of_two');
+              }
+            }}
             className="w-full mt-4 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs tracking-wide transition shadow-sm hover:shadow"
           >
             {texts.takeAdvantage}

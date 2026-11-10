@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UNIVERSITIES } from './data/mockData';
 import { University } from './types';
+import { EXTENDED_PROFESSIONS, ExtendedProfession } from './data/proforientData';
 import { Header } from './components/Header';
 import { UniversityCatalog } from './components/UniversityCatalog';
 import { EgeCalculatorView } from './components/EgeCalculatorView';
@@ -12,6 +13,12 @@ import { FearMapView } from './components/FearMapView';
 import { BlacklistView } from './components/BlacklistView';
 import { RemoteEducationView } from './components/RemoteEducationView';
 import { CareerTestsView } from './components/CareerTestsView';
+import { ProforientByInterestsView } from './components/ProforientByInterestsView';
+import { ProforientByEgeView } from './components/ProforientByEgeView';
+import { ProforientBySubjectsView } from './components/ProforientBySubjectsView';
+import { ProforientKlimovView } from './components/ProforientKlimovView';
+import { ProforientOneOfTwoView } from './components/ProforientOneOfTwoView';
+import { MyPlanModal } from './components/MyPlanModal';
 import { UniversityComparisonView } from './components/UniversityComparisonView';
 import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
 import { ApplicationTrackerView } from './components/ApplicationTrackerView';
@@ -44,6 +51,15 @@ export const App: React.FC = () => {
     }
   });
 
+  const [myPlanProfessions, setMyPlanProfessions] = useState<ExtendedProfession[]>(() => {
+    try {
+      const saved = localStorage.getItem('vuzopedia_my_plan');
+      return saved ? JSON.parse(saved) : [EXTENDED_PROFESSIONS[0], EXTENDED_PROFESSIONS[7]];
+    } catch {
+      return [EXTENDED_PROFESSIONS[0], EXTENDED_PROFESSIONS[7]];
+    }
+  });
+
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('vuzopedia_theme') === 'dark';
@@ -56,6 +72,7 @@ export const App: React.FC = () => {
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isDedAssistantOpen, setIsDedAssistantOpen] = useState(false);
+  const [isMyPlanOpen, setIsMyPlanOpen] = useState(false);
 
   // Sync dark mode class
   useEffect(() => {
@@ -68,10 +85,30 @@ export const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Sync favorites & compare
+  // Sync favorites, compare & my plan
   useEffect(() => {
     localStorage.setItem('vuzopedia_favs', JSON.stringify(favorites));
   }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem('vuzopedia_compare', JSON.stringify(compareList));
+  }, [compareList]);
+
+  useEffect(() => {
+    localStorage.setItem('vuzopedia_my_plan', JSON.stringify(myPlanProfessions));
+  }, [myPlanProfessions]);
+
+  const toggleMyPlan = (prof: ExtendedProfession) => {
+    if (myPlanProfessions.some((p) => p.id === prof.id)) {
+      setMyPlanProfessions(myPlanProfessions.filter((p) => p.id !== prof.id));
+    } else {
+      setMyPlanProfessions([...myPlanProfessions, prof]);
+    }
+  };
+
+  const removeMyPlan = (id: string) => {
+    setMyPlanProfessions(myPlanProfessions.filter((p) => p.id !== id));
+  };
 
   useEffect(() => {
     localStorage.setItem('vuzopedia_compare', JSON.stringify(compareList));
@@ -122,6 +159,8 @@ export const App: React.FC = () => {
         onOpenCityModal={() => setIsCityModalOpen(true)}
         onOpenSearchModal={() => setIsSearchModalOpen(true)}
         onOpenDedAssistant={() => setIsDedAssistantOpen(true)}
+        onOpenMyPlan={() => setIsMyPlanOpen(true)}
+        myPlanCount={myPlanProfessions.length}
         compareCount={compareList.length}
         favoritesCount={favorites.length}
         isDarkMode={isDarkMode}
@@ -167,6 +206,58 @@ export const App: React.FC = () => {
         {currentTab === 'remote' && <RemoteEducationView />}
 
         {currentTab === 'tests' && <CareerTestsView onNavigateTab={setCurrentTab} />}
+
+        {/* 5 Dedicated Proforientation Full-Page Views (Exact from user photos) */}
+        {currentTab === 'proforient_interests' && (
+          <ProforientByInterestsView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+            onOpenCityModal={() => setIsCityModalOpen(true)}
+            selectedCity={selectedCity}
+            myPlanIds={myPlanProfessions.map((p) => p.id)}
+            onToggleMyPlan={toggleMyPlan}
+          />
+        )}
+
+        {currentTab === 'proforient_ege' && (
+          <ProforientByEgeView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+            onOpenCityModal={() => setIsCityModalOpen(true)}
+            selectedCity={selectedCity}
+            myPlanIds={myPlanProfessions.map((p) => p.id)}
+            onToggleMyPlan={toggleMyPlan}
+          />
+        )}
+
+        {currentTab === 'proforient_subjects' && (
+          <ProforientBySubjectsView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+            onOpenCityModal={() => setIsCityModalOpen(true)}
+            selectedCity={selectedCity}
+            myPlanIds={myPlanProfessions.map((p) => p.id)}
+            onToggleMyPlan={toggleMyPlan}
+          />
+        )}
+
+        {currentTab === 'proforient_klimov' && (
+          <ProforientKlimovView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+            myPlanIds={myPlanProfessions.map((p) => p.id)}
+            onToggleMyPlan={toggleMyPlan}
+          />
+        )}
+
+        {currentTab === 'proforient_one_of_two' && (
+          <ProforientOneOfTwoView
+            onOpenMyPlan={() => setIsMyPlanOpen(true)}
+            onNavigateTab={setCurrentTab}
+            myPlanIds={myPlanProfessions.map((p) => p.id)}
+            onToggleMyPlan={toggleMyPlan}
+          />
+        )}
 
         {currentTab === 'compare' && (
           <UniversityComparisonView
@@ -216,6 +307,14 @@ export const App: React.FC = () => {
       <DedVuzopedAssistantModal
         isOpen={isDedAssistantOpen}
         onClose={() => setIsDedAssistantOpen(false)}
+        onNavigateTab={setCurrentTab}
+      />
+
+      <MyPlanModal
+        isOpen={isMyPlanOpen}
+        onClose={() => setIsMyPlanOpen(false)}
+        savedProfessions={myPlanProfessions}
+        onRemoveProfession={removeMyPlan}
         onNavigateTab={setCurrentTab}
       />
 
