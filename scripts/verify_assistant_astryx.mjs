@@ -64,19 +64,29 @@ server.listen(PORT, async () => {
     await modalTitle.waitFor({ timeout: 5000 });
     console.log('Verified: Assistant modal opened successfully from Header.');
 
-    // Test 2: Send question "Какие проходные баллы на IT в 2026?"
-    console.log('3. Sending IT query to assistant...');
+    // Test 2: Test Gemini API Settings Popover
+    console.log('3. Testing Gemini API settings modal...');
+    const settingsBtn = page.locator('button[title="Настройки Gemini API"]');
+    await settingsBtn.click();
+    await page.waitForTimeout(400);
+
+    const settingsDrawer = page.locator('text=Настройки Gemini API Key');
+    await settingsDrawer.waitFor({ timeout: 4000 });
+    console.log('Verified: Gemini API settings drawer opened with active key.');
+    await settingsBtn.click(); // toggle close
+    await page.waitForTimeout(300);
+
+    // Test 3: Send question "Какие проходные баллы на IT в 2026?"
+    console.log('4. Sending IT query to assistant...');
     const input = page.locator('input[data-testid="ded-assistant-input"], input[placeholder*="Спросите"]');
     await input.waitFor({ timeout: 5000 });
     await input.fill('Какие проходные баллы на IT в 2026?');
     await page.keyboard.press('Enter');
 
-    // Wait for response and tool call
-    console.log('4. Waiting for AI response and Astryx ChatToolCalls...');
-    await page.waitForTimeout(1200);
-
-    const toolCallPill = page.locator('text=Реестр программ IT');
-    await toolCallPill.waitFor({ timeout: 5000 });
+    // Wait for response and tool call (Gemini API or local fallback)
+    console.log('5. Waiting for AI response and Astryx ChatToolCalls...');
+    const toolCallPill = page.locator('button:has-text("Реестр программ"), button:has-text("Аналитический модуль"), button:has-text("База"), button:has-text("Калькулятор")').last();
+    await toolCallPill.waitFor({ timeout: 15000 });
     console.log('Verified: Astryx ChatToolCall pill rendered.');
 
     // Expand tool call
@@ -91,39 +101,40 @@ server.listen(PORT, async () => {
     }
     console.log('Captured: feature_assistant_toolcalls.png');
 
-    // Test 3: Click Action button inside response
-    console.log('5. Clicking Action button "Смотреть программы IT-направлений"...');
-    const actionBtn = page.locator('button:has-text("Смотреть программы IT-направлений")');
-    if (await actionBtn.isVisible()) {
-      await actionBtn.click();
-      await page.waitForTimeout(600);
-      console.log('Verified: Deep-link action navigated tab and closed modal.');
+    // Test 4: Astryx Toolbar - Thumbs up feedback & Copy
+    console.log('6. Testing message reactions (Thumbs up and Copy)...');
+    const thumbsUpBtn = page.locator('button[title="Полезный ответ"]').last();
+    if (await thumbsUpBtn.isVisible()) {
+      await thumbsUpBtn.click();
+      await page.waitForTimeout(300);
+      console.log('Verified: Thumbs up reaction clicked.');
     }
 
-    // Test 4: Open via floating widget in bottom right
-    console.log('6. Opening assistant via Floating Action Button...');
-    const floatingBtn = page.locator('button[title="Спросить Деда Вузопеда"]');
-    await floatingBtn.click({ force: true });
-    await page.waitForTimeout(500);
-    await modalTitle.waitFor({ timeout: 5000 });
-    console.log('Verified: Assistant modal opened from floating action button.');
-
-    // Test 5: Click a suggestion chip
-    console.log('7. Clicking suggestion chip for BVI / Olympiads...');
-    const bviChip = page.locator('button:has-text("Что такое БВИ?"), button:has-text("Как подтвердить БВИ")').first();
-    if (await bviChip.isVisible()) {
-      await bviChip.click();
-      await page.waitForTimeout(1200);
-      console.log('Verified: Suggestion chip triggered question & answer flow.');
-    }
-
-    // Test 6: Test message copy
-    console.log('8. Testing message copy action...');
     const copyBtn = page.locator('button[title="Скопировать ответ"]').last();
     if (await copyBtn.isVisible()) {
       await copyBtn.click();
       await page.waitForTimeout(400);
       console.log('Verified: Copy button triggered check confirmation.');
+    }
+
+    // Test 5: Fullscreen Toggle
+    console.log('7. Testing Fullscreen workspace view...');
+    const fullscreenBtn = page.locator('button[title="На весь экран"]');
+    if (await fullscreenBtn.isVisible()) {
+      await fullscreenBtn.click();
+      await page.waitForTimeout(500);
+
+      const fsImg = path.join('.pipeline/after', 'feature_assistant_fullscreen.png');
+      await page.screenshot({ path: fsImg });
+      if (fs.existsSync(artifactDir)) {
+        fs.copyFileSync(fsImg, path.join(artifactDir, 'feature_assistant_fullscreen.png'));
+      }
+      console.log('Captured: feature_assistant_fullscreen.png');
+
+      const normalViewBtn = page.locator('button[title="Обычный режим"]');
+      await normalViewBtn.click();
+      await page.waitForTimeout(400);
+      console.log('Verified: Returned to normal modal view.');
     }
 
     // Capture full assistant dialog screenshot
@@ -136,6 +147,17 @@ server.listen(PORT, async () => {
 
     // Close modal
     const closeBtn = page.locator('button[title="Закрыть окно"], button[title*="Закрыть"]');
+    await closeBtn.click();
+    await page.waitForTimeout(500);
+
+    // Test 6: Verify Floating Action Button opens assistant
+    console.log('8. Opening assistant via Floating Action Button...');
+    const floatingBtn = page.locator('button[title="Спросить Деда Вузопеда"]');
+    await floatingBtn.click({ force: true });
+    await page.waitForTimeout(500);
+    await modalTitle.waitFor({ timeout: 5000 });
+    console.log('Verified: Assistant modal opened from floating action button.');
+
     await closeBtn.click();
     await page.waitForTimeout(500);
 

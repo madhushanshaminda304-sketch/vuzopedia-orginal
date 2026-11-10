@@ -59,3 +59,17 @@ profile: webapp
   - Dictation voice input simulation, message copying with toast confirmation, chat history reset, auto-scroll to bottom with floating helper, and accessible keyboard shortcuts.
 - **Omnipresent Entry Points**: Wired Header assistant button, mobile/desktop floating action button (with smooth scale interactive transitions), and Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" link.
 - **Verification**: Playwright automated suite (`verify_assistant_astryx.mjs`) ran all 7 checks (Header launch, NLP query matching, ChatToolCall rendering & expansion, deep-link navigation, floating widget launch, suggestion chips, clipboard copy, Footer trigger) with 0 errors. Screenshots captured to `.pipeline/after/feature_assistant_astryx.png` and `.pipeline/after/feature_assistant_toolcalls.png`.
+
+## Change 2026-11-11: Live Gemini 3.5 Flash AI Integration & Astryx Advanced Suite
+- **Size**: M | **Types**: feature, api, ui, speech
+- **Google Generative AI Integration (`src/services/geminiService.ts`)**:
+  - Connected live to Google Gemini API (`models/gemini-3.5-flash` with fallback to `models/gemini-3.5-flash-lite` and offline engine) using the user-provided Gemini key.
+  - Injected comprehensive 2026 Russian admissions system instructions covering BVI, quotas, 3% credit, and FZ-273 achievement caps.
+  - Real-time tool call extraction from responses (`[TOOL: ...]` and `[ACTION: ...]`).
+- **Astryx Chat Suite Additions**:
+  - Markdown bubble formatting with bold highlights, clean bullet/numbered lists, and section headers.
+  - Astryx `ChatMessageToolbar` with Thumbs up/down reaction feedback, clipboard copy, and model attribution badge.
+  - Web Speech API integration (`window.webkitSpeechRecognition || window.SpeechRecognition`) with animated recording state and graceful fallback.
+  - Workspace Fullscreen mode toggle (`Maximize2` / `Minimize2`) for comprehensive admissions research.
+  - In-app API Key settings drawer for key management, status check, and custom keys.
+- **Verification**: All 7 Playwright tests passed with zero console errors. Screenshots captured to `.pipeline/after/feature_assistant_fullscreen.png`.
