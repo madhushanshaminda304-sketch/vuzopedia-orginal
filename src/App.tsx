@@ -1,0 +1,201 @@
+import React, { useState, useEffect } from 'react';
+import { UNIVERSITIES } from './data/mockData';
+import { University } from './types';
+import { Header } from './components/Header';
+import { UniversityCatalog } from './components/UniversityCatalog';
+import { EgeCalculatorView } from './components/EgeCalculatorView';
+import { SpecialtiesCatalogView } from './components/SpecialtiesCatalogView';
+import { ProfessionsCatalogView } from './components/ProfessionsCatalogView';
+import { CareerTestsView } from './components/CareerTestsView';
+import { UniversityComparisonView } from './components/UniversityComparisonView';
+import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
+import { ApplicationTrackerView } from './components/ApplicationTrackerView';
+import { CityModal } from './components/CityModal';
+import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { UniversityDetailModal } from './components/UniversityDetailModal';
+import { Footer } from './components/Footer';
+
+export const App: React.FC = () => {
+  const [currentTab, setCurrentTab] = useState<string>('catalog');
+  const [selectedCity, setSelectedCity] = useState<string>('Все города');
+
+  // Persistence in LocalStorage
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('vuzopedia_favs');
+      return saved ? JSON.parse(saved) : ['mgu', 'bmstu', 'hse'];
+    } catch {
+      return ['mgu', 'bmstu', 'hse'];
+    }
+  });
+
+  const [compareList, setCompareList] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('vuzopedia_compare');
+      return saved ? JSON.parse(saved) : ['mgu', 'bmstu', 'hse'];
+    } catch {
+      return ['mgu', 'bmstu', 'hse'];
+    }
+  });
+
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('vuzopedia_theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+
+  const [selectedVuzDetail, setSelectedVuzDetail] = useState<University | null>(null);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
+  // Sync dark mode class
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('vuzopedia_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('vuzopedia_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  // Sync favorites & compare
+  useEffect(() => {
+    localStorage.setItem('vuzopedia_favs', JSON.stringify(favorites));
+  }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem('vuzopedia_compare', JSON.stringify(compareList));
+  }, [compareList]);
+
+  // Global keyboard shortcut Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleFavorite = (id: string) => {
+    if (favorites.includes(id)) {
+      setFavorites(favorites.filter((f) => f !== id));
+    } else {
+      if (favorites.length >= 5) {
+        alert('По правилам поступления в РФ можно выбрать не более 5 вузов в приоритетный список.');
+      }
+      setFavorites([...favorites, id]);
+    }
+  };
+
+  const toggleCompare = (id: string) => {
+    if (compareList.includes(id)) {
+      setCompareList(compareList.filter((c) => c !== id));
+    } else {
+      if (compareList.length >= 4) {
+        alert('Для комфортного сравнения можно одновременно выбрать до 4 вузов.');
+        return;
+      }
+      setCompareList([...compareList, id]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
+      {/* Main Sticky Header */}
+      <Header
+        currentTab={currentTab}
+        onSelectTab={setCurrentTab}
+        selectedCity={selectedCity}
+        onOpenCityModal={() => setIsCityModalOpen(true)}
+        onOpenSearchModal={() => setIsSearchModalOpen(true)}
+        compareCount={compareList.length}
+        favoritesCount={favorites.length}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+      />
+
+      {/* Main View Area */}
+      <main className="flex-1">
+        {currentTab === 'catalog' && (
+          <UniversityCatalog
+            universities={UNIVERSITIES}
+            selectedCity={selectedCity}
+            onOpenCityModal={() => setIsCityModalOpen(true)}
+            onOpenDetail={setSelectedVuzDetail}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+            compareList={compareList}
+            onToggleCompare={toggleCompare}
+          />
+        )}
+
+        {currentTab === 'calculator' && (
+          <EgeCalculatorView
+            onOpenUniversity={setSelectedVuzDetail}
+            selectedCity={selectedCity}
+            onOpenCityModal={() => setIsCityModalOpen(true)}
+          />
+        )}
+
+        {currentTab === 'specialties' && <SpecialtiesCatalogView />}
+
+        {currentTab === 'professions' && <ProfessionsCatalogView />}
+
+        {currentTab === 'tests' && <CareerTestsView onNavigateTab={setCurrentTab} />}
+
+        {currentTab === 'compare' && (
+          <UniversityComparisonView
+            compareIds={compareList}
+            onRemoveFromCompare={toggleCompare}
+            onOpenDetail={setSelectedVuzDetail}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'calendar' && <CalendarAndGlossaryView />}
+
+        {currentTab === 'tracker' && (
+          <ApplicationTrackerView
+            favoriteIds={favorites}
+            onRemoveFavorite={toggleFavorite}
+            onOpenDetail={setSelectedVuzDetail}
+            onNavigateTab={setCurrentTab}
+          />
+        )}
+      </main>
+
+      {/* Modals & Overlays */}
+      <CityModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        selectedCity={selectedCity}
+        onSelectCity={setSelectedCity}
+      />
+
+      <GlobalSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onSelectUniversity={setSelectedVuzDetail}
+        onNavigateTab={setCurrentTab}
+      />
+
+      <UniversityDetailModal
+        university={selectedVuzDetail}
+        onClose={() => setSelectedVuzDetail(null)}
+        isFavorite={selectedVuzDetail ? favorites.includes(selectedVuzDetail.id) : false}
+        onToggleFavorite={toggleFavorite}
+        isCompared={selectedVuzDetail ? compareList.includes(selectedVuzDetail.id) : false}
+        onToggleCompare={toggleCompare}
+      />
+
+      {/* Global Footer */}
+      <Footer onSelectTab={setCurrentTab} onSelectCity={setSelectedCity} />
+    </div>
+  );
+};
