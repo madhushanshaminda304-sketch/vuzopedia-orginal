@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Building2, BookOpen, Briefcase, ChevronRight } from 'lucide-react';
-import { UNIVERSITIES, SPECIALTIES, PROFESSIONS } from '../data/mockData';
+import { Search, X, Building2, BookOpen, Briefcase, ChevronRight, GraduationCap, School } from 'lucide-react';
+import { UNIVERSITIES, SPECIALTIES, PROFESSIONS, COLLEGES } from '../data/mockData';
+import { FULL_PROGRAMS } from '../data/extendedData';
 import { University, Specialty, Profession } from '../types';
 
 interface GlobalSearchModalProps {
@@ -19,7 +20,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return { vuzes: [], specs: [], profs: [] };
+    if (!query.trim()) return { vuzes: [], specs: [], profs: [], programs: [], colleges: [] };
     const q = query.toLowerCase().trim();
 
     const vuzes = UNIVERSITIES.filter(
@@ -27,28 +28,47 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         v.shortName.toLowerCase().includes(q) ||
         v.fullName.toLowerCase().includes(q) ||
         v.city.toLowerCase().includes(q)
-    ).slice(0, 5);
+    ).slice(0, 4);
+
+    const programs = FULL_PROGRAMS.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        p.universityShort.toLowerCase().includes(q)
+    ).slice(0, 4);
 
     const specs = SPECIALTIES.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         s.code.toLowerCase().includes(q) ||
         s.categoryLabel.toLowerCase().includes(q)
-    ).slice(0, 4);
+    ).slice(0, 3);
+
+    const colleges = COLLEGES.filter(
+      (c) =>
+        c.shortName.toLowerCase().includes(q) ||
+        c.fullName.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q)
+    ).slice(0, 3);
 
     const profs = PROFESSIONS.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
         p.sphere.toLowerCase().includes(q) ||
         p.keySkills.some((k) => k.toLowerCase().includes(q))
-    ).slice(0, 4);
+    ).slice(0, 3);
 
-    return { vuzes, specs, profs };
+    return { vuzes, specs, profs, programs, colleges };
   }, [query]);
 
   if (!isOpen) return null;
 
-  const totalResults = filtered.vuzes.length + filtered.specs.length + filtered.profs.length;
+  const totalResults =
+    filtered.vuzes.length +
+    filtered.specs.length +
+    filtered.profs.length +
+    filtered.programs.length +
+    filtered.colleges.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -133,6 +153,41 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             </div>
           )}
 
+          {/* Educational Programs Section */}
+          {filtered.programs.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">
+                <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
+                Программы обучения
+              </div>
+              <div className="space-y-1">
+                {filtered.programs.map((prog) => (
+                  <button
+                    key={prog.id}
+                    onClick={() => {
+                      onNavigateTab('programs');
+                      onClose();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition group"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        <span className="font-mono text-blue-600 dark:text-blue-400 mr-2">
+                          {prog.code}
+                        </span>
+                        {prog.name}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {prog.universityShort} • Бюджет от {prog.minBudgetScore} б. • {prog.careerProspects.join(', ')}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Specialties Section */}
           {filtered.specs.length > 0 && (
             <div>
@@ -194,6 +249,38 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-600 transition" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Colleges Section */}
+          {filtered.colleges.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">
+                <School className="w-3.5 h-3.5 text-purple-600" />
+                Колледжи и техникумы (СПО)
+              </div>
+              <div className="space-y-1">
+                {filtered.colleges.map((col) => (
+                  <button
+                    key={col.id}
+                    onClick={() => {
+                      onNavigateTab('spo');
+                      onClose();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition group"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition">
+                        {col.shortName}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {col.city} • Проходной аттестат: {col.minGpaBudget} • {col.budgetPlaces} мест
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-purple-600 transition" />
                   </button>
                 ))}
               </div>

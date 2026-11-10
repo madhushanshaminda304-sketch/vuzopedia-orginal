@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { University, UniversityProgram, ExamSubjectId } from '../types';
 import { EXAM_SUBJECTS } from '../data/mockData';
+import { DORMITORIES, MILITARY_CENTERS, UNIVERSITY_REVIEWS } from '../data/extendedData';
 
 interface UniversityDetailModalProps {
   university: University | null;
@@ -39,7 +40,7 @@ export const UniversityDetailModal: React.FC<UniversityDetailModalProps> = ({
   isCompared,
   onToggleCompare,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'chance'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'chance' | 'dorms_military' | 'reviews'>('overview');
   const [userExamScores, setUserExamScores] = useState<{ [key: string]: number }>({
     rus: 82,
     math_prof: 80,
@@ -171,6 +172,28 @@ export const UniversityDetailModal: React.FC<UniversityDetailModalProps> = ({
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span>Калькулятор шансов в {v.shortName}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('dorms_military')}
+            className={`py-3 px-4 text-sm font-semibold transition border-b-2 flex items-center gap-1.5 ${
+              activeTab === 'dorms_military'
+                ? 'border-brand-600 text-brand-600 dark:text-brand-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Home className="w-4 h-4 text-blue-500" />
+            <span>Общежития и ВУЦ</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`py-3 px-4 text-sm font-semibold transition border-b-2 flex items-center gap-1.5 ${
+              activeTab === 'reviews'
+                ? 'border-brand-600 text-brand-600 dark:text-brand-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Star className="w-4 h-4 text-amber-400" />
+            <span>Отзывы студентов</span>
           </button>
         </div>
 
@@ -380,6 +403,200 @@ export const UniversityDetailModal: React.FC<UniversityDetailModalProps> = ({
               </div>
             </div>
           )}
+
+          {activeTab === 'dorms_military' && (() => {
+            const dorm = DORMITORIES.find(
+              (d) =>
+                d.universityShort.toLowerCase().includes(v.shortName.toLowerCase()) ||
+                v.shortName.toLowerCase().includes(d.universityShort.toLowerCase())
+            );
+            const military = MILITARY_CENTERS.find(
+              (m) =>
+                m.universityShort.toLowerCase().includes(v.shortName.toLowerCase()) ||
+                v.shortName.toLowerCase().includes(m.universityShort.toLowerCase())
+            );
+
+            return (
+              <div className="space-y-6">
+                {/* Dormitory Card */}
+                <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                        <Home className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
+                          {dorm ? dorm.universityFullName : `Общежитие ${v.shortName}`}
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          {dorm ? dorm.address : `${v.city}, студенческий городок`}
+                        </p>
+                      </div>
+                    </div>
+                    {dorm?.guaranteedForFirstYear && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        100% гарантия 1 курсу
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Тип планировки</span>
+                      <strong className="text-slate-800 dark:text-slate-200">{dorm ? dorm.buildingType : 'Блочный'}</strong>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Стоимость проживания</span>
+                      <strong className="text-emerald-600 dark:text-emerald-400">
+                        {dorm ? `${dorm.costPerMonth} ₽ / мес` : `от ${v.dormitoryInfo.costMonth} ₽ / мес`}
+                      </strong>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Всего мест</span>
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        {dorm ? dorm.placesTotal.toLocaleString() : v.dormitoryInfo.places.toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">До корпусов</span>
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        ~{dorm ? dorm.distanceToCampusMin : v.dormitoryInfo.distanceMinutes} минут
+                      </strong>
+                    </div>
+                  </div>
+
+                  {dorm?.facilities && (
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Инфраструктура и удобства:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dorm.facilities.map((f, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700"
+                          >
+                            ✓ {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Military Center Card */}
+                <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Военный учебный центр (ВУЦ) при {v.shortName}
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Подготовка офицеров, сержантов и рядовых запаса
+                      </p>
+                    </div>
+                  </div>
+
+                  {military ? (
+                    <div className="space-y-3 text-xs">
+                      <div className="flex flex-wrap gap-2">
+                        {military.ranksTrained.map((r, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 font-bold"
+                          >
+                            🎖️ {r}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1">
+                        <span className="font-semibold text-slate-400 block text-[11px]">Нормативы физподготовки:</span>
+                        <div className="text-slate-700 dark:text-slate-200 flex flex-wrap gap-4 font-medium">
+                          <span>Подтягивания: ≥ <strong>{military.physicalRequirements.pullUps} раз</strong></span>
+                          <span>Бег 100м: ≤ <strong>{military.physicalRequirements.running100mSec} сек</strong></span>
+                          <span>Кросс 3км: ≤ <strong>{military.physicalRequirements.running3kmMin} мин</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      Студенты очной формы обучения имеют право на государственную отсрочку от призыва на весь период непрерывного обучения (бакалавриат + магистратура + аспирантура).
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {activeTab === 'reviews' && (() => {
+            const vuzReviews = UNIVERSITY_REVIEWS.filter(
+              (r) =>
+                r.universityId === v.id ||
+                r.courseAndFaculty.toLowerCase().includes(v.shortName.toLowerCase())
+            );
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      Рейтинг студентов: {v.studentRating} / 5.0 ({v.reviewsCount} отзывов)
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-brand-600 dark:text-brand-400">
+                    Верифицированные студенты
+                  </span>
+                </div>
+
+                {vuzReviews.length > 0 ? (
+                  vuzReviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <strong className="text-slate-900 dark:text-white text-sm block">
+                            {rev.authorName}
+                          </strong>
+                          <span className="text-slate-500">{rev.courseAndFaculty} • {rev.date}</span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-sm">
+                          ★ {rev.ratingOverall}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2 border-y border-slate-200 dark:border-slate-700 text-[11px]">
+                        <div>Учёба: <strong>{rev.ratingEducation} / 5</strong></div>
+                        <div>Общага: <strong>{rev.ratingDorm} / 5</strong></div>
+                        <div>Деканат: <strong>{rev.ratingDeanery} / 5</strong></div>
+                        <div>Карьера: <strong>{rev.ratingEmployment} / 5</strong></div>
+                      </div>
+
+                      <div className="space-y-1.5 leading-relaxed text-slate-700 dark:text-slate-300">
+                        <div><strong className="text-emerald-600 dark:text-emerald-400">Плюсы:</strong> {rev.pros}</div>
+                        <div><strong className="text-rose-600 dark:text-rose-400">Минусы:</strong> {rev.cons}</div>
+                        <div className="pt-1 italic text-slate-600 dark:text-slate-400">«{rev.verdict}»</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-xs text-slate-500">
+                    <p className="font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      По этому вузу пока нет развернутых текстовых отзывов на текущей сессии.
+                    </p>
+                    <p>Общая оценка студентов составляет {v.studentRating} на основе опросов выпускников.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

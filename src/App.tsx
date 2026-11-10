@@ -81,6 +81,39 @@ export const App: React.FC = () => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isDedAssistantOpen, setIsDedAssistantOpen] = useState(false);
   const [isMyPlanOpen, setIsMyPlanOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((current) => (current === msg ? null : current));
+    }, 2800);
+  };
+
+  // Sync document title with currentTab
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      catalog: 'Вузы России 2026 — Каталог, баллы и бюджетные места | Вузопедия',
+      programs: 'Программы высшего образования 2026 — Бакалавриат и специалитет | Вузопедия',
+      calculator: 'Калькулятор ЕГЭ 2026 — Подбор вузов по предметам и баллам | Вузопедия',
+      spo: 'Колледжи и техникумы России (СПО) 2026 — Поступление после 9 и 11 классов | Вузопедия',
+      specialties: 'Специальности высшего образования — Каталог направлений | Вузопедия',
+      professions: 'Атлас профессий — Кем стать и сколько платят | Вузопедия',
+      target: 'Целевое обучение 2026 — Заказчики и квоты | Вузопедия',
+      dorms: 'Общежития вузов России — Стоимость и гарантии | Вузопедия',
+      military: 'Военные учебные центры (ВУЦ) при вузах РФ | Вузопедия',
+      reviews: 'Отзывы студентов о вузах России — Честные оценки | Вузопедия',
+      olympiads: 'Олимпиады для поступления и БВИ 2026 | Вузопедия',
+      credit: 'Образовательный кредит с господдержкой 3% и скидки | Вузопедия',
+      achievements: 'Калькулятор индивидуальных достижений к ЕГЭ (до +10 б.) | Вузопедия',
+      student_budget: 'Калькулятор расходов и бюджета студента по городам РФ | Вузопедия',
+      tests: 'Тесты профориентации — Выбор профессии онлайн | Вузопедия',
+      compare: 'Сравнение выбранных университетов | Вузопедия',
+      calendar: 'Календарь абитуриента 2026 и Словарь терминов | Вузопедия',
+      tracker: 'Мои приоритеты поступления — Стратегия 5 вузов | Вузопедия',
+    };
+    document.title = titles[currentTab] || 'Вузопедия 2026 — Поступление в вузы России';
+  }, [currentTab]);
 
   // Sync dark mode class
   useEffect(() => {
@@ -107,20 +140,22 @@ export const App: React.FC = () => {
   }, [myPlanProfessions]);
 
   const toggleMyPlan = (prof: ExtendedProfession) => {
+    const profName = prof.titleRu || prof.titleEn;
     if (myPlanProfessions.some((p) => p.id === prof.id)) {
       setMyPlanProfessions(myPlanProfessions.filter((p) => p.id !== prof.id));
+      showToast(`Удалено из плана: ${profName}`);
     } else {
       setMyPlanProfessions([...myPlanProfessions, prof]);
+      showToast(`Добавлено в Мой план: ${profName}`);
     }
   };
 
   const removeMyPlan = (id: string) => {
-    setMyPlanProfessions(myPlanProfessions.filter((p) => p.id !== id));
+    const p = myPlanProfessions.find((item) => item.id === id);
+    const profName = p ? (p.titleRu || p.titleEn) : '';
+    setMyPlanProfessions(myPlanProfessions.filter((item) => item.id !== id));
+    if (p) showToast(`Удалено из плана: ${profName}`);
   };
-
-  useEffect(() => {
-    localStorage.setItem('vuzopedia_compare', JSON.stringify(compareList));
-  }, [compareList]);
 
   // Global keyboard shortcut Ctrl+K
   useEffect(() => {
@@ -137,23 +172,28 @@ export const App: React.FC = () => {
   const toggleFavorite = (id: string) => {
     if (favorites.includes(id)) {
       setFavorites(favorites.filter((f) => f !== id));
+      showToast('Удалено из ваших приоритетов');
     } else {
       if (favorites.length >= 5) {
         alert('По правилам поступления в РФ можно выбрать не более 5 вузов в приоритетный список.');
+        return;
       }
       setFavorites([...favorites, id]);
+      showToast('Добавлено в 5 приоритетов поступления');
     }
   };
 
   const toggleCompare = (id: string) => {
     if (compareList.includes(id)) {
       setCompareList(compareList.filter((c) => c !== id));
+      showToast('Удалено из сравнения');
     } else {
       if (compareList.length >= 4) {
         alert('Для комфортного сравнения можно одновременно выбрать до 4 вузов.');
         return;
       }
       setCompareList([...compareList, id]);
+      showToast('Добавлено в сравнение вузов');
     }
   };
 
@@ -381,6 +421,14 @@ export const App: React.FC = () => {
         <span className="text-xl">🧙‍♂️</span>
         <span className="hidden sm:inline">Дед Вузопед (Помощник)</span>
       </button>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 font-bold text-xs shadow-2xl backdrop-blur-md border border-slate-700 dark:border-slate-300 animate-slideDown">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Global Footer */}
       <Footer onSelectTab={setCurrentTab} onSelectCity={setSelectedCity} />
