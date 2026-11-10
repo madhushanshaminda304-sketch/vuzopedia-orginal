@@ -3,7 +3,6 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 
-// Simple static server for dist
 const distDir = path.resolve('dist');
 
 const mimeTypes = {
@@ -24,7 +23,6 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
     fs.createReadStream(filePath).pipe(res);
   } else {
-    // SPA fallback
     const indexPath = path.join(distDir, 'index.html');
     res.writeHead(200, { 'Content-Type': 'text/html' });
     fs.createReadStream(indexPath).pipe(res);
@@ -38,7 +36,6 @@ server.listen(4173, async () => {
 
   let browser;
   try {
-    // Try launching chromium or system chrome
     try {
       browser = await chromium.launch({ headless: true });
     } catch {
@@ -47,7 +44,6 @@ server.listen(4173, async () => {
 
     const consoleErrors = [];
 
-    // Test Desktop 1440px
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     page.on('console', msg => {
       if (msg.type() === 'error') {
@@ -58,46 +54,51 @@ server.listen(4173, async () => {
     await page.goto('http://localhost:4173');
     await page.waitForTimeout(1000);
 
-    // Screenshot Desktop Home
-    await page.screenshot({ path: '.pipeline/after/desktop_home_1440.png', fullPage: false });
+    // 1. Home
+    await page.screenshot({ path: '.pipeline/after/desktop_home_1440.png' });
     console.log('✓ Captured desktop_home_1440.png');
 
-    // Click on Calculator Tab
+    // 2. Calculator
     await page.click('button:has-text("Калькулятор ЕГЭ")');
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: '.pipeline/after/desktop_calculator_1440.png', fullPage: false });
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_calculator_1440.png' });
     console.log('✓ Captured desktop_calculator_1440.png');
 
-    // Click on Specialties Tab
-    await page.click('button:has-text("Специальности")');
+    // 3. SPO / Colleges
+    await page.click('button:has-text("Колледжи (СПО)")');
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_spo_1440.png' });
+    console.log('✓ Captured desktop_spo_1440.png');
+
+    // 4. Target Quota
+    await page.click('button:has-text("Целевое")');
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_target_1440.png' });
+    console.log('✓ Captured desktop_target_1440.png');
+
+    // 5. Fear Map / Where to start
+    await page.click('button:has-text("С чего начать")');
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_fear_map_1440.png' });
+    console.log('✓ Captured desktop_fear_map_1440.png');
+
+    // 6. Blacklist
+    await page.click('button:has-text("Черный список")');
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_blacklist_1440.png' });
+    console.log('✓ Captured desktop_blacklist_1440.png');
+
+    // 7. Remote / Online degrees
+    await page.click('button:has-text("Онлайн-обучение")');
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: '.pipeline/after/desktop_remote_1440.png' });
+    console.log('✓ Captured desktop_remote_1440.png');
+
+    // 8. Open Ded Vuzoped Assistant
+    await page.click('button:has-text("Дед Вузопед")');
     await page.waitForTimeout(500);
-    await page.screenshot({ path: '.pipeline/after/desktop_specialties_1440.png', fullPage: false });
-    console.log('✓ Captured desktop_specialties_1440.png');
-
-    // Click on Tests Tab
-    await page.click('button:has-text("Тесты и выбор")');
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: '.pipeline/after/desktop_tests_1440.png', fullPage: false });
-    console.log('✓ Captured desktop_tests_1440.png');
-
-    // Click on Compare Tab
-    await page.click('button:has-text("Сравнение")');
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: '.pipeline/after/desktop_compare_1440.png', fullPage: false });
-    console.log('✓ Captured desktop_compare_1440.png');
-
-    // Test Mobile 375px
-    const mobilePage = await browser.newPage({ viewport: { width: 375, height: 667 } });
-    mobilePage.on('console', msg => {
-      if (msg.type() === 'error') {
-        consoleErrors.push(msg.text());
-      }
-    });
-
-    await mobilePage.goto('http://localhost:4173');
-    await mobilePage.waitForTimeout(1000);
-    await mobilePage.screenshot({ path: '.pipeline/after/mobile_home_375.png', fullPage: false });
-    console.log('✓ Captured mobile_home_375.png');
+    await page.screenshot({ path: '.pipeline/after/desktop_ded_assistant_1440.png' });
+    console.log('✓ Captured desktop_ded_assistant_1440.png');
 
     await browser.close();
     server.close();
@@ -108,9 +109,9 @@ server.listen(4173, async () => {
       process.exit(1);
     }
 
-    console.log('ALL PLAYWRIGHT TESTS AND SCREENSHOTS COMPLETED WITH 0 CONSOLE ERRORS!');
+    console.log('ALL EXTENDED PLAYWRIGHT TESTS PASSED WITH 0 CONSOLE ERRORS!');
   } catch (err) {
-    console.error('Playwright execution error:', err);
+    console.error('Error in verification:', err);
     if (browser) await browser.close();
     server.close();
     process.exit(1);

@@ -1,45 +1,49 @@
-# Project Memory: Vuzopedia Remake
+# Project Memory: Vuzopedia Remake (Full Feature Suite)
 
 ## Overview
-High-performance, modern clone & reverse engineering of https://vuzopedia.ru/ built with React 19, TypeScript, Tailwind CSS, and Vite. Ad-free, fast, accessible, and responsive.
+Comprehensive, high-performance, ad-free clone & reverse engineering of https://vuzopedia.ru/ built with React 19, TypeScript, Tailwind CSS, and Vite.
 
-## Running the Project
-- Development server: `npm run dev` (starts on http://localhost:3000)
-- Production build: `npm run build` (outputs optimized bundle to `dist/`)
-- Production preview: `npm run preview`
-- Run logic tests: `npx tsx scripts/test_logic.mjs`
-- Run verification & visual tests: `node scripts/verify_and_screenshot.mjs`
+## Complete Feature Matrix
+1. **Каталог вузов России 2026 (`UniversityCatalog.tsx`)**:
+   - Multi-criteria filter: City, State vs Private, Military Training Center (ВУЦ), Dormitory, Passing score slider (100–310), Tuition fee slider.
+   - Sorting: by rank, passing score, budget spots, tuition fee.
+2. **Калькулятор ЕГЭ 2026 (`EgeCalculatorView.tsx`)**:
+   - All 11 official Russian USE subjects + Individual Achievements (+0..10).
+   - Real-time chance corridor calculation: Green (guaranteed), Yellow (borderline), Red (reserve).
+3. **Колледжи и техникумы СПО (`CollegesView.tsx`)**:
+   - College directory for 9th and 11th grade graduates.
+   - Interactive GPA (средний балл аттестата) calculator.
+4. **Каталог специальностей высшего образования (`SpecialtiesCatalogView.tsx`)**:
+   - Official classification codes (`09.03.01`, `01.03.02`, `38.03.01`, `31.05.01`, etc.).
+   - Category filtering, degree levels, exam requirements, and salary benchmarks.
+5. **Атлас востребованных профессий (`ProfessionsCatalogView.tsx`)**:
+   - Salary matrix (Junior / Middle / Senior), key competencies, recommended degree tracks.
+6. **Целевое обучение 2026 (`TargetEducationView.tsx`)**:
+   - Employer quota contracts (Росатом, Газпром, РЖД, Ростех, Минздрав).
+   - Monthly stipend allowances (+12 000 – 25 000 ₽), open seats, and direct links to «Работа в России».
+7. **С чего начать: Карта страхов абитуриента (`FearMapView.tsx`)**:
+   - 5-step interactive admission roadmap.
+   - Actionable solutions for critical applicant anxieties (завалил экзамен, не хватило 2 баллов, армия и отсрочка, дедлайны Госуслуг).
+8. **Чёрный список вузов Рособрнадзора (`BlacklistView.tsx`)**:
+   - Verification tool for revoked, suspended, unaccredited, or reorganized universities.
+   - Clear warnings on military draft deferral loss and unaccredited diplomas.
+9. **Дистанционное и онлайн-образование (`RemoteEducationView.tsx`)**:
+   - 100% remote university bachelor degree programs with state diplomas.
+10. **Профориентационный тест Климова (`CareerTestsView.tsx`)**:
+    - 5-domain aptitude questionnaire with instant radar/percentage breakdown and specialty matching.
+11. **Сравнение университетов (`UniversityComparisonView.tsx`)**:
+    - Side-by-side comparison matrix for up to 4 universities with best metric highlights.
+12. **Календарь поступления 2026 и Словарь (`CalendarAndGlossaryView.tsx`)**:
+    - Complete admissions milestones and searchable glossary (БВИ, СНИЛС, целевое, согласие).
+13. **Персональный трекер 5 приоритетов (`ApplicationTrackerView.tsx`)**:
+    - Strategy optimizer for the official 5-university application limit.
+14. **Интерактивный консультант «Дед Вузопед» (`DedVuzopedAssistantModal.tsx`)**:
+    - Smart virtual admission advisor with quick suggestion chips and deep linking.
+15. **Глобальный поиск (`GlobalSearchModal.tsx`, `Ctrl+K`)**:
+    - Instant multi-category search across universities, specialties, and careers.
 
-## Architecture & Folders
-- `src/`
-  - `components/`
-    - `Header.tsx`: Navigation, search trigger, city selector, theme toggle, mobile menu
-    - `UniversityCatalog.tsx`: University directory with multi-criteria filters & sorting
-    - `UniversityCard.tsx`: University card with badges, scores, spots, and quick actions
-    - `UniversityDetailModal.tsx`: Comprehensive modal with overview, programs, and chance calculator
-    - `EgeCalculatorView.tsx`: 11-subject USE calculator with dynamic chance corridor calculation
-    - `SpecialtiesCatalogView.tsx`: Catalog of official degree specialties (09.03.01, etc.)
-    - `ProfessionsCatalogView.tsx`: Atlas of in-demand modern professions with salaries
-    - `CareerTestsView.tsx`: Klimov 5-domain aptitude questionnaire with instant results
-    - `UniversityComparisonView.tsx`: Side-by-side comparison matrix for up to 4 universities
-    - `CalendarAndGlossaryView.tsx`: 2026 Admissions roadmap and terminology dictionary
-    - `ApplicationTrackerView.tsx`: Priority ranking tool for up to 5 university applications
-    - `CityModal.tsx`: Regional educational hub selector
-    - `GlobalSearchModal.tsx`: Universal instant search across universities, specialties, and professions
-    - `Footer.tsx`: Educational links, legal disclaimer, and branding
-  - `data/`
-    - `mockData.ts`: Realistic dataset of top Russian universities, programs, specialties, professions, questions, calendar, and glossary
-  - `types/`
-    - `index.ts`: TypeScript contracts and domain models
-  - `utils/`
-    - `calculator.ts`: Scoring and admission probability algorithm
-  - `App.tsx`: Main layout, state sync, LocalStorage persistence
-  - `main.tsx`: React DOM mount
-  - `index.css`: Tailwind directives and custom micro-animations
-
-## Key Design Tokens
-- Primary Brand Blue: `#2563EB` (Tailwind `brand-600`)
-- Accent Amber: `#F59E0B`
-- Success Green: `#10B981`
-- Typography: Inter with Cyrillic character support
-- Dark Mode: `.dark` class supported via Tailwind CSS
+## Running & Testing
+- Development: `npm run dev`
+- Production Build: `npm run build`
+- Unit Logic Tests: `npx tsx scripts/test_logic.mjs`
+- Full Visual Verification: `node scripts/verify_and_screenshot.mjs`

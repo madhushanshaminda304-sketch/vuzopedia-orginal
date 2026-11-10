@@ -4,8 +4,13 @@ import { University } from './types';
 import { Header } from './components/Header';
 import { UniversityCatalog } from './components/UniversityCatalog';
 import { EgeCalculatorView } from './components/EgeCalculatorView';
+import { CollegesView } from './components/CollegesView';
 import { SpecialtiesCatalogView } from './components/SpecialtiesCatalogView';
 import { ProfessionsCatalogView } from './components/ProfessionsCatalogView';
+import { TargetEducationView } from './components/TargetEducationView';
+import { FearMapView } from './components/FearMapView';
+import { BlacklistView } from './components/BlacklistView';
+import { RemoteEducationView } from './components/RemoteEducationView';
 import { CareerTestsView } from './components/CareerTestsView';
 import { UniversityComparisonView } from './components/UniversityComparisonView';
 import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
@@ -13,6 +18,7 @@ import { ApplicationTrackerView } from './components/ApplicationTrackerView';
 import { CityModal } from './components/CityModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { UniversityDetailModal } from './components/UniversityDetailModal';
+import { DedVuzopedAssistantModal } from './components/DedVuzopedAssistantModal';
 import { Footer } from './components/Footer';
 
 export const App: React.FC = () => {
@@ -49,6 +55,7 @@ export const App: React.FC = () => {
   const [selectedVuzDetail, setSelectedVuzDetail] = useState<University | null>(null);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isDedAssistantOpen, setIsDedAssistantOpen] = useState(false);
 
   // Sync dark mode class
   useEffect(() => {
@@ -114,6 +121,7 @@ export const App: React.FC = () => {
         selectedCity={selectedCity}
         onOpenCityModal={() => setIsCityModalOpen(true)}
         onOpenSearchModal={() => setIsSearchModalOpen(true)}
+        onOpenDedAssistant={() => setIsDedAssistantOpen(true)}
         compareCount={compareList.length}
         favoritesCount={favorites.length}
         isDarkMode={isDarkMode}
@@ -143,9 +151,19 @@ export const App: React.FC = () => {
           />
         )}
 
+        {currentTab === 'spo' && <CollegesView />}
+
         {currentTab === 'specialties' && <SpecialtiesCatalogView />}
 
         {currentTab === 'professions' && <ProfessionsCatalogView />}
+
+        {currentTab === 'target' && <TargetEducationView />}
+
+        {currentTab === 'fear_map' && <FearMapView onNavigateTab={setCurrentTab} />}
+
+        {currentTab === 'blacklist' && <BlacklistView />}
+
+        {currentTab === 'remote' && <RemoteEducationView />}
 
         {currentTab === 'tests' && <CareerTestsView onNavigateTab={setCurrentTab} />}
 
@@ -193,6 +211,22 @@ export const App: React.FC = () => {
         isCompared={selectedVuzDetail ? compareList.includes(selectedVuzDetail.id) : false}
         onToggleCompare={toggleCompare}
       />
+
+      <DedVuzopedAssistantModal
+        isOpen={isDedAssistantOpen}
+        onClose={() => setIsDedAssistantOpen(false)}
+        onNavigateTab={setCurrentTab}
+      />
+
+      {/* Floating Ded Vuzoped launcher for mobile & desktop */}
+      <button
+        onClick={() => setIsDedAssistantOpen(true)}
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-amber-500 via-brand-600 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-extrabold text-xs shadow-2xl transition transform hover:scale-110 animate-bounce"
+        title="Спросить Деда Вузопеда"
+      >
+        <span className="text-xl">🧙‍♂️</span>
+        <span className="hidden sm:inline">Дед Вузопед (Помощник)</span>
+      </button>
 
       {/* Global Footer */}
       <Footer onSelectTab={setCurrentTab} onSelectCity={setSelectedCity} />

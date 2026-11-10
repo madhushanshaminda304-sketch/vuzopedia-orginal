@@ -20,7 +20,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => 
               <span className="text-xl font-extrabold tracking-tight text-white">ВУЗОПЕДИЯ</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Главный независимый портал для поступающих в вузы России. Помогаем абитуриентам трезво оценить свои шансы, рассчитать баллы ЕГЭ, подобрать востребованную профессию и поступить на бюджет в вуз мечты.
+              Главный независимый портал для поступающих в вузы и колледжи России. Помогаем абитуриентам трезво оценить свои шансы, рассчитать баллы ЕГЭ, подобрать востребованную профессию, найти целевую квоту и поступить на бюджет в вуз мечты.
             </p>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <Shield className="w-4 h-4 text-emerald-400" />
@@ -50,6 +50,14 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => 
               </li>
               <li>
                 <button
+                  onClick={() => onSelectTab('spo')}
+                  className="hover:text-white transition"
+                >
+                  Колледжи и техникумы (СПО)
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => onSelectTab('specialties')}
                   className="hover:text-white transition"
                 >
@@ -64,13 +72,45 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => 
                   Атлас профессий
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab('remote')}
+                  className="hover:text-white transition"
+                >
+                  Онлайн и дистанционное ВО
+                </button>
+              </li>
             </ul>
           </div>
 
-          {/* Column 2: Сервисы */}
+          {/* Column 2: Сервисы и Защита */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Сервисы</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Сервисы и помощь</h4>
             <ul className="space-y-2 text-xs">
+              <li>
+                <button
+                  onClick={() => onSelectTab('target')}
+                  className="hover:text-white transition"
+                >
+                  Целевое обучение 2026
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab('fear_map')}
+                  className="hover:text-white transition"
+                >
+                  С чего начать (Карта страхов)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab('blacklist')}
+                  className="hover:text-rose-400 transition text-rose-300 font-semibold"
+                >
+                  Чёрный список вузов (Рособрнадзор)
+                </button>
+              </li>
               <li>
                 <button
                   onClick={() => onSelectTab('compare')}
@@ -108,7 +148,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => 
 
           {/* Column 3: Города */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Города</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Города обучения</h4>
             <ul className="space-y-2 text-xs">
               {['Москва', 'Санкт-Петербург', 'Казань', 'Новосибирск', 'Екатеринбург', 'Томск'].map(
                 (city) => (

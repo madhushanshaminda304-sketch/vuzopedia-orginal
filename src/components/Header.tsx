@@ -10,7 +10,11 @@ import {
   Menu,
   X,
   Sparkles,
-  ClipboardList,
+  School,
+  FileCheck,
+  Compass,
+  ShieldAlert,
+  Laptop,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -19,6 +23,7 @@ interface HeaderProps {
   selectedCity: string;
   onOpenCityModal: () => void;
   onOpenSearchModal: () => void;
+  onOpenDedAssistant: () => void;
   compareCount: number;
   favoritesCount: number;
   isDarkMode: boolean;
@@ -31,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   selectedCity,
   onOpenCityModal,
   onOpenSearchModal,
+  onOpenDedAssistant,
   compareCount,
   favoritesCount,
   isDarkMode,
@@ -38,29 +44,34 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
+  const mainNavItems = [
     { id: 'catalog', label: 'Вузы' },
     { id: 'calculator', label: 'Калькулятор ЕГЭ', badge: '2026' },
+    { id: 'spo', label: 'Колледжи (СПО)' },
     { id: 'specialties', label: 'Специальности' },
     { id: 'professions', label: 'Профессии' },
-    { id: 'tests', label: 'Тесты и выбор' },
+    { id: 'target', label: 'Целевое' },
+    { id: 'fear_map', label: 'С чего начать' },
+    { id: 'blacklist', label: 'Черный список', isWarning: true },
+    { id: 'remote', label: 'Онлайн-обучение' },
+    { id: 'tests', label: 'Тесты' },
     { id: 'compare', label: 'Сравнение', count: compareCount },
-    { id: 'calendar', label: 'Календарь 2026' },
+    { id: 'calendar', label: 'Календарь' },
     { id: 'tracker', label: 'Мои приоритеты', count: favoritesCount },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       {/* Top Banner Ribbon */}
-      <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 text-white text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2">
+      <div className="bg-gradient-to-r from-brand-700 via-indigo-600 to-brand-800 text-white text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2">
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-        <span>Приёмная кампания 2026: актуальные проходные баллы, бюджетные места и новый калькулятор шансов!</span>
+        <span>Приёмная кампания 2026: вузы, колледжи СПО, целевые квоты, калькулятор баллов и навигатор поступления</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-16 gap-3">
           {/* Logo & City Selector */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => onSelectTab('catalog')}
               className="flex items-center gap-2.5 group focus:outline-none"
@@ -81,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* City Selector Pill */}
             <button
               onClick={onOpenCityModal}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
             >
               <MapPin className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
               <span>{selectedCity}</span>
@@ -89,49 +100,58 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => {
+          <nav className="hidden xl:flex items-center gap-1">
+            {mainNavItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => onSelectTab(item.id)}
-                  className={`relative px-3 py-2 rounded-xl text-sm font-medium transition ${
+                  className={`relative px-2.5 py-1.5 rounded-xl text-xs font-medium transition ${
                     isActive
-                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 font-semibold'
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 font-bold'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   }`}
                 >
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1">
                     {item.label}
                     {item.badge && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
                         {item.badge}
                       </span>
                     )}
                     {item.count !== undefined && item.count > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-brand-600 text-white">
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-brand-600 text-white">
                         {item.count}
                       </span>
                     )}
                   </span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-brand-600 dark:bg-brand-400 rounded-full" />
+                    <span className="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-brand-600 dark:bg-brand-400 rounded-full" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Action Icons */}
+          {/* Right Action Icons & Assistant Button */}
           <div className="flex items-center gap-2">
+            {/* Ded Vuzoped trigger button */}
+            <button
+              onClick={onOpenDedAssistant}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-extrabold shadow-sm transition transform hover:scale-105"
+            >
+              <span className="text-sm">🧙‍♂️</span>
+              <span className="hidden sm:inline">Дед Вузопед</span>
+            </button>
+
             {/* Quick Search */}
             <button
               onClick={onOpenSearchModal}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition"
               title="Поиск по сайту (Ctrl+K)"
             >
-              <Search className="w-4 h-4 text-slate-400" />
+              <Search className="w-3.5 h-3.5 text-slate-400" />
               <span className="hidden xl:inline text-xs">Поиск...</span>
             </button>
 
@@ -141,9 +161,9 @@ export const Header: React.FC<HeaderProps> = ({
               className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               title="Сравнение вузов"
             >
-              <Scale className="w-5 h-5" />
+              <Scale className="w-4 h-4" />
               {compareCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center animate-scaleIn">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center animate-scaleIn">
                   {compareCount}
                 </span>
               )}
@@ -153,11 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={() => onSelectTab('tracker')}
               className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Мои приоритеты (Избранное)"
+              title="Мои приоритеты (до 5 вузов)"
             >
-              <Bookmark className="w-5 h-5" />
+              <Bookmark className="w-4 h-4" />
               {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center animate-scaleIn">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center animate-scaleIn">
                   {favoritesCount}
                 </span>
               )}
@@ -167,58 +187,56 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onToggleDarkMode}
               className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title={isDarkMode ? 'Светлая тема' : 'Тёмная тема'}
             >
-              {isDarkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Mobile Hamburger Button */}
+            {/* Mobile / Compact Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="xl:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Expanded Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-2 pb-6 space-y-2 animate-fadeIn">
-          {/* City in Mobile */}
-          <button
-            onClick={() => {
-              onOpenCityModal();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-800 dark:text-slate-200"
-          >
-            <div className="flex items-center gap-2">
+        <div className="xl:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-2 pb-6 space-y-3 animate-fadeIn shadow-2xl">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold">
+            <button
+              onClick={() => {
+                onOpenCityModal();
+                setMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-2 text-slate-800 dark:text-slate-200"
+            >
               <MapPin className="w-4 h-4 text-brand-600" />
               <span>Город: {selectedCity}</span>
-            </div>
-            <span className="text-xs text-brand-600 font-semibold">Изменить</span>
-          </button>
+            </button>
+            <span className="text-brand-600 cursor-pointer">Изменить</span>
+          </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            {navItems.map((item) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {mainNavItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
                   onSelectTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`p-3 rounded-xl text-left text-sm font-medium transition ${
+                className={`p-3 rounded-xl text-left text-xs font-medium transition ${
                   currentTab === item.id
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800'
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 font-bold border border-brand-200 dark:border-brand-800'
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span>{item.label}</span>
                   {item.count !== undefined && item.count > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-600 text-white font-bold">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-600 text-white font-bold">
                       {item.count}
                     </span>
                   )}

@@ -1,0 +1,2886 @@
+[
+  {
+    "href": "/city/moskva",
+    "title": "Москва"
+  },
+  {
+    "href": "/city/sankt-peterburg",
+    "title": "Санкт-Петербург"
+  },
+  {
+    "href": "/city/novosibirsk",
+    "title": "Новосибирск"
+  },
+  {
+    "href": "/city/ekaterinburg",
+    "title": "Екатеринбург"
+  },
+  {
+    "href": "/city/kazan",
+    "title": "Казань"
+  },
+  {
+    "href": "/city/nizhny-novgorod",
+    "title": "Нижний Новгород"
+  },
+  {
+    "href": "/city/chelyabinsk",
+    "title": "Челябинск"
+  },
+  {
+    "href": "/city/krasnoyarsk",
+    "title": "Красноярск"
+  },
+  {
+    "href": "/city/samara",
+    "title": "Самара"
+  },
+  {
+    "href": "/city/ufa",
+    "title": "Уфа"
+  },
+  {
+    "href": "/city/rostov-na-donu",
+    "title": "Ростов-на-Дону"
+  },
+  {
+    "href": "/city/omsk",
+    "title": "Омск"
+  },
+  {
+    "href": "/city/krasnodar",
+    "title": "Краснодар"
+  },
+  {
+    "href": "/city/voronezh",
+    "title": "Воронеж"
+  },
+  {
+    "href": "/city/perm",
+    "title": "Пермь"
+  },
+  {
+    "href": "/city/volgograd",
+    "title": "Волгоград"
+  },
+  {
+    "href": "/city/saratov",
+    "title": "Саратов"
+  },
+  {
+    "href": "/city/tumen",
+    "title": "Тюмень"
+  },
+  {
+    "href": "/city/tolyatti",
+    "title": "Тольятти"
+  },
+  {
+    "href": "/city/barnaul",
+    "title": "Барнаул"
+  },
+  {
+    "href": "/city/izhevsk",
+    "title": "Ижевск"
+  },
+  {
+    "href": "/city/mahachkala",
+    "title": "Махачкала"
+  },
+  {
+    "href": "/city/khabarovsk",
+    "title": "Хабаровск"
+  },
+  {
+    "href": "/city/ulyanovsk",
+    "title": "Ульяновск"
+  },
+  {
+    "href": "/city/irkutsk",
+    "title": "Иркутск"
+  },
+  {
+    "href": "/city/belokurikha",
+    "title": "Белокуриха"
+  },
+  {
+    "href": "/city/biysk",
+    "title": "Бийск"
+  },
+  {
+    "href": "/city/rubtsovsk",
+    "title": "Рубцовск"
+  },
+  {
+    "href": "/city/blagoveshensk",
+    "title": "Благовещенск"
+  },
+  {
+    "href": "/city/svobodnyy",
+    "title": "Свободный"
+  },
+  {
+    "href": "/city/tynda",
+    "title": "Тында"
+  },
+  {
+    "href": "/city/arkhangelsk",
+    "title": "Архангельск"
+  },
+  {
+    "href": "/city/severodvinsk",
+    "title": "Северодвинск"
+  },
+  {
+    "href": "/city/astrakhan",
+    "title": "Астрахань"
+  },
+  {
+    "href": "/city/znamensk",
+    "title": "Знаменск"
+  },
+  {
+    "href": "/city/belgorod",
+    "title": "Белгород"
+  },
+  {
+    "href": "/city/gubkin",
+    "title": "Губкин"
+  },
+  {
+    "href": "/city/stary-oskol",
+    "title": "Старый Оскол"
+  },
+  {
+    "href": "/city/minsk",
+    "title": "Минск"
+  },
+  {
+    "href": "/city/bryansk",
+    "title": "Брянск"
+  },
+  {
+    "href": "/city/karachev",
+    "title": "Карачев"
+  },
+  {
+    "href": "/city/novozybkov",
+    "title": "Новозыбков"
+  },
+  {
+    "href": "/city/vladimir",
+    "title": "Владимир"
+  },
+  {
+    "href": "/city/kovrov",
+    "title": "Ковров"
+  },
+  {
+    "href": "/city/murom",
+    "title": "Муром"
+  },
+  {
+    "href": "/city/pokrov",
+    "title": "Покров"
+  },
+  {
+    "href": "/city/volzhskiy",
+    "title": "Волжский"
+  },
+  {
+    "href": "/city/kamyshin",
+    "title": "Камышин"
+  },
+  {
+    "href": "/city/mikhaylovka",
+    "title": "Михайловка"
+  },
+  {
+    "href": "/city/vologda",
+    "title": "Вологда"
+  },
+  {
+    "href": "/city/cherepovets",
+    "title": "Череповец"
+  },
+  {
+    "href": "/city/borisoglebsk",
+    "title": "Борисоглебск"
+  },
+  {
+    "href": "/city/novovoronezh",
+    "title": "Нововоронеж"
+  },
+  {
+    "href": "/city/rossosh",
+    "title": "Россошь"
+  },
+  {
+    "href": "/city/gorlovka",
+    "title": "Горловка"
+  },
+  {
+    "href": "/city/makeevka",
+    "title": "Макеевка"
+  },
+  {
+    "href": "/city/mariupol",
+    "title": "Мариуполь"
+  },
+  {
+    "href": "/city/birobidzhan",
+    "title": "Биробиджан"
+  },
+  {
+    "href": "/city/chita",
+    "title": "Чита"
+  },
+  {
+    "href": "/city/berdyansk",
+    "title": "Бердянск"
+  },
+  {
+    "href": "/city/melitopol",
+    "title": "Мелитополь"
+  },
+  {
+    "href": "/city/energodar",
+    "title": "Энергодар"
+  },
+  {
+    "href": "/city/ivanovo",
+    "title": "Иваново"
+  },
+  {
+    "href": "/city/shuya",
+    "title": "Шуя"
+  },
+  {
+    "href": "/city/yuzha",
+    "title": "Южа"
+  },
+  {
+    "href": "/city/angarsk",
+    "title": "Ангарск"
+  },
+  {
+    "href": "/city/bratsk",
+    "title": "Братск"
+  },
+  {
+    "href": "/city/ust-ilimsk",
+    "title": "Усть-Илимск"
+  },
+  {
+    "href": "/city/nalchik",
+    "title": "Нальчик"
+  },
+  {
+    "href": "/city/nur-sultan",
+    "title": "Астана"
+  },
+  {
+    "href": "/city/kaliningrad",
+    "title": "Калининград"
+  },
+  {
+    "href": "/city/chernyakhovsk",
+    "title": "Черняховск"
+  },
+  {
+    "href": "/city/kaluga",
+    "title": "Калуга"
+  },
+  {
+    "href": "/city/obninsk",
+    "title": "Обнинск"
+  },
+  {
+    "href": "/city/petrapavlovsk-kamtchatskiy",
+    "title": "Петропавловск-Камчатский"
+  },
+  {
+    "href": "/city/karachaevsk",
+    "title": "Карачаевск"
+  },
+  {
+    "href": "/city/cherkessk",
+    "title": "Черкесск"
+  },
+  {
+    "href": "/city/kemerovo",
+    "title": "Кемерово"
+  },
+  {
+    "href": "/city/belovo",
+    "title": "Белово"
+  },
+  {
+    "href": "/city/mezhdurechensk",
+    "title": "Междуреченск"
+  },
+  {
+    "href": "/city/novokuznetsk",
+    "title": "Новокузнецк"
+  },
+  {
+    "href": "/city/prokopevsk",
+    "title": "Прокопьевск"
+  },
+  {
+    "href": "/city/yurga",
+    "title": "Юрга"
+  },
+  {
+    "href": "/city/kirov",
+    "title": "Киров"
+  },
+  {
+    "href": "/city/kostroma",
+    "title": "Кострома"
+  },
+  {
+    "href": "/city/abinsk",
+    "title": "Абинск"
+  },
+  {
+    "href": "/city/anapa",
+    "title": "Анапа"
+  },
+  {
+    "href": "/city/apsheronsk",
+    "title": "Апшеронск"
+  },
+  {
+    "href": "/city/armavir",
+    "title": "Армавир"
+  },
+  {
+    "href": "/city/belorechensk",
+    "title": "Белореченск"
+  },
+  {
+    "href": "/city/gelendzhik",
+    "title": "Геленджик"
+  },
+  {
+    "href": "/city/goryachiy-klyuch",
+    "title": "Горячий Ключ"
+  },
+  {
+    "href": "/city/eysk",
+    "title": "Ейск"
+  },
+  {
+    "href": "/city/labinsk",
+    "title": "Лабинск"
+  },
+  {
+    "href": "/city/novorossiysk",
+    "title": "Новороссийск"
+  },
+  {
+    "href": "/city/slavyansk-na-kubani",
+    "title": "Славянск-на-Кубани"
+  },
+  {
+    "href": "/city/sochi",
+    "title": "Сочи"
+  },
+  {
+    "href": "/city/temryuk",
+    "title": "Темрюк"
+  },
+  {
+    "href": "/city/tuapse",
+    "title": "Туапсе"
+  },
+  {
+    "href": "/city/achinsk",
+    "title": "Ачинск"
+  },
+  {
+    "href": "/city/lesosibirsk",
+    "title": "Лесосибирск"
+  },
+  {
+    "href": "/city/norilsk",
+    "title": "Норильск"
+  },
+  {
+    "href": "/city/kurgan",
+    "title": "Курган"
+  },
+  {
+    "href": "/city/shadrinsk",
+    "title": "Шадринск"
+  },
+  {
+    "href": "/city/kursk",
+    "title": "Курск"
+  },
+  {
+    "href": "/city/boksitogorsk",
+    "title": "Бокситогорск"
+  },
+  {
+    "href": "/city/vsevolozhsk",
+    "title": "Всеволожск"
+  },
+  {
+    "href": "/city/vyborg",
+    "title": "Выборг"
+  },
+  {
+    "href": "/city/gatchina",
+    "title": "Гатчина"
+  },
+  {
+    "href": "/city/kingisepp",
+    "title": "Кингисепп"
+  },
+  {
+    "href": "/city/kirishi",
+    "title": "Кириши"
+  },
+  {
+    "href": "/city/kolpino",
+    "title": "Колпино"
+  },
+  {
+    "href": "/city/luga",
+    "title": "Луга"
+  },
+  {
+    "href": "/city/pushkin",
+    "title": "Пушкин"
+  },
+  {
+    "href": "/city/sosnovy-bor",
+    "title": "Сосновый Бор"
+  },
+  {
+    "href": "/city/tikhvin",
+    "title": "Тихвин"
+  },
+  {
+    "href": "/city/elec",
+    "title": "Елец"
+  },
+  {
+    "href": "/city/lipetsk",
+    "title": "Липецк"
+  },
+  {
+    "href": "/city/alchevsk",
+    "title": "Алчевск"
+  },
+  {
+    "href": "/city/antratsit",
+    "title": "Антрацит"
+  },
+  {
+    "href": "/city/krasnyy-luch",
+    "title": "Красный Луч"
+  },
+  {
+    "href": "/city/lugansk",
+    "title": "Луганск"
+  },
+  {
+    "href": "/city/severodonetsk",
+    "title": "Северодонецк"
+  },
+  {
+    "href": "/city/starobelsk",
+    "title": "Старобельск"
+  },
+  {
+    "href": "/city/stahanov",
+    "title": "Стаханов"
+  },
+  {
+    "href": "/city/magadan",
+    "title": "Магадан"
+  },
+  {
+    "href": "/city/balashikha",
+    "title": "Балашиха"
+  },
+  {
+    "href": "/city/vidnoe",
+    "title": "Видное"
+  },
+  {
+    "href": "/city/voskresensk",
+    "title": "Воскресенск"
+  },
+  {
+    "href": "/city/dzerzhinskiy",
+    "title": "Дзержинский"
+  },
+  {
+    "href": "/city/dmitrov",
+    "title": "Дмитров"
+  },
+  {
+    "href": "/city/domodedovo",
+    "title": "Домодедово"
+  },
+  {
+    "href": "/city/dubna",
+    "title": "Дубна"
+  },
+  {
+    "href": "/city/egorevsk",
+    "title": "Егорьевск"
+  },
+  {
+    "href": "/city/zhukovskiy",
+    "title": "Жуковский"
+  },
+  {
+    "href": "/city/zelenograd",
+    "title": "Зеленоград"
+  },
+  {
+    "href": "/city/istra",
+    "title": "Истра"
+  },
+  {
+    "href": "/city/kolomna",
+    "title": "Коломна"
+  },
+  {
+    "href": "/city/korolyov",
+    "title": "Королёв"
+  },
+  {
+    "href": "/city/krasnogorsk",
+    "title": "Красногорск"
+  },
+  {
+    "href": "/city/lytkarino",
+    "title": "Лыткарино"
+  },
+  {
+    "href": "/city/lyubertsy",
+    "title": "Люберцы"
+  },
+  {
+    "href": "/city/mytishchi",
+    "title": "Мытищи"
+  },
+  {
+    "href": "/city/naro-fominsk",
+    "title": "Наро-фоминск"
+  },
+  {
+    "href": "/city/noginsk",
+    "title": "Ногинск"
+  },
+  {
+    "href": "/city/odintsovo",
+    "title": "Одинцово"
+  },
+  {
+    "href": "/city/orekhovo-zuevo",
+    "title": "Орехово-Зуево"
+  },
+  {
+    "href": "/city/pavlovskiy-posad",
+    "title": "Павловский Посад"
+  },
+  {
+    "href": "/city/podolsk",
+    "title": "Подольск"
+  },
+  {
+    "href": "/city/pushkino",
+    "title": "Пушкино"
+  },
+  {
+    "href": "/city/pushchino",
+    "title": "Пущино"
+  },
+  {
+    "href": "/city/sergiev-posad",
+    "title": "Сергиев Посад"
+  },
+  {
+    "href": "/city/serpuhov",
+    "title": "Серпухов"
+  },
+  {
+    "href": "/city/stupino",
+    "title": "Ступино"
+  },
+  {
+    "href": "/city/troitsk",
+    "title": "Троицк"
+  },
+  {
+    "href": "/city/himki",
+    "title": "Химки"
+  },
+  {
+    "href": "/city/chernogolovka",
+    "title": "Черноголовка"
+  },
+  {
+    "href": "/city/shatura",
+    "title": "Шатура"
+  },
+  {
+    "href": "/city/shchelkovo",
+    "title": "Щелково"
+  },
+  {
+    "href": "/city/elektrostal",
+    "title": "Электросталь"
+  },
+  {
+    "href": "/city/apatity",
+    "title": "Апатиты"
+  },
+  {
+    "href": "/city/murmansk",
+    "title": "Мурманск"
+  },
+  {
+    "href": "/city/arzamas",
+    "title": "Арзамас"
+  },
+  {
+    "href": "/city/balakhna",
+    "title": "Балахна"
+  },
+  {
+    "href": "/city/dzerzhinsk",
+    "title": "Дзержинск"
+  },
+  {
+    "href": "/city/sarov",
+    "title": "Саров"
+  },
+  {
+    "href": "/city/velikiy-novgorod",
+    "title": "Великий Новгород"
+  },
+  {
+    "href": "/city/ob",
+    "title": "Обь"
+  },
+  {
+    "href": "/city/tara",
+    "title": "Тара"
+  },
+  {
+    "href": "/city/buzuluk",
+    "title": "Бузулук"
+  },
+  {
+    "href": "/city/orenburg",
+    "title": "Оренбург"
+  },
+  {
+    "href": "/city/orsk",
+    "title": "Орск"
+  },
+  {
+    "href": "/city/livny",
+    "title": "Ливны"
+  },
+  {
+    "href": "/city/mtsensk",
+    "title": "Мценск"
+  },
+  {
+    "href": "/city/orel",
+    "title": "Орел"
+  },
+  {
+    "href": "/city/osh",
+    "title": "Ош"
+  },
+  {
+    "href": "/city/penza",
+    "title": "Пенза"
+  },
+  {
+    "href": "/city/berezniki",
+    "title": "Березники"
+  },
+  {
+    "href": "/city/lysva",
+    "title": "Лысьва"
+  },
+  {
+    "href": "/city/solikamsk",
+    "title": "Соликамск"
+  },
+  {
+    "href": "/city/chaykovskiy",
+    "title": "Чайковский"
+  },
+  {
+    "href": "/city/vladivostok",
+    "title": "Владивосток"
+  },
+  {
+    "href": "/city/nakhodka",
+    "title": "Находка"
+  },
+  {
+    "href": "/city/ussuriysk",
+    "title": "Уссурийск"
+  },
+  {
+    "href": "/city/velikie-luki",
+    "title": "Великие Луки"
+  },
+  {
+    "href": "/city/pskov",
+    "title": "Псков"
+  },
+  {
+    "href": "/city/kogalym",
+    "title": "Когалым"
+  },
+  {
+    "href": "/city/krasnodon",
+    "title": "Краснодон"
+  },
+  {
+    "href": "/city/maikop",
+    "title": "Майкоп"
+  },
+  {
+    "href": "/city/herson",
+    "title": "Херсон"
+  },
+  {
+    "href": "/city/gorno-altaysk",
+    "title": "Горно-Алтайск"
+  },
+  {
+    "href": "/city/belebey",
+    "title": "Белебей"
+  },
+  {
+    "href": "/city/beloretsk",
+    "title": "Белорецк"
+  },
+  {
+    "href": "/city/birsk",
+    "title": "Бирск"
+  },
+  {
+    "href": "/city/ishimbay",
+    "title": "Ишимбай"
+  },
+  {
+    "href": "/city/kumertau",
+    "title": "Кумертау"
+  },
+  {
+    "href": "/city/meleuz",
+    "title": "Мелеуз"
+  },
+  {
+    "href": "/city/neftekamsk",
+    "title": "Нефтекамск"
+  },
+  {
+    "href": "/city/oktyabrskiy",
+    "title": "Октябрьский"
+  },
+  {
+    "href": "/city/salavat",
+    "title": "Салават"
+  },
+  {
+    "href": "/city/sibay",
+    "title": "Сибай"
+  },
+  {
+    "href": "/city/sterlitamak",
+    "title": "Стерлитамак"
+  },
+  {
+    "href": "/city/ulan-ude",
+    "title": "Улан-Удэ"
+  },
+  {
+    "href": "/city/derbent",
+    "title": "Дербент"
+  },
+  {
+    "href": "/city/kaspiysk",
+    "title": "Каспийск"
+  },
+  {
+    "href": "/city/kizlyar",
+    "title": "Кизляр"
+  },
+  {
+    "href": "/city/khasavyurt",
+    "title": "Хасавюрт"
+  },
+  {
+    "href": "/city/magas",
+    "title": "Магас"
+  },
+  {
+    "href": "/city/nazran",
+    "title": "Назрань"
+  },
+  {
+    "href": "/city/sunzha",
+    "title": "Сунжа"
+  },
+  {
+    "href": "/city/elista",
+    "title": "Элиста"
+  },
+  {
+    "href": "/city/petrozavodsk",
+    "title": "Петрозаводск"
+  },
+  {
+    "href": "/city/vorkuta",
+    "title": "Воркута"
+  },
+  {
+    "href": "/city/syktyvcar",
+    "title": "Сыктывкар"
+  },
+  {
+    "href": "/city/usinsk",
+    "title": "Усинск"
+  },
+  {
+    "href": "/city/uhta",
+    "title": "Ухта"
+  },
+  {
+    "href": "/city/armyansk",
+    "title": "Армянск"
+  },
+  {
+    "href": "/city/evpatoriya",
+    "title": "Евпатория"
+  },
+  {
+    "href": "/city/kerch",
+    "title": "Керчь"
+  },
+  {
+    "href": "/city/sevastopol",
+    "title": "Севастополь"
+  },
+  {
+    "href": "/city/simferopol",
+    "title": "Симферополь"
+  },
+  {
+    "href": "/city/feodosiya",
+    "title": "Феодосия"
+  },
+  {
+    "href": "/city/yalta",
+    "title": "Ялта"
+  },
+  {
+    "href": "/city/yoshkar-ola",
+    "title": "Йошкар-Ола"
+  },
+  {
+    "href": "/city/ruzaevka",
+    "title": "Рузаевка"
+  },
+  {
+    "href": "/city/saransk",
+    "title": "Саранск"
+  },
+  {
+    "href": "/city/mirnyy",
+    "title": "Мирный"
+  },
+  {
+    "href": "/city/neryungri",
+    "title": "Нерюнгри"
+  },
+  {
+    "href": "/city/yakutsk",
+    "title": "Якутск"
+  },
+  {
+    "href": "/city/naberezhnye-chelny",
+    "title": "Набережные Челны"
+  },
+  {
+    "href": "/city/almetievsk",
+    "title": "Альметьевск"
+  },
+  {
+    "href": "/city/bolgar",
+    "title": "Болгар"
+  },
+  {
+    "href": "/city/elabuga",
+    "title": "Елабуга"
+  },
+  {
+    "href": "/city/innopolis",
+    "title": "Иннополис"
+  },
+  {
+    "href": "/city/leninogorsk",
+    "title": "Лениногорск"
+  },
+  {
+    "href": "/city/nizhnekamsk",
+    "title": "Нижнекамск"
+  },
+  {
+    "href": "/city/chistopol",
+    "title": "Чистополь"
+  },
+  {
+    "href": "/city/kyzyl",
+    "title": "Кызыл"
+  },
+  {
+    "href": "/city/abakan",
+    "title": "Абакан"
+  },
+  {
+    "href": "/city/sayanogorsk",
+    "title": "Саяногорск"
+  },
+  {
+    "href": "/city/azov",
+    "title": "Азов"
+  },
+  {
+    "href": "/city/bataysk",
+    "title": "Батайск"
+  },
+  {
+    "href": "/city/volgodonsk",
+    "title": "Волгодонск"
+  },
+  {
+    "href": "/city/gukovo",
+    "title": "Гуково"
+  },
+  {
+    "href": "/city/donetsk",
+    "title": "Донецк"
+  },
+  {
+    "href": "/city/zernograd",
+    "title": "Зерноград"
+  },
+  {
+    "href": "/city/kamensk-shakhtinskiy",
+    "title": "Каменск-Шахтинский"
+  },
+  {
+    "href": "/city/millerovo",
+    "title": "Миллерово"
+  },
+  {
+    "href": "/city/novocherkassk",
+    "title": "Новочеркасск"
+  },
+  {
+    "href": "/city/taganrog",
+    "title": "Таганрог"
+  },
+  {
+    "href": "/city/shakhty",
+    "title": "Шахты"
+  },
+  {
+    "href": "/city/ryazan",
+    "title": "Рязань"
+  },
+  {
+    "href": "/city/novokuybyshevsk",
+    "title": "Новокуйбышевск"
+  },
+  {
+    "href": "/city/syzran",
+    "title": "Сызрань"
+  },
+  {
+    "href": "/city/balakovo",
+    "title": "Балаково"
+  },
+  {
+    "href": "/city/balashov",
+    "title": "Балашов"
+  },
+  {
+    "href": "/city/engels",
+    "title": "Энгельс"
+  },
+  {
+    "href": "/city/yuzhno-sahalinsk",
+    "title": "Южно-Сахалинск"
+  },
+  {
+    "href": "/city/verkhnyaya-pyshma",
+    "title": "Верхняя Пышма"
+  },
+  {
+    "href": "/city/kamensk-uralsk",
+    "title": "Каменск-Уральск"
+  },
+  {
+    "href": "/city/lesnoy",
+    "title": "Лесной"
+  },
+  {
+    "href": "/city/nizhny-tagil",
+    "title": "Нижний Тагил"
+  },
+  {
+    "href": "/city/nizhnyaya-tura",
+    "title": "Нижняя Тура"
+  },
+  {
+    "href": "/city/novouralsk",
+    "title": "Новоуральск"
+  },
+  {
+    "href": "/city/pervouralsk",
+    "title": "Первоуральск"
+  },
+  {
+    "href": "/city/serov",
+    "title": "Серов"
+  },
+  {
+    "href": "/city/vladikavkaz",
+    "title": "Владикавказ"
+  },
+  {
+    "href": "/city/smolensk",
+    "title": "Смоленск"
+  },
+  {
+    "href": "/city/budennovsk",
+    "title": "Буденновск"
+  },
+  {
+    "href": "/city/essentuki",
+    "title": "Ессентуки"
+  },
+  {
+    "href": "/city/kislovodsk",
+    "title": "Кисловодск"
+  },
+  {
+    "href": "/city/mineralnye-vody",
+    "title": "Минеральные Воды"
+  },
+  {
+    "href": "/city/nevinnomyssk",
+    "title": "Невинномысск"
+  },
+  {
+    "href": "/city/pyatigorsk",
+    "title": "Пятигорск"
+  },
+  {
+    "href": "/city/svetlograd",
+    "title": "Светлоград"
+  },
+  {
+    "href": "/city/stavropol",
+    "title": "Ставрополь"
+  },
+  {
+    "href": "/city/michurinsk",
+    "title": "Мичуринск"
+  },
+  {
+    "href": "/city/tambov",
+    "title": "Тамбов"
+  },
+  {
+    "href": "/city/tver",
+    "title": "Тверь"
+  },
+  {
+    "href": "/city/tomsk",
+    "title": "Томск"
+  },
+  {
+    "href": "/city/seversk",
+    "title": "Северск"
+  },
+  {
+    "href": "/city/novomoskovsk",
+    "title": "Новомосковск"
+  },
+  {
+    "href": "/city/tula",
+    "title": "Тула"
+  },
+  {
+    "href": "/city/ishim",
+    "title": "Ишим"
+  },
+  {
+    "href": "/city/nizhnevartovsk",
+    "title": "Нижневартовск"
+  },
+  {
+    "href": "/city/surgut",
+    "title": "Сургут"
+  },
+  {
+    "href": "/city/tobolsk",
+    "title": "Тобольск"
+  },
+  {
+    "href": "/city/khanty-mansiisk",
+    "title": "Ханты-Мансийск"
+  },
+  {
+    "href": "/city/votkinsk",
+    "title": "Воткинск"
+  },
+  {
+    "href": "/city/glazov",
+    "title": "Глазов"
+  },
+  {
+    "href": "/city/mozhga",
+    "title": "Можга"
+  },
+  {
+    "href": "/city/sarapul",
+    "title": "Сарапул"
+  },
+  {
+    "href": "/city/dimitrovgrad",
+    "title": "Димитровград"
+  },
+  {
+    "href": "/city/inza",
+    "title": "Инза"
+  },
+  {
+    "href": "/city/komsomolsk-na-amure",
+    "title": "Комсомольск-на-Амуре"
+  },
+  {
+    "href": "/city/zlatoust",
+    "title": "Златоуст"
+  },
+  {
+    "href": "/city/magnitigorsk",
+    "title": "Магнитогорск"
+  },
+  {
+    "href": "/city/miass",
+    "title": "Миасс"
+  },
+  {
+    "href": "/city/ozersk",
+    "title": "Озерск"
+  },
+  {
+    "href": "/city/snezhinsk",
+    "title": "Снежинск"
+  },
+  {
+    "href": "/city/trekhgornyy",
+    "title": "Трехгорный"
+  },
+  {
+    "href": "/city/grozny",
+    "title": "Грозный"
+  },
+  {
+    "href": "/city/gudermes",
+    "title": "Гудермес"
+  },
+  {
+    "href": "/city/alatyr",
+    "title": "Алатырь"
+  },
+  {
+    "href": "/city/cheboksary",
+    "title": "Чебоксары"
+  },
+  {
+    "href": "/city/anadyr",
+    "title": "Анадырь"
+  },
+  {
+    "href": "/city/noyabrsk",
+    "title": "Ноябрьск"
+  },
+  {
+    "href": "/city/yaroslavl",
+    "title": "Ярославль"
+  },
+  {
+    "href": "/city/rybinsk",
+    "title": "Рыбинск"
+  },
+  {
+    "href": "/city/tutaev",
+    "title": "Тутаев"
+  },
+  {
+    "href": "/vuz/3",
+    "title": "РАМ имени Гнесиных Российская академия музыки имени Гнесиных"
+  },
+  {
+    "href": "/vuz/4",
+    "title": "МГТУ им. Н.Э. Баумана Московский государственный технический университет им. Н.Э. Баумана"
+  },
+  {
+    "href": "/vuz/20",
+    "title": "МАРХИ Московский архитектурный институт (Государственная академия)"
+  },
+  {
+    "href": "/vuz/43",
+    "title": "РАЖВиЗ Российская академия живописи, ваяния и зодчества Ильи Глазунова"
+  },
+  {
+    "href": "/vuz/49",
+    "title": "Школа-студия МХАТ Школа-студия (институт) им. Вл. И. Немировича-Данченко при МХАТ им. А. П. Чехова"
+  },
+  {
+    "href": "/vuz/65",
+    "title": "РГУНиГ им. И.М. Губкина Российский государственный университет нефти и газа им. И.М. Губкина"
+  },
+  {
+    "href": "/vuz/69",
+    "title": "МГАХ Московская государственная академия хореографии"
+  },
+  {
+    "href": "/vuz/72",
+    "title": "РМАТ Российская международная академия туризма"
+  },
+  {
+    "href": "/vuz/76",
+    "title": "РХТУ Российский химико-технологический университет им. Д.И. Менделеева"
+  },
+  {
+    "href": "/vuz/89",
+    "title": "ГИТР Институт кино и телевидения"
+  },
+  {
+    "href": "/vuz/96",
+    "title": "РГГУ Российский государственный гуманитарный университет"
+  },
+  {
+    "href": "/vuz/99",
+    "title": "МТУСИ Московский технический университет связи и информатики"
+  },
+  {
+    "href": "/vuz/108",
+    "title": "МГИК Московский государственный институт культуры"
+  },
+  {
+    "href": "/vuz/126",
+    "title": "МГЛУ Московский государственный лингвистический университет"
+  },
+  {
+    "href": "/vuz/137",
+    "title": "ГЦОЛИФК Российский университет спорта «ГЦОЛИФК»"
+  },
+  {
+    "href": "/vuz/142",
+    "title": "МГИМ им. А.Г. Шнитке Московский государственный институт музыки им. А.Г. Шнитке"
+  },
+  {
+    "href": "/vuz/150",
+    "title": "МДА РПЦ Московская духовная академия Русской Православной Церкви"
+  },
+  {
+    "href": "/vuz",
+    "title": "ВЫСШЕЕ"
+  },
+  {
+    "href": "/spo",
+    "title": "СПО"
+  },
+  {
+    "href": "/admission",
+    "title": "ПЕРСОНАЛЬНЫЙ ПЛАН"
+  },
+  {
+    "href": "&#x2F;s-chego-nachat&#x3F;track&#x3D;vuz",
+    "title": "С текущей точки"
+  },
+  {
+    "href": "&#x2F;s-chego-nachat&#x2F;karta-strahov&#x3F;track&#x3D;vuz",
+    "title": "Карта страхов"
+  },
+  {
+    "href": "&#x2F;pravila-priema",
+    "title": "Правила приема"
+  },
+  {
+    "href": "&#x2F;voprosy-o-postuplenii&#x3F;track&#x3D;vuz",
+    "title": "Частые вопросы"
+  },
+  {
+    "href": "&#x2F;testy",
+    "title": "Тесты о поступлении"
+  },
+  {
+    "href": "&#x2F;slovar-postupayushchego",
+    "title": "Словарь"
+  },
+  {
+    "href": "&#x2F;podbor-professii&#x2F;temy",
+    "title": "Профессии по интересам"
+  },
+  {
+    "href": "&#x2F;stoimost-obucheniya-i-prozhivaniya",
+    "title": "Расчёт затрат на обучение"
+  },
+  {
+    "href": "/vuz",
+    "title": "Все вузы"
+  },
+  {
+    "href": "/vuzy/gosudartsvennue",
+    "title": "Государственные"
+  },
+  {
+    "href": "/vuzy/negosudartsvennue",
+    "title": "Частные"
+  },
+  {
+    "href": "/sphere-list",
+    "title": "По интересам"
+  },
+  {
+    "href": "&#x2F;services&#x2F;comparevuz",
+    "title": "Сравнить вузы"
+  },
+  {
+    "href": "/vuzypoege",
+    "title": "Подбор по ЕГЭ"
+  },
+  {
+    "href": "/vuzfilter?vuz=",
+    "title": "По параметрам"
+  },
+  {
+    "href": "/ded-vuzoped",
+    "title": "Дед Вузопед"
+  },
+  {
+    "href": "/recommend",
+    "title": "Рекомендации"
+  },
+  {
+    "href": "/napravlenia/bakalavriat",
+    "title": "Бакалавриат"
+  },
+  {
+    "href": "/napravlenia/specialitet",
+    "title": "Специалитет"
+  },
+  {
+    "href": "/napravlenia/magistratura",
+    "title": "Магистратура"
+  },
+  {
+    "href": "/napravlenia/bazovoe-vysshee",
+    "title": "Базовое высшее"
+  },
+  {
+    "href": "/napravlenia/specializirovannoe-vysshee",
+    "title": "Специализированное высшее"
+  },
+  {
+    "href": "/podbor-spec",
+    "title": "Подбор по ЕГЭ"
+  },
+  {
+    "href": "/vuzfilter/spec",
+    "title": "По параметрам"
+  },
+  {
+    "href": "/compare/catalog/vo/specialty",
+    "title": "Сравнить специальности"
+  },
+  {
+    "href": "/compare/specialty/vo",
+    "title": "Специальность в вузах"
+  },
+  {
+    "href": "/program/bakispec",
+    "title": "Бакалавриат и специалитет"
+  },
+  {
+    "href": "/program/magistratura",
+    "title": "Магистратура"
+  },
+  {
+    "href": "/program/bazovoe-vysshee",
+    "title": "Базовое высшее"
+  },
+  {
+    "href": "/program/specializirovannoe-vysshee",
+    "title": "Специализированное высшее"
+  },
+  {
+    "href": "/spo/programs/spednego-professionalnogo-obrazovania",
+    "title": "СПО"
+  },
+  {
+    "href": "/podbor-programmy",
+    "title": "Подбор по ЕГЭ"
+  },
+  {
+    "href": "/vuzfilter/prog",
+    "title": "По параметрам"
+  },
+  {
+    "href": "/professii",
+    "title": "Каталог профессий"
+  },
+  {
+    "href": "/podbor-professii",
+    "title": "По видам деятельности"
+  },
+  {
+    "href": "/spo/professii",
+    "title": "Профессии СПО"
+  },
+  {
+    "href": "/compare/catalog/vo/profession",
+    "title": "Сравнить профессии"
+  },
+  {
+    "href": "/compare/catalog/vo/sphere",
+    "title": "Сравнить сферы"
+  },
+  {
+    "href": "/proforient/klimov",
+    "title": "Тест по Климову"
+  },
+  {
+    "href": "/proforient/po-predmetam",
+    "title": "По школьным предметам"
+  },
+  {
+    "href": "/proforient",
+    "title": "Все тесты на профориентацию"
+  },
+  {
+    "href": "/professii",
+    "title": "Все профессии →"
+  },
+  {
+    "href": "/kalendar",
+    "title": "Дни открытых дверей"
+  },
+  {
+    "href": "/traektory",
+    "title": "Траектория поступления"
+  },
+  {
+    "href": "/traektory-vuzes",
+    "title": "Даты в вузах"
+  },
+  {
+    "href": "/kalendar",
+    "title": "Все мероприятия →"
+  },
+  {
+    "href": "&#x2F;s-chego-nachat&#x3F;track&#x3D;vuz",
+    "title": "С чего начать"
+  },
+  {
+    "href": "&#x2F;articles",
+    "title": "Статьи"
+  },
+  {
+    "href": "&#x2F;news",
+    "title": "Новости"
+  },
+  {
+    "href": "&#x2F;top-articles-for-abitur",
+    "title": "Популярные статьи"
+  },
+  {
+    "href": "&#x2F;pravila-priema",
+    "title": "Правила приёма"
+  },
+  {
+    "href": "&#x2F;voprosy-o-postuplenii&#x3F;track&#x3D;vuz",
+    "title": "Ответы на вопросы"
+  },
+  {
+    "href": "/testy",
+    "title": "На знание поступления"
+  },
+  {
+    "href": "/proforient",
+    "title": "Профориентации"
+  },
+  {
+    "href": "/podbor-obucheniya",
+    "title": "Подбор вузов и колледжей"
+  },
+  {
+    "href": "/tune-vuzopedia",
+    "title": "Куда вы проходите?"
+  },
+  {
+    "href": "/analize-admission",
+    "title": "Анализ шансов поступить"
+  },
+  {
+    "href": "/kalkulator-ege",
+    "title": "Калькулятор ЕГЭ"
+  },
+  {
+    "href": "/stoimost-obucheniya",
+    "title": "Стоимость обучения"
+  },
+  {
+    "href": "/services",
+    "title": "Все сервисы →"
+  },
+  {
+    "href": "/vuzypoege",
+    "title": "Вуз по ЕГЭ"
+  },
+  {
+    "href": "/podbor-spec",
+    "title": "Специальность по ЕГЭ"
+  },
+  {
+    "href": "/podbor-programmy",
+    "title": "Программа по ЕГЭ"
+  },
+  {
+    "href": "/podbor-professii-po-ege",
+    "title": "Профессия по ЕГЭ"
+  },
+  {
+    "href": "/kakie-ege-nuzhno-sdavat",
+    "title": "Какие ЕГЭ сдавать?"
+  },
+  {
+    "href": "/tune-vuzopedia",
+    "title": "Где есть шансы по ЕГЭ?"
+  },
+  {
+    "href": "/ege/lenta/267",
+    "title": "Расписание ЕГЭ"
+  },
+  {
+    "href": "/ege/lenta/266",
+    "title": "Минимальные баллы"
+  },
+  {
+    "href": "/ege/lenta/2",
+    "title": "Шкала перевода баллов"
+  },
+  {
+    "href": "/ege/lenta/268",
+    "title": "Демоверсии"
+  },
+  {
+    "href": "/ege/p/1",
+    "title": "Математика"
+  },
+  {
+    "href": "/ege/p/2",
+    "title": "Русский"
+  },
+  {
+    "href": "/ege/p/3",
+    "title": "Физика"
+  },
+  {
+    "href": "/ege/p/4",
+    "title": "Обществознание"
+  },
+  {
+    "href": "/ege",
+    "title": "Все о ЕГЭ →"
+  },
+  {
+    "href": "/target",
+    "title": "Целевое высшее"
+  },
+  {
+    "href": "/spo/target",
+    "title": "Целевое СПО"
+  },
+  {
+    "href": "/target-company",
+    "title": "Работодатели"
+  },
+  {
+    "href": "/search/results",
+    "title": "Поиск"
+  },
+  {
+    "href": "/admission/auth#reg",
+    "title": "Зарегистрируйтесь или войдите"
+  },
+  {
+    "href": "/services",
+    "title": "Как мы помогаем вам поступить?"
+  },
+  {
+    "href": "/admission/auth#vhod",
+    "title": "&#xE853;"
+  },
+  {
+    "href": "/traektory-vuzes",
+    "title": "Даты в вузах ›"
+  },
+  {
+    "href": "/kalendar",
+    "title": "Дни открытых дверей ›"
+  },
+  {
+    "href": "/traektory",
+    "title": "Траектория поступления ›"
+  },
+  {
+    "href": "/services",
+    "title": "Все сервисы"
+  },
+  {
+    "href": "/ege",
+    "title": "Все о ЕГЭ"
+  },
+  {
+    "href": "/search/results",
+    "title": "Поиск ›"
+  },
+  {
+    "href": "/admission",
+    "title": "Ваш план ›"
+  },
+  {
+    "href": "/sphere/1",
+    "title": "IT и цифровые технологии"
+  },
+  {
+    "href": "/sphere/41",
+    "title": "Инженерия и технологии"
+  },
+  {
+    "href": "/sphere/34",
+    "title": "Медицина, здоровье и бионауки"
+  },
+  {
+    "href": "/sphere/8",
+    "title": "Экономика, бизнес и управление"
+  },
+  {
+    "href": "/sphere/22",
+    "title": "Гуманитарные науки и языки"
+  },
+  {
+    "href": "/sphere/16",
+    "title": "Творчество, дизайн и медиа"
+  },
+  {
+    "href": "/sphere/27",
+    "title": "Социальная сфера и работа с людьми"
+  },
+  {
+    "href": "/sphere/52",
+    "title": "Строительство, архитектура и среда"
+  },
+  {
+    "href": "/sphere/58",
+    "title": "Право, государство и безопасность"
+  },
+  {
+    "href": "/sphere/65",
+    "title": "Политика и общество"
+  },
+  {
+    "href": "/sphere/71",
+    "title": "Наука и исследования"
+  },
+  {
+    "href": "/sphere/81",
+    "title": "Экология и окружающая среда"
+  },
+  {
+    "href": "/sphere/93",
+    "title": "Транспорт и логистика"
+  },
+  {
+    "href": "/sphere/100",
+    "title": "Сельское, лесное и рыбное хозяйство"
+  },
+  {
+    "href": "/sphere/106",
+    "title": "Агробизнес и управление в АПК"
+  },
+  {
+    "href": "/sphere/113",
+    "title": "Военное дело, безопасность и охрана"
+  },
+  {
+    "href": "/sphere/120",
+    "title": "Мода, стиль и индустрия образа"
+  },
+  {
+    "href": "/sphere/127",
+    "title": "Искусство и художественные профессии"
+  },
+  {
+    "href": "/sphere/133",
+    "title": "Музыка, театр и сценическое искусство"
+  },
+  {
+    "href": "/sphere/140",
+    "title": "Ремёсла и прикладное искусство"
+  },
+  {
+    "href": "/sphere/146",
+    "title": "Кулинария и гастрономия"
+  },
+  {
+    "href": "/sphere/150",
+    "title": "Спорт и физическая культура"
+  },
+  {
+    "href": "/sphere/156",
+    "title": "Неопределённые и смешанные интересы"
+  },
+  {
+    "href": "/compare/catalog/vo/sphere",
+    "title": "Сравнить сферы высшего образования"
+  },
+  {
+    "href": "/sphere/1",
+    "title": "IT и цифровые технологии 6"
+  },
+  {
+    "href": "/sphere/41",
+    "title": "Инженерия и технологии 12"
+  },
+  {
+    "href": "/sphere/34",
+    "title": "Медицина, здоровье и бионауки 7"
+  },
+  {
+    "href": "/sphere/8",
+    "title": "Экономика, бизнес и управление 7"
+  },
+  {
+    "href": "/sphere/22",
+    "title": "Гуманитарные науки и языки 5"
+  },
+  {
+    "href": "/sphere/16",
+    "title": "Творчество, дизайн и медиа 5"
+  },
+  {
+    "href": "/sphere/27",
+    "title": "Социальная сфера и работа с людьми 5"
+  },
+  {
+    "href": "/sphere/52",
+    "title": "Строительство, архитектура и среда 5"
+  },
+  {
+    "href": "/sphere/58",
+    "title": "Право, государство и безопасность 6"
+  },
+  {
+    "href": "/sphere/65",
+    "title": "Политика и общество 6"
+  },
+  {
+    "href": "/sphere/2",
+    "title": "Программирование и разработка"
+  },
+  {
+    "href": "/sphere/3",
+    "title": "Искусственный интеллект (AI) и аналитика данных"
+  },
+  {
+    "href": "/sphere/4",
+    "title": "Кибербезопасность и сети"
+  },
+  {
+    "href": "/sphere/5",
+    "title": "Разработка игр и приложений"
+  },
+  {
+    "href": "/sphere/6",
+    "title": "Управление цифровыми продуктами"
+  },
+  {
+    "href": "/sphere/7",
+    "title": "Тестирование и качество ПО"
+  },
+  {
+    "href": "/sphere/42",
+    "title": "Машиностроение и мехатроника"
+  },
+  {
+    "href": "/sphere/43",
+    "title": "Робототехника и автоматизация"
+  },
+  {
+    "href": "/sphere/44",
+    "title": "Электроника и радиотехника"
+  },
+  {
+    "href": "/sphere/45",
+    "title": "Энергетика и электротехника"
+  },
+  {
+    "href": "/sphere/46",
+    "title": "Материаловедение и металлургия"
+  },
+  {
+    "href": "/sphere/47",
+    "title": "Технологические производства"
+  },
+  {
+    "href": "/sphere/48",
+    "title": "Технологические машины и оборудование"
+  },
+  {
+    "href": "/sphere/49",
+    "title": "Качество и управление в технических системах"
+  },
+  {
+    "href": "/sphere/50",
+    "title": "Приборостроение"
+  },
+  {
+    "href": "/sphere/51",
+    "title": "Нанотехнологии и наноматериалы"
+  },
+  {
+    "href": "/sphere/168",
+    "title": "Нефтегазовое дело"
+  },
+  {
+    "href": "/sphere/172",
+    "title": "Химическая технология"
+  },
+  {
+    "href": "/sphere/35",
+    "title": "Лечебное дело"
+  },
+  {
+    "href": "/sphere/36",
+    "title": "Стоматология"
+  },
+  {
+    "href": "/sphere/37",
+    "title": "Фармация"
+  },
+  {
+    "href": "/sphere/38",
+    "title": "Биология и биотехнологии"
+  },
+  {
+    "href": "/sphere/39",
+    "title": "Медицинская диагностика"
+  },
+  {
+    "href": "/sphere/40",
+    "title": "Общественное здоровье"
+  },
+  {
+    "href": "/sphere/177",
+    "title": "Педиатрия"
+  },
+  {
+    "href": "/sphere/9",
+    "title": "Экономика и финансы"
+  },
+  {
+    "href": "/sphere/10",
+    "title": "Предпринимательство"
+  },
+  {
+    "href": "/sphere/11",
+    "title": "Маркетинг и реклама"
+  },
+  {
+    "href": "/sphere/12",
+    "title": "Продажи и работа с клиентами"
+  },
+  {
+    "href": "/sphere/13",
+    "title": "Управление проектами и процессами"
+  },
+  {
+    "href": "/sphere/14",
+    "title": "Логистика и закупки"
+  },
+  {
+    "href": "/sphere/15",
+    "title": "Офисная и административная деятельность"
+  },
+  {
+    "href": "/sphere/23",
+    "title": "Филология и лингвистика"
+  },
+  {
+    "href": "/sphere/24",
+    "title": "История и культура"
+  },
+  {
+    "href": "/sphere/25",
+    "title": "Регионоведение и международные коммуникации"
+  },
+  {
+    "href": "/sphere/26",
+    "title": "Философия и религия"
+  },
+  {
+    "href": "/sphere/162",
+    "title": "Перевод"
+  },
+  {
+    "href": "/sphere/17",
+    "title": "Графический и цифровой дизайн"
+  },
+  {
+    "href": "/sphere/18",
+    "title": "UX/UI и веб-дизайн"
+  },
+  {
+    "href": "/sphere/19",
+    "title": "Видео, кино и монтаж"
+  },
+  {
+    "href": "/sphere/20",
+    "title": "Журналистика, издательство и контент"
+  },
+  {
+    "href": "/sphere/21",
+    "title": "Анимация и 3D"
+  },
+  {
+    "href": "/sphere/28",
+    "title": "Педагогика и образование"
+  },
+  {
+    "href": "/sphere/29",
+    "title": "Психология и консультирование"
+  },
+  {
+    "href": "/sphere/30",
+    "title": "Социальная работа"
+  },
+  {
+    "href": "/sphere/31",
+    "title": "Сервис и клиентское обслуживание"
+  },
+  {
+    "href": "/sphere/32",
+    "title": "HR и управление персоналом"
+  },
+  {
+    "href": "/sphere/53",
+    "title": "Строительство зданий и сооружений"
+  },
+  {
+    "href": "/sphere/54",
+    "title": "Архитектура и проектирование"
+  },
+  {
+    "href": "/sphere/55",
+    "title": "Градостроительство"
+  },
+  {
+    "href": "/sphere/56",
+    "title": "Дизайн среды и интерьеров"
+  },
+  {
+    "href": "/sphere/57",
+    "title": "Геодезия и землеустройство"
+  },
+  {
+    "href": "/sphere/59",
+    "title": "Юриспруденция"
+  },
+  {
+    "href": "/sphere/60",
+    "title": "Государственное и муниципальное управление"
+  },
+  {
+    "href": "/sphere/62",
+    "title": "Правоохранительная деятельность"
+  },
+  {
+    "href": "/sphere/63",
+    "title": "Национальная безопасность"
+  },
+  {
+    "href": "/sphere/64",
+    "title": "Таможня"
+  },
+  {
+    "href": "/sphere/173",
+    "title": "Криминалистика и судебная экспертиза"
+  },
+  {
+    "href": "/sphere/61",
+    "title": "Международные отношения"
+  },
+  {
+    "href": "/sphere/66",
+    "title": "Политология"
+  },
+  {
+    "href": "/sphere/67",
+    "title": "Социология"
+  },
+  {
+    "href": "/sphere/68",
+    "title": "Государственная политика"
+  },
+  {
+    "href": "/sphere/69",
+    "title": "Публичное управление"
+  },
+  {
+    "href": "/sphere/70",
+    "title": "Общественная деятельность"
+  },
+  {
+    "href": "/sphere/72",
+    "title": "Физика и математика"
+  },
+  {
+    "href": "/sphere/73",
+    "title": "Химия и биология"
+  },
+  {
+    "href": "/sphere/74",
+    "title": "География и науки о Земле"
+  },
+  {
+    "href": "/sphere/75",
+    "title": "Астрономия и космос"
+  },
+  {
+    "href": "/sphere/76",
+    "title": "Фундаментальная наука"
+  },
+  {
+    "href": "/sphere/77",
+    "title": "Прикладные исследования"
+  },
+  {
+    "href": "/sphere/78",
+    "title": "Лабораторная деятельность"
+  },
+  {
+    "href": "/sphere/80",
+    "title": "Археология и исторические исследования"
+  },
+  {
+    "href": "/sphere/82",
+    "title": "Защита природы и экология"
+  },
+  {
+    "href": "/sphere/83",
+    "title": "Природные ресурсы и экология"
+  },
+  {
+    "href": "/sphere/84",
+    "title": "Города и экологичная среда, урбанистика"
+  },
+  {
+    "href": "/sphere/85",
+    "title": "Экологичные технологии"
+  },
+  {
+    "href": "/sphere/86",
+    "title": "Экология будущего и устойчивое развитие, климат"
+  },
+  {
+    "href": "/sphere/94",
+    "title": "Авиация и космос"
+  },
+  {
+    "href": "/sphere/95",
+    "title": "Железнодорожный транспорт"
+  },
+  {
+    "href": "/sphere/96",
+    "title": "Автомобилестроение"
+  },
+  {
+    "href": "/sphere/97",
+    "title": "Транспортная логистика"
+  },
+  {
+    "href": "/sphere/98",
+    "title": "Судостроение"
+  },
+  {
+    "href": "/sphere/99",
+    "title": "Водный транспорт"
+  },
+  {
+    "href": "/sphere/175",
+    "title": "БПЛА, беспилотники"
+  },
+  {
+    "href": "/sphere/101",
+    "title": "Сельское хозяйство и агротехнологии"
+  },
+  {
+    "href": "/sphere/102",
+    "title": "Лесное хозяйство и экология лесов"
+  },
+  {
+    "href": "/sphere/103",
+    "title": "Рыбное хозяйство и аквакультура"
+  },
+  {
+    "href": "/sphere/104",
+    "title": "Ветеринария и животноводство"
+  },
+  {
+    "href": "/sphere/105",
+    "title": "Агробизнес и управление в АПК"
+  },
+  {
+    "href": "/sphere/107",
+    "title": "Оружейные системы"
+  },
+  {
+    "href": "/sphere/108",
+    "title": "Баллистика и боеприпасы"
+  },
+  {
+    "href": "/sphere/109",
+    "title": "Военная инженерия"
+  },
+  {
+    "href": "/sphere/110",
+    "title": "Военная техника"
+  },
+  {
+    "href": "/sphere/111",
+    "title": "Конструкторская деятельность (ОПК)"
+  },
+  {
+    "href": "/sphere/112",
+    "title": "Испытания и эксплуатация"
+  },
+  {
+    "href": "/sphere/114",
+    "title": "Военная служба"
+  },
+  {
+    "href": "/sphere/117",
+    "title": "Охранная деятельность"
+  },
+  {
+    "href": "/sphere/119",
+    "title": "Пограничная служба"
+  },
+  {
+    "href": "/sphere/121",
+    "title": "Дизайн одежды"
+  },
+  {
+    "href": "/sphere/122",
+    "title": "Моделирование и конструирование"
+  },
+  {
+    "href": "/sphere/123",
+    "title": "Технологии лёгкой промышленности (швейное, текстиль)"
+  },
+  {
+    "href": "/sphere/124",
+    "title": "Fashion-маркетинг и бренды"
+  },
+  {
+    "href": "/sphere/129",
+    "title": "Живопись и графика"
+  },
+  {
+    "href": "/sphere/130",
+    "title": "Скульптура"
+  },
+  {
+    "href": "/sphere/131",
+    "title": "Современное искусство"
+  },
+  {
+    "href": "/sphere/132",
+    "title": "Арт-менеджмент и кураторство"
+  },
+  {
+    "href": "/sphere/164",
+    "title": "Хореография и танец"
+  },
+  {
+    "href": "/sphere/134",
+    "title": "Музыкальное исполнительство"
+  },
+  {
+    "href": "/sphere/135",
+    "title": "Композиция и аранжировка"
+  },
+  {
+    "href": "/sphere/136",
+    "title": "Театр и актёрское мастерство"
+  },
+  {
+    "href": "/sphere/137",
+    "title": "Режиссура"
+  },
+  {
+    "href": "/sphere/138",
+    "title": "Сценография"
+  },
+  {
+    "href": "/sphere/139",
+    "title": "Продюсирование"
+  },
+  {
+    "href": "/sphere/141",
+    "title": "Декоративно-прикладное искусство"
+  },
+  {
+    "href": "/sphere/142",
+    "title": "Ювелирное дело"
+  },
+  {
+    "href": "/sphere/143",
+    "title": "Художественная обработка материалов"
+  },
+  {
+    "href": "/sphere/144",
+    "title": "Керамика и стекло"
+  },
+  {
+    "href": "/sphere/145",
+    "title": "Реставрация"
+  },
+  {
+    "href": "/sphere/148",
+    "title": "Ресторанный бизнес"
+  },
+  {
+    "href": "/sphere/149",
+    "title": "Технологии пищевой промышленности"
+  },
+  {
+    "href": "/sphere/151",
+    "title": "Профессиональный спорт"
+  },
+  {
+    "href": "/sphere/152",
+    "title": "Тренерская деятельность"
+  },
+  {
+    "href": "/sphere/153",
+    "title": "Спортивный менеджмент"
+  },
+  {
+    "href": "/sphere/154",
+    "title": "Реабилитация и спортивная медицина"
+  },
+  {
+    "href": "/sphere/155",
+    "title": "Фитнес и wellness"
+  },
+  {
+    "href": "/sphere/157",
+    "title": "Не определился"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "looks_one Выберите город"
+  },
+  {
+    "href": "/vuz",
+    "title": "looks_two Каталог вузов"
+  },
+  {
+    "href": "/program/bakispec",
+    "title": "looks_3 Программы в вузах"
+  },
+  {
+    "href": "/professii",
+    "title": "looks_4 Профессии в вузах"
+  },
+  {
+    "href": "/teacher",
+    "title": "looks_5 Преподаватели в вузах"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "looks_6 Настройте по вузу"
+  },
+  {
+    "href": "/admission",
+    "title": "ТОП-сервис Мой план Воспользоваться"
+  },
+  {
+    "href": "/quiz",
+    "title": "ТОП-сервис Квиз по подбору вуза Воспользоваться"
+  },
+  {
+    "href": "/recommend",
+    "title": "ТОП-сервис Рекомендации от Деда Вузопеда Воспользоваться"
+  },
+  {
+    "href": "/traektory-vuzes",
+    "title": "ТОП-сервис Даты поступления в конкретные вузы Воспользоваться"
+  },
+  {
+    "href": "/analize-admission",
+    "title": "ТОП-сервис Анализ шансов поступить онлайн Воспользоваться"
+  },
+  {
+    "href": "/kalkulator-ege",
+    "title": "ТОП-сервис Калькулятор ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/vuz/3935",
+    "title": "НИУ ВШЭ - Нижний Новгород"
+  },
+  {
+    "href": "/vuz",
+    "title": "каталоге вузов"
+  },
+  {
+    "href": "/program/bakispec",
+    "title": "бакалавриата и специалитета (базовое высшее)"
+  },
+  {
+    "href": "/program/magistratura",
+    "title": "магистратуры (специализированное высшее)"
+  },
+  {
+    "href": "/professii",
+    "title": "каталоге профессий"
+  },
+  {
+    "href": "/teacher",
+    "title": "каталоге преподавателей"
+  },
+  {
+    "href": "/voprosy/top-questions",
+    "title": "базе вопросов"
+  },
+  {
+    "href": "/quiz?id_vuz=",
+    "title": "remove_red_eye Есть шансы?"
+  },
+  {
+    "href": "/professii/1810",
+    "title": "Специалист по аэродинамике, инженер-аэродинамик"
+  },
+  {
+    "href": "/professii/1810",
+    "title": "Подробнее"
+  },
+  {
+    "href": "/professii/1811",
+    "title": "Специалист по математическому моделированию"
+  },
+  {
+    "href": "/professii/1811",
+    "title": "Подробнее"
+  },
+  {
+    "href": "/professii",
+    "title": "Посмотреть все профессии"
+  },
+  {
+    "href": "/sphere/1",
+    "title": "computer IT и цифровые технологии →"
+  },
+  {
+    "href": "/sphere/41",
+    "title": "settings Инженерия и технологии →"
+  },
+  {
+    "href": "/sphere/34",
+    "title": "local_hospital Медицина, здоровье и бионауки →"
+  },
+  {
+    "href": "/sphere/8",
+    "title": "business_center Экономика, бизнес и управление →"
+  },
+  {
+    "href": "/sphere/22",
+    "title": "translate Гуманитарные науки и языки →"
+  },
+  {
+    "href": "/sphere/16",
+    "title": "palette Творчество, дизайн и медиа →"
+  },
+  {
+    "href": "/sphere/27",
+    "title": "people Социальная сфера и работа с людьми →"
+  },
+  {
+    "href": "/sphere/52",
+    "title": "location_city Строительство, архитектура и среда →"
+  },
+  {
+    "href": "/sphere/58",
+    "title": "account_balance Право, государство и безопасность →"
+  },
+  {
+    "href": "/sphere/65",
+    "title": "public Политика и общество →"
+  },
+  {
+    "href": "/sphere/71",
+    "title": "school Наука и исследования →"
+  },
+  {
+    "href": "/sphere/81",
+    "title": "nature Экология и окружающая среда →"
+  },
+  {
+    "href": "/sphere/93",
+    "title": "local_shipping Транспорт и логистика →"
+  },
+  {
+    "href": "/sphere/100",
+    "title": "local_florist Сельское, лесное и рыбное хозяйство →"
+  },
+  {
+    "href": "/sphere/106",
+    "title": "store Агробизнес и управление в АПК →"
+  },
+  {
+    "href": "/sphere/120",
+    "title": "style Мода, стиль и индустрия образа →"
+  },
+  {
+    "href": "/sphere/127",
+    "title": "brush Искусство и художественные профессии →"
+  },
+  {
+    "href": "/sphere/133",
+    "title": "music_note Музыка, театр и сценическое искусство →"
+  },
+  {
+    "href": "/sphere/140",
+    "title": "build Ремёсла и прикладное искусство →"
+  },
+  {
+    "href": "/sphere/146",
+    "title": "restaurant Кулинария и гастрономия →"
+  },
+  {
+    "href": "/sphere/147",
+    "title": "Кулинарные направления"
+  },
+  {
+    "href": "/sphere/150",
+    "title": "fitness_center Спорт и физическая культура →"
+  },
+  {
+    "href": "/sphere/113",
+    "title": "security Военное дело, безопасность и охрана →"
+  },
+  {
+    "href": "/sphere/156",
+    "title": "explore Неопределённые и смешанные интересы →"
+  },
+  {
+    "href": "/sphere/90",
+    "title": "Карьерное консультирование"
+  },
+  {
+    "href": "/tune-vuzopedia",
+    "title": "ТОП-сервис Решение вопроса выбора вуза Воспользоваться"
+  },
+  {
+    "href": "/ded-vuzoped",
+    "title": "ТОП-сервис Дед Вузопед Воспользоваться"
+  },
+  {
+    "href": "/admission-aggregate",
+    "title": "ТОП-сервис Вузопедия.Трекинг — отслеживание позиций в списках Смотреть"
+  },
+  {
+    "href": "/services/dynamic-admission",
+    "title": "ТОП-сервис Динамика приемных кампаний Смотреть"
+  },
+  {
+    "href": "/vitrina/2026",
+    "title": "ТОП-сервис Витрина вузов: недоборы в вузах Воспользоваться"
+  },
+  {
+    "href": "/traektory",
+    "title": "ТОП-сервис Траектория поступления Воспользоваться"
+  },
+  {
+    "href": "/kuda-eshe-mozhno-postupit",
+    "title": "ТОП-сервис Куда еще можно поступить Воспользоваться"
+  },
+  {
+    "href": "/vuzypoege",
+    "title": "ТОП-сервис Подбор вуза по ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/podbor-spec",
+    "title": "ТОП-сервис Подбор специальности по ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/podbor-programmy",
+    "title": "ТОП-сервис Подбор программы по ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/kakie-ege-nuzhno-sdavat",
+    "title": "ТОП-сервис Все комбинации предметов ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/check-licens",
+    "title": "ТОП-сервис Проверка лицензии и аккредитации Воспользоваться"
+  },
+  {
+    "href": "/services/comparevuz",
+    "title": "ТОП-сервис Сравнение вузов Воспользоваться"
+  },
+  {
+    "href": "/podbor-professii",
+    "title": "ТОП-сервис Подбор профессии Воспользоваться"
+  },
+  {
+    "href": "/podbor-professii-po-ege",
+    "title": "ТОП-сервис Подбор профессии по ЕГЭ Воспользоваться"
+  },
+  {
+    "href": "/proforient/po-predmetam",
+    "title": "ТОП-сервис Подбор профессии по школьным предметам Воспользоваться"
+  },
+  {
+    "href": "/proforient/klimov",
+    "title": "ТОП-сервис Тест профориентации Климова Воспользоваться"
+  },
+  {
+    "href": "/proforient/odna-iz-dvuh",
+    "title": "ТОП-сервис Одна из двух Воспользоваться"
+  },
+  {
+    "href": "/vuz",
+    "title": "Вузы России 2026"
+  },
+  {
+    "href": "/presscentr",
+    "title": "Журнал абитуриента"
+  },
+  {
+    "href": "/kalendar",
+    "title": "Календарь абитуриента"
+  },
+  {
+    "href": "/services",
+    "title": "Инструменты для абитуриента"
+  },
+  {
+    "href": "/cherniy-spisok-vuzov",
+    "title": "Черный список вузов 2026"
+  },
+  {
+    "href": "/navigator-abiturienta",
+    "title": "Навигатор абитуриента"
+  },
+  {
+    "href": "/napravlenia/bakalavriat",
+    "title": "Специальности бакалавриата"
+  },
+  {
+    "href": "/napravlenia/specialitet",
+    "title": "Специальности специалитета"
+  },
+  {
+    "href": "/napravlenia/magistratura",
+    "title": "Специальности магистратуры"
+  },
+  {
+    "href": "/program/bakispec",
+    "title": "Программы в вузах"
+  },
+  {
+    "href": "/search",
+    "title": "Поиск по сайту"
+  },
+  {
+    "href": "/distancionnoe-obrazovanie",
+    "title": "Дистанционное обучение"
+  },
+  {
+    "href": "/individualnye-dostizheniya",
+    "title": "Индивидуальные достижения"
+  },
+  {
+    "href": "/vuzypoege",
+    "title": "Выберите вуз по ЕГЭ"
+  },
+  {
+    "href": "/consult",
+    "title": "Консультации"
+  },
+  {
+    "href": "/ege",
+    "title": "Подготовка к ЕГЭ"
+  },
+  {
+    "href": "/admission?view=plan&amp;mode=map#awPlanSteps",
+    "title": "format_list_numbered Ваш план"
+  },
+  {
+    "href": "/search/results?track=vuz",
+    "title": "search Поиск"
+  },
+  {
+    "href": "/s-chego-nachat?role=applicant&amp;track=vuz",
+    "title": "local_library База знаний"
+  },
+  {
+    "href": "/s-chego-nachat?role=applicant&amp;track=vuz",
+    "title": "С чего начать"
+  },
+  {
+    "href": "/s-chego-nachat/karta-strahov?track=vuz",
+    "title": "Карта страхов"
+  },
+  {
+    "href": "/voprosy-o-postuplenii?track=vuz",
+    "title": "Вопросы о поступлении"
+  },
+  {
+    "href": "/pravila-priema?track=vuz",
+    "title": "Правила приёма"
+  },
+  {
+    "href": "/slovar-postupayushchego?level=vuz",
+    "title": "Словарь поступающего"
+  },
+  {
+    "href": "/testy?track=vuz",
+    "title": "Тесты о поступлении"
+  },
+  {
+    "href": "/top-articles-for-abitur?track=vuz",
+    "title": "Важные статьи"
+  },
+  {
+    "href": "/s-chego-nachat?role=applicant&amp;track=vuz",
+    "title": "База знаний: с чего начать"
+  },
+  {
+    "href": "/voprosy-o-postuplenii",
+    "title": "Разобраться с поступлением Ответы на вопросы, документы и важные сроки. →"
+  },
+  {
+    "href": "/admission?view=home&amp;track=vuz",
+    "title": "Понять, что делать дальше Персональный план и следующие шаги поступления. →"
+  },
+  {
+    "href": "/auth/social/yandex",
+    "title": "Я Яндекс"
+  },
+  {
+    "href": "/auth/social/vk",
+    "title": "VK VK"
+  },
+  {
+    "href": "/docs/policy-of-personal-data",
+    "title": "политики"
+  },
+  {
+    "href": "/docs/agree-to-agregate-personal-data",
+    "title": "согласие"
+  },
+  {
+    "href": "/docs/agree-to-newsletter",
+    "title": "согласие"
+  },
+  {
+    "href": "/forgot-password",
+    "title": "Восстановить пароль"
+  },
+  {
+    "href": "/admission?view=home&track=vuz",
+    "title": "arrow_forward Открыть персональный план"
+  },
+  {
+    "href": "/s-chego-nachat?track=vuz",
+    "title": "С чего начать"
+  },
+  {
+    "href": "/admission?track=vuz",
+    "title": "Персональный план"
+  },
+  {
+    "href": "/vuzfilter",
+    "title": "Подобрать вуз"
+  },
+  {
+    "href": "/for/abiturientam",
+    "title": "Поступающим"
+  },
+  {
+    "href": "/for/roditelyam",
+    "title": "Родителям"
+  },
+  {
+    "href": "/for/uchitelyam",
+    "title": "Учителям"
+  },
+  {
+    "href": "/voprosy-o-postuplenii?track=vuz",
+    "title": "Ответы на вопросы"
+  },
+  {
+    "href": "/pravila-priema",
+    "title": "Правила приёма"
+  },
+  {
+    "href": "/slovar-postupayushchego",
+    "title": "Словарь поступающего"
+  },
+  {
+    "href": "/testy",
+    "title": "Тесты о поступлении"
+  },
+  {
+    "href": "/vuzam",
+    "title": "Вузам и колледжам"
+  },
+  {
+    "href": "/vuzam/registraciya",
+    "title": "Регистрация представителя"
+  },
+  {
+    "href": "/vuzam#campaign",
+    "title": "Реклама и сотрудничество"
+  },
+  {
+    "href": "/contact-us",
+    "title": "Помощь и обратная связь"
+  },
+  {
+    "href": "/documents",
+    "title": "Документы"
+  },
+  {
+    "href": "/vuzopedia-qr",
+    "title": "QR-код сайта"
+  },
+  {
+    "href": "/delete-account",
+    "title": "Удалить аккаунт"
+  },
+  {
+    "href": "/spo",
+    "title": "Колледжи и техникумы"
+  },
+  {
+    "href": "/",
+    "title": "Vuzopedia.ru"
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Добавили в избранное Найдете это учебное заведение в личном кабинете."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Убрали из избранного Можно добавить снова в любой момент."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Специальность добавлена Она появилась в избранном личного кабинета."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Специальность удалена В избранном личного кабинета ее больше нет."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Направление добавлено Оно появилось в избранном личного кабинета."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Направление удалено В избранном личного кабинета его больше нет."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Профессия добавлена Она появилась в избранном личного кабинета."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Профессия удалена В избранном личного кабинета ее больше нет."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Программа добавлена Она появилась в избранном личного кабинета."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Программа удалена В избранном личного кабинета ее больше нет."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite Статья добавлена Она появилась в избранном личного кабинета."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "favorite_border Статья удалена В избранном личного кабинета ее больше нет."
+  },
+  {
+    "href": "/lk/favorites",
+    "title": "priority_high Лимит избранного достигнут Удалите часть материалов этого типа в личном кабинете."
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "Разблокировать полный доступ"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "Полный доступ на сезон"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "Открыть доступ к подбору"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "Зарегистрироваться (+50)"
+  },
+  {
+    "href": "javascript:void(0)",
+    "title": "Открыть доступ к безлимитному подбору"
+  },
+  {
+    "href": "/quiz",
+    "title": "Подобрать бесплатно"
+  }
+]

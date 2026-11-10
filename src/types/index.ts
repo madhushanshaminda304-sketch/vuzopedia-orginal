@@ -1,4 +1,4 @@
-export type StudyDegree = 'bachelor' | 'specialist' | 'master';
+export type StudyDegree = 'bachelor' | 'specialist' | 'master' | 'spo';
 
 export type ExamSubjectId =
   | 'rus'
@@ -22,18 +22,19 @@ export interface ExamSubject {
 
 export interface UniversityProgram {
   id: string;
-  code: string; // e.g. "09.03.01"
+  code: string;
   name: string;
   faculty: string;
   degree: StudyDegree;
   requiredExams: ExamSubjectId[];
-  optionalExams?: ExamSubjectId[]; // choice subject, e.g. Phys or Inf
+  optionalExams?: ExamSubjectId[];
   budgetPlaces: number;
   paidPlaces: number;
   minBudgetScore2025: number;
   minPaidScore2025: number;
   annualFee: number;
   durationYears: number;
+  isRemoteAvailable?: boolean;
 }
 
 export interface University {
@@ -115,14 +116,6 @@ export interface TestQuestion {
   };
 }
 
-export interface TestResultCategory {
-  category: 'nature' | 'tech' | 'human' | 'sign' | 'art';
-  title: string;
-  score: number;
-  description: string;
-  suitableProfessions: string[];
-}
-
 export interface AdmissionsCalendarEvent {
   date: string;
   title: string;
@@ -136,4 +129,65 @@ export interface GlossaryTerm {
   abbr?: string;
   definition: string;
   example?: string;
+}
+
+// === NEW ADVANCED FEATURES TYPES ===
+
+export interface College {
+  id: string;
+  shortName: string;
+  fullName: string;
+  city: string;
+  minGpaBudget: number; // e.g. 4.45
+  budgetPlaces: number;
+  hasDormitory: boolean;
+  base: 'after_9' | 'after_11' | 'both';
+  annualFee: number;
+  specialties: string[];
+  rating: number;
+}
+
+export interface BlacklistEntry {
+  id: string;
+  name: string;
+  city: string;
+  status: 'revoked' | 'suspended' | 'no_accreditation' | 'reorganized';
+  statusLabel: string;
+  decisionDate: string;
+  consequences: string;
+  officialDocNumber: string;
+}
+
+export interface TargetQuotaOffer {
+  id: string;
+  employer: string;
+  sphere: string;
+  specialtyCode: string;
+  specialtyName: string;
+  universityShort: string;
+  city: string;
+  stipendPerMonth: number;
+  openSpots: number;
+  obligationYears: number;
+  benefits: string[];
+}
+
+export interface FearMapItem {
+  id: string;
+  fear: string;
+  riskSeverity: 'high' | 'medium' | 'low';
+  realityCheck: string;
+  stepByStepSolution: string[];
+  alternativePaths: string[];
+}
+
+export interface RemoteProgram {
+  id: string;
+  code: string;
+  title: string;
+  universityShort: string;
+  annualFee: number;
+  durationYears: number;
+  onlineExamProctoring: boolean;
+  diplomaType: 'Диплом государственного образца' | 'Диплом установленного образца';
 }
