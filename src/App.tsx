@@ -140,6 +140,7 @@ export const App: React.FC = () => {
             onToggleFavorite={toggleFavorite}
             compareList={compareList}
             onToggleCompare={toggleCompare}
+            onNavigateTab={setCurrentTab}
           />
         )}
 

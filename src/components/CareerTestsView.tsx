@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { KLIMOV_QUESTIONS } from '../data/mockData';
+import { CareerGuidanceHub } from './CareerGuidanceHub';
 
 interface CareerTestsViewProps {
   onNavigateTab: (tab: string) => void;
@@ -94,20 +95,26 @@ export const CareerTestsView: React.FC<CareerTestsViewProps> = ({ onNavigateTab 
   const progressPercent = Math.round(((currentQuestionIndex + 1) / KLIMOV_QUESTIONS.length) * 100);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
-      {/* Title */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-bold uppercase tracking-wider mb-2">
-          <Compass className="w-4 h-4" />
-          Профориентационный тест
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
+      {/* 5-Card Career Guidance Carousel (Matches user photo 1:1) */}
+      <CareerGuidanceHub onNavigateTab={onNavigateTab} />
+
+      <div className="my-12 border-t border-slate-200 dark:border-slate-800" />
+
+      {/* In-depth Klimov Questionnaire Section */}
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-bold uppercase tracking-wider mb-2">
+            <Compass className="w-4 h-4" />
+            Профориентационный тест
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
+            Тест Климова: Выбор профессиональной сферы
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 text-sm max-w-xl mx-auto leading-relaxed">
+            Классическая академическая методика определения склонностей к пяти ключевым типам профессий. Отвечайте честно, выбирая то, что искренне привлекательнее.
+          </p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
-          Тест Климова: Выбор профессиональной сферы
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300 text-sm max-w-xl mx-auto leading-relaxed">
-          Классическая академическая методика определения склонностей к пяти ключевым типам профессий. Отвечайте честно, выбирая то, что искренне привлекательнее.
-        </p>
-      </div>
 
       {!isCompleted ? (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800 shadow-soft">
@@ -247,6 +254,7 @@ export const CareerTestsView: React.FC<CareerTestsViewProps> = ({ onNavigateTab 
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

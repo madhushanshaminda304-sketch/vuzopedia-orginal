@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'fear_map', label: 'С чего начать' },
     { id: 'blacklist', label: 'Черный список', isWarning: true },
     { id: 'remote', label: 'Онлайн-обучение' },
-    { id: 'tests', label: 'Тесты' },
+    { id: 'tests', label: 'Профориентация', badge: 'ХИТ' },
     { id: 'compare', label: 'Сравнение', count: compareCount },
     { id: 'calendar', label: 'Календарь' },
     { id: 'tracker', label: 'Мои приоритеты', count: favoritesCount },

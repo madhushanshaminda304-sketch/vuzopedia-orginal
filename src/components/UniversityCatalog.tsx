@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { University } from '../types';
 import { UniversityCard } from './UniversityCard';
+import { CareerGuidanceHub } from './CareerGuidanceHub';
 
 interface UniversityCatalogProps {
   universities: University[];
@@ -21,6 +22,7 @@ interface UniversityCatalogProps {
   onToggleFavorite: (id: string) => void;
   compareList: string[];
   onToggleCompare: (id: string) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const UniversityCatalog: React.FC<UniversityCatalogProps> = ({
@@ -32,6 +34,7 @@ export const UniversityCatalog: React.FC<UniversityCatalogProps> = ({
   onToggleFavorite,
   compareList,
   onToggleCompare,
+  onNavigateTab,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'rank' | 'score_asc' | 'score_desc' | 'places' | 'fee'>('rank');
@@ -115,6 +118,12 @@ export const UniversityCatalog: React.FC<UniversityCatalogProps> = ({
           Полная база аккредитованных университетов, институтов и академий с официальными проходными баллами на бюджет, количеством бюджетных мест, стоимостью обучения и информацией о военной кафедре и общежитиях.
         </p>
       </div>
+
+      {/* Featured Career Guidance Section (Exact 5-Card Carousel from Vuzopedia) */}
+      <CareerGuidanceHub
+        onNavigateTab={onNavigateTab}
+        onOpenUniversity={onOpenDetail}
+      />
 
       {/* Main Controls Bar */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-soft mb-6">
