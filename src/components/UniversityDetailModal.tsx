@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -49,6 +49,16 @@ export const UniversityDetailModal: React.FC<UniversityDetailModalProps> = ({
     soc: 78,
   });
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!v) return null;
 
   const getSubjectName = (subId: ExamSubjectId) => {
@@ -63,6 +73,8 @@ export const UniversityDetailModal: React.FC<UniversityDetailModalProps> = ({
         <div className="p-6 bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white relative">
           <button
             onClick={onClose}
+            data-testid="close-university-modal"
+            title="Закрыть"
             className="absolute top-5 right-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
           >
             <X className="w-5 h-5" />

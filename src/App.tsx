@@ -402,6 +402,10 @@ export const App: React.FC = () => {
         isOpen={isDedAssistantOpen}
         onClose={() => setIsDedAssistantOpen(false)}
         onNavigateTab={setCurrentTab}
+        onSelectUniversity={(vuz) => {
+          setSelectedVuzDetail(vuz);
+          setIsDedAssistantOpen(false);
+        }}
       />
 
       <MyPlanModal

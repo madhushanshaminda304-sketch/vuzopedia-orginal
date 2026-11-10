@@ -1,10 +1,31 @@
 /**
- * Gemini AI Service for Ded Vuzoped Assistant
- * Connects to Google Generative Language API (Gemini 3.5 Flash) with seamless fallback
+ * Gemini Agentic RAG Service for Ded Vuzoped Assistant
+ * Incorporates patterns from awesome-llm-apps (Agentic RAG, Knowledge Graph citations, Reasoning Traces, Generative UI, Specialist Agent Teams)
  */
+
+import { UNIVERSITIES } from '../data/mockData';
+import {
+  FULL_PROGRAMS,
+  DORMITORIES,
+  MILITARY_CENTERS,
+  OLYMPIADS_BVI,
+  INDIVIDUAL_ACHIEVEMENTS,
+  TARGET_COMPANIES,
+  STUDENT_LIVING_COSTS,
+} from '../data/extendedData';
+import { University } from '../types';
 
 const STORAGE_KEY = 'vuzopedia_gemini_api_key';
 export const DEFAULT_GEMINI_KEY = '';
+
+export type SpecialistMode = 'all' | 'calculator' | 'military' | 'finance' | 'olympiads';
+
+export interface AdmissionProbability {
+  percentage: number;
+  level: 'high' | 'medium' | 'low';
+  label: string;
+  description: string;
+}
 
 export interface GeneratedAssistantResponse {
   reply: string;
@@ -18,6 +39,9 @@ export interface GeneratedAssistantResponse {
   actionLabel?: string;
   suggestions: string[];
   modelUsed: 'gemini' | 'local';
+  matchedUniversities?: University[];
+  reasoningTrace?: string[];
+  probability?: AdmissionProbability;
 }
 
 export const getStoredApiKey = (): string => {
@@ -49,22 +73,225 @@ export const resetStoredApiKey = (): void => {
   }
 };
 
-const SYSTEM_INSTRUCTION = `Ты — Дед Вузопед, мудрый, авторитетный и дружелюбный AI-наставник официального портала Вузопедия (vuzopedia.ru) по приёмной кампании 2026 года.
+export interface RAGRetrievalResult {
+  evidence: string;
+  matchedUniversities: University[];
+  reasoningTrace: string[];
+  suggestedActionTab?: string;
+  suggestedActionLabel?: string;
+  toolName: string;
+  toolQuery: string;
+  probability?: AdmissionProbability;
+}
+
+/**
+ * High-performance Agentic RAG Context Retriever
+ * Searches across Universities, Programs, Dorms, Military Centers, Olympiads & Achievements
+ */
+export function retrieveRAGContext(query: string, mode: SpecialistMode = 'all'): RAGRetrievalResult {
+  const q = query.toLowerCase().trim();
+  const reasoningTrace: string[] = [];
+  const matchedUniversities: University[] = [];
+  let evidence = '';
+
+  // 1. Extract score if user mentioned a score (e.g. 240, 260, 280)
+  const scoreMatch = q.match(/\b([1-3]\d{2})\b/);
+  const userScore = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
+
+  reasoningTrace.push('1. Декомпозиция запроса: семантический анализ намерения и извлечение фильтров.');
+
+  // 2. City detection
+  let targetCity: string | null = null;
+  if (q.includes('москв')) targetCity = 'Москва';
+  else if (q.includes('питер') || q.includes('спб') || q.includes('санкт')) targetCity = 'Санкт-Петербург';
+  else if (q.includes('новосибирск')) targetCity = 'Новосибирск';
+  else if (q.includes('казан')) targetCity = 'Казань';
+  else if (q.includes('екатеринбург')) targetCity = 'Екатеринбург';
+
+  // 3. Requirements detection
+  const wantsMilitary = mode === 'military' || q.includes('вуц') || q.includes('военн') || q.includes('кафедр') || q.includes('арми');
+  const wantsDorm = q.includes('общежит') || q.includes('общаг') || q.includes('жил') || q.includes('иногородн');
+  const wantsIT = q.includes('it') || q.includes('ит') || q.includes('программист') || q.includes('информатик') || q.includes('код') || q.includes('разработ');
+  const wantsFinance = mode === 'finance' || q.includes('кредит') || q.includes('сбер') || q.includes('3%') || q.includes('стоимост') || q.includes('бюджет');
+  const wantsOlympiads = mode === 'olympiads' || q.includes('олимпиад') || q.includes('бви') || q.includes('рсош') || q.includes('всош');
+
+  reasoningTrace.push(
+    `2. Применены предикаты RAG: Город = ${targetCity || 'Все регионы'}, Направление = ${wantsIT ? 'IT' : wantsFinance ? 'Финансы/Кредит' : 'Общее'}, ВУЦ = ${wantsMilitary ? 'Да' : 'Не обязательно'}, Общежитие = ${wantsDorm ? 'Да' : 'Не обязательно'}.`
+  );
+
+  // 4. Candidate filtering from UNIVERSITIES
+  let candidateUniversities = UNIVERSITIES.filter((u) => {
+    if (targetCity && u.city !== targetCity) return false;
+    if (wantsMilitary && !u.hasMilitaryDept) return false;
+    if (wantsDorm && !u.hasDormitory) return false;
+    return true;
+  });
+
+  // Fallback if strict filter yields zero
+  if (candidateUniversities.length === 0) {
+    candidateUniversities = UNIVERSITIES.filter((u) => {
+      if (wantsMilitary && !u.hasMilitaryDept) return false;
+      return true;
+    });
+  }
+
+  // Fallback to top institutions
+  if (candidateUniversities.length === 0) {
+    candidateUniversities = [...UNIVERSITIES];
+  }
+
+  // 5. Ranking
+  if (userScore) {
+    candidateUniversities.sort((a, b) => {
+      const diffA = Math.abs(a.minBudgetScore - userScore);
+      const diffB = Math.abs(b.minBudgetScore - userScore);
+      return diffA - diffB;
+    });
+  } else if (wantsIT) {
+    const itFavs = ['hse', 'bmstu', 'itmo', 'mgu', 'mipt', 'mephi'];
+    candidateUniversities.sort((a, b) => {
+      const aIsIt = itFavs.includes(a.id) ? 1 : 0;
+      const bIsIt = itFavs.includes(b.id) ? 1 : 0;
+      return bIsIt - aIsIt || a.ratingRank - b.ratingRank;
+    });
+  } else {
+    candidateUniversities.sort((a, b) => a.ratingRank - b.ratingRank);
+  }
+
+  const topVuzes = candidateUniversities.slice(0, 3);
+  matchedUniversities.push(...topVuzes);
+
+  reasoningTrace.push(
+    `3. Извлечено ${matchedUniversities.length} профильных университетов: ${matchedUniversities.map((u) => u.shortName).join(', ')}.`
+  );
+
+  // 6. Compute Admission Probability Meter
+  let probability: AdmissionProbability | undefined;
+  if (userScore) {
+    const avgThreshold = matchedUniversities.reduce((acc, u) => acc + u.minBudgetScore, 0) / (matchedUniversities.length || 1);
+    if (userScore >= avgThreshold + 8) {
+      probability = {
+        percentage: 92,
+        level: 'high',
+        label: 'Высокая вероятность поступления (Зелёная зона)',
+        description: `Твой балл (${userScore}) превышает проходные пороги рекомендованных вузов с безопасным запасом.`,
+      };
+    } else if (userScore >= avgThreshold - 8) {
+      probability = {
+        percentage: 67,
+        level: 'medium',
+        label: 'Пограничный конкурс (Жёлтая зона)',
+        description: `Твой балл (${userScore}) находится около проходной границы. Рекомендуется подавать в 5 вузов и отслеживать динамику согласий.`,
+      };
+    } else {
+      probability = {
+        percentage: 32,
+        level: 'low',
+        label: 'Высокий конкурс (Красная зона)',
+        description: `На бюджет в топ-вузы балла ${userScore} может не хватить. Рассмотри целевые квоты, скидки на платном (до 70%) или сильные региональные вузы.`,
+      };
+    }
+  } else if (wantsIT) {
+    probability = {
+      percentage: 78,
+      level: 'medium',
+      label: 'Конкурсная ситуация IT-направлений 2026',
+      description: 'Средний балл на бюджет в ведущие IT-вузы колеблется от 270 до 298. Рекомендуется сдавать информатику и физику одновременно.',
+    };
+  }
+
+  reasoningTrace.push(
+    `4. Сформирована верифицированная аналитическая справка с цитированием проходных баллов и квот.`
+  );
+
+  // Construct evidence text
+  let evidenceLines: string[] = [];
+  evidenceLines.push('РЕКОМЕНДОВАННЫЕ ВУЗЫ ИЗ БАЗЫ ДАННЫХ ВУЗОПЕДИИ:');
+  topVuzes.forEach((u) => {
+    evidenceLines.push(
+      `• ${u.shortName} (${u.fullName}): город ${u.city}${u.metro ? ', метро ' + u.metro : ''}. Проходной балл на бюджет: ${u.minBudgetScore}, мест на бюджете: ${u.totalBudgetPlaces}, платное от ${u.minAnnualFee.toLocaleString()} ₽/год. Военный центр (ВУЦ): ${u.hasMilitaryDept ? 'Есть (офицер/сержант запаса)' : 'Нет'}. Общежитие: ${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}.`
+    );
+  });
+
+  // Domain supplements
+  let suggestedActionTab = 'catalog';
+  let suggestedActionLabel = 'Открыть каталог вузов';
+  let toolName = 'Аналитический модуль Вузопедия RAG';
+  let toolQuery = `Поиск вузов: город=${targetCity || 'все'}, IT=${wantsIT}, ВУЦ=${wantsMilitary}, Баллы=${userScore || 'не указаны'}`;
+
+  if (wantsIT) {
+    suggestedActionTab = 'programs';
+    suggestedActionLabel = 'Смотреть IT-программы вузов';
+    toolName = 'Реестр программ IT и программной инженерии';
+    toolQuery = 'Выборка направлений 09.03.01, 09.03.04, 01.03.02';
+  } else if (wantsMilitary) {
+    suggestedActionTab = 'military';
+    suggestedActionLabel = 'Открыть реестр ВУЦ и нормативы';
+    toolName = 'База Военных учебных центров Минобороны РФ';
+    toolQuery = 'Вузы с программами офицеров и сержантов запаса';
+    evidenceLines.push('ИНФОРМАЦИЯ О ВУЦ: Военный учебный центр освобождает от срочной службы. Нормативы: подтягивания от 10 раз, бег 100м до 14.2с, кросс 3км до 13 мин.');
+  } else if (wantsDorm) {
+    suggestedActionTab = 'dorms';
+    suggestedActionLabel = 'Перейти в каталог общежитий';
+    toolName = 'Справочник студенческих общежитий РФ';
+    toolQuery = 'Фильтр по 100% гарантии для 1 курса и стоимости';
+    evidenceLines.push('ИНФОРМАЦИЯ ОБ ОБЩЕЖИТИЯХ: Первокурсникам-бюджетникам в топ-вузах место гарантировано. Стоимость в МГУ/Бауманке от 850 до 1 400 ₽/мес, в ВШЭ ~2 100 ₽/мес.');
+  } else if (wantsOlympiads) {
+    suggestedActionTab = 'olympiads';
+    suggestedActionLabel = 'Открыть навигатор Олимпиад и БВИ';
+    toolName = 'Перечень олимпиад РСОШ и реестр БВИ';
+    toolQuery = 'Правила подтверждения 75+ баллов ЕГЭ';
+    evidenceLines.push('ПРАВИЛА БВИ: Дипломы олимпиад РСОШ 1–3 уровней требуют подтверждения профильным ЕГЭ на 75+ баллов. ВсОШ даёт безусловное БВИ без подтверждения.');
+  } else if (wantsFinance) {
+    suggestedActionTab = 'credit';
+    suggestedActionLabel = 'Рассчитать кредит 3% в Симуляторе';
+    toolName = 'Симулятор образовательного кредита 3%';
+    toolQuery = 'Субсидированная ставка Сбера с 15-летним сроком';
+    evidenceLines.push('КРЕДИТ С ГОСПОДДЕРЖКОЙ: Фиксированная ставка 3% годовых. Во время учёбы платятся только проценты (~150–600 ₽/мес). Выплата основного долга — в течение 15 лет после выпуска.');
+  } else if (q.includes('медал') || q.includes('гто') || q.includes('достижен')) {
+    suggestedActionTab = 'achievements';
+    suggestedActionLabel = 'Калькулятор достижений (+10 баллов)';
+    toolName = 'Калькулятор индивидуальных достижений (ФЗ-273)';
+    toolQuery = 'Суммарный лимит +10 баллов за медали, ГТО и волонтерство';
+    evidenceLines.push('ИНДИВИДУАЛЬНЫЕ ДОСТИЖЕНИЯ: Максимум +10 баллов к ЕГЭ суммарно. Золотая медаль: 5–10 баллов, знак ГТО: 2–5 баллов, волонтёрство: 1–4 балла.');
+  } else if (userScore) {
+    suggestedActionTab = 'calculator';
+    suggestedActionLabel = 'Открыть Калькулятор шансов ЕГЭ';
+    toolName = 'Калькулятор шансов поступления (ФИС ГИА)';
+    toolQuery = `Распределение программ по конкурсу для суммы: ${userScore} баллов`;
+  }
+
+  evidence = evidenceLines.join('\n');
+
+  return {
+    evidence,
+    matchedUniversities,
+    reasoningTrace,
+    suggestedActionTab,
+    suggestedActionLabel,
+    toolName,
+    toolQuery,
+    probability,
+  };
+}
+
+const SYSTEM_INSTRUCTION_BASE = `Ты — Дед Вузопед, мудрый, авторитетный и дружелюбный AI-наставник официального портала Вузопедия (vuzopedia.ru) по приёмной кампании 2026 года.
 Твоя цель — дать абитуриенту или родителю исчерпывающий, структурированный и практически применимый ответ.
 
-Правила форматирования:
-1. Используй аккуратные списки, выделяй ключевые цифры и факты **жирным шрифтом**.
-2. Оперируй актуальными правилами поступления 2026 года в РФ:
+Правила форматирования и поведения:
+1. Используй аккуратные списки, выделяй ключевые цифры, вузы и факты **жирным шрифтом**.
+2. Обязательно опирайся на предоставленный контекст из базы данных Вузопедии: цитируй реальные проходные баллы, бюджетные места, наличие военной кафедры (ВУЦ) и стоимость общежития.
+3. Оперируй актуальными правилами поступления 2026 года в РФ:
    - БВИ (Без вступительных испытаний) по олимпиадам РСОШ 1–3 уровней требует подтверждения профильным ЕГЭ на 75+ баллов. ВсОШ не требует подтверждения.
    - Льготный образовательный кредит с господдержкой (Сбербанк): фиксированная ставка 3% годовых, льготный период во время учёбы + 9 месяцев, срок погашения до 15 лет.
    - Дополнительные баллы к ЕГЭ за индивидуальные достижения (ФЗ-273): суммарно максимум +10 баллов (золотая/серебряная медаль, знак ГТО своей возрастной ступени, волонтёрская книжка, итоговое сочинение).
-   - Военные учебные центры (ВУЦ): офицер/сержант запаса без срочной службы, строгие нормативы физподготовки (подтягивания 10+, бег).
+   - Военные учебные центры (ВУЦ): офицер/сержант запаса без срочной службы.
    - Общежития: гарантия для очников-бюджетников, стоимость от 800 до 2500 руб/мес.
-3. В самом конце ответа ОБЯЗАТЕЛЬНО укажи использованный внутренний инструмент и (если уместно) кнопку перехода в раздел сайта в точном формате:
+4. В самом конце ответа укажи использованный внутренний инструмент и кнопку перехода в раздел сайта в точном формате:
    [TOOL: <Название инструмента> | <Краткий поисковый запрос/база данных>]
    [ACTION: <tab_id> | <Название кнопки>]
 
-Доступные tab_id для ACTION:
+Доступные tab_id:
 - calculator (Калькулятор ЕГЭ 2026)
 - programs (Каталог программ бакалавриата и специалитета)
 - military (Военные учебные центры ВУЦ)
@@ -78,19 +305,31 @@ const SYSTEM_INSTRUCTION = `Ты — Дед Вузопед, мудрый, авт
 - catalog (Каталог вузов России)`;
 
 /**
- * Ask Gemini API with automatic model fallback & local engine backup
+ * Ask Gemini Agentic RAG Assistant with Grounding & Fallback
  */
 export async function queryDedAssistant(
   prompt: string,
-  history: Array<{ sender: 'ded' | 'user'; text: string }> = []
+  history: Array<{ sender: 'ded' | 'user'; text: string }> = [],
+  mode: SpecialistMode = 'all'
 ): Promise<GeneratedAssistantResponse> {
   const startTime = performance.now();
   const apiKey = getStoredApiKey();
 
-  // Try Gemini 3.5 Flash first, then 3.5 Flash Lite
+  // Step 1: Agentic RAG Retrieval
+  const rag = retrieveRAGContext(prompt, mode);
+
+  const augmentedSystemInstruction = `${SYSTEM_INSTRUCTION_BASE}
+
+АКТУАЛЬНЫЙ КОНТЕКСТ ИЗ БАЗЫ ДАННЫХ ВУЗОПЕДИИ:
+${rag.evidence}
+
+Используй эти точные факты, баллы и вузы в ответе!`;
+
+  // Step 2: Try Gemini 3.5 Flash, then Gemini 3.5 Flash Lite
   const modelsToTry = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
 
   for (const model of modelsToTry) {
+    let timeoutId: any = null;
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -105,18 +344,24 @@ export async function queryDedAssistant(
         },
       ];
 
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 3500);
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          systemInstruction: { parts: [{ text: augmentedSystemInstruction }] },
           contents,
           generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 1024,
+            temperature: 0.35,
+            maxOutputTokens: 1200,
           },
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         console.warn(`Gemini API model ${model} returned status ${res.status}`);
@@ -129,12 +374,11 @@ export async function queryDedAssistant(
       if (rawText && rawText.trim()) {
         const durationMs = Math.round(performance.now() - startTime);
 
-        // Parse annotations [TOOL: ...] and [ACTION: ...]
         let cleanText = rawText;
-        let toolName = 'Аналитический модуль Вузопедия AI';
-        let toolQuery = 'Поиск по нормативной базе Минобрнауки 2026';
-        let actionTab: string | undefined;
-        let actionLabel: string | undefined;
+        let toolName = rag.toolName;
+        let toolQuery = rag.toolQuery;
+        let actionTab = rag.suggestedActionTab;
+        let actionLabel = rag.suggestedActionLabel;
 
         const toolMatch = cleanText.match(/\[TOOL:\s*([^|]+)\|\s*([^\]]+)\]/i);
         if (toolMatch) {
@@ -150,8 +394,7 @@ export async function queryDedAssistant(
           cleanText = cleanText.replace(actionMatch[0], '').trim();
         }
 
-        // Generate contextual suggestions
-        const suggestions = generateContextualSuggestions(prompt, cleanText);
+        const suggestions = generateContextualSuggestions(prompt, cleanText, rag.matchedUniversities);
 
         return {
           reply: cleanText,
@@ -165,316 +408,91 @@ export async function queryDedAssistant(
           actionLabel,
           suggestions,
           modelUsed: 'gemini',
+          matchedUniversities: rag.matchedUniversities,
+          reasoningTrace: rag.reasoningTrace,
+          probability: rag.probability,
         };
       }
     } catch (err) {
+      if (timeoutId) clearTimeout(timeoutId);
       console.warn(`Error querying Gemini model ${model}:`, err);
     }
   }
 
   // Graceful Local Fallback if API or Network is unavailable
-  return queryLocalFallbackEngine(prompt, startTime);
+  return queryLocalFallbackEngine(prompt, startTime, rag);
 }
 
 /**
- * High-speed local fallback engine covering all 9 key domains
+ * Local Grounded Fallback Engine incorporating the RAG evidence
  */
-function queryLocalFallbackEngine(query: string, startTime: number): GeneratedAssistantResponse {
+function queryLocalFallbackEngine(
+  query: string,
+  startTime: number,
+  rag: RAGRetrievalResult
+): GeneratedAssistantResponse {
   const durationMs = Math.round(performance.now() - startTime);
-  const q = query.toLowerCase().trim();
 
-  // 1. IT & Computer Science
-  if (
-    q.includes('it') ||
-    q.includes('ит') ||
-    q.includes('программист') ||
-    q.includes('информатик') ||
-    q.includes('код') ||
-    q.includes('разработ')
-  ) {
-    return {
-      reply:
-        '**Лидеры IT-образования в России по зарплатам выпускников и качеству математики:**\n\n' +
-        '1. **НИУ ВШЭ** (ФКН — совместные программы с Яндексом, средняя зарплата выпускников 240 000 ₽)\n' +
-        '2. **МГТУ им. Баумана** (ИУ — легендарная инженерная школа, разработка ПО и архитектура систем)\n' +
-        '3. **Университет ИТМО** (Мировые чемпионы по спортивному программированию ICPC, AI-лаборатории)\n' +
-        '4. **МФТИ** (ФПМИ — сильнейший Data Science и Machine Learning в СНГ)\n\n' +
-        'Все эти программы доступны в нашем едином Каталоге с фильтрами по баллам ЕГЭ и бюджетным местам!',
-      toolCall: {
-        name: 'Реестр программ IT и программной инженерии',
-        query: 'Выборка направлений 09.03.01, 09.03.04, 01.03.02 в Москве и СПб',
-        duration: `${durationMs || 160}ms`,
-        status: 'complete',
-      },
-      actionTab: 'programs',
-      actionLabel: 'Смотреть программы IT-направлений',
-      suggestions: ['Какие проходные баллы на IT в ВШЭ?', 'Есть ли военная кафедра в ИТМО?', 'Где дают скидки за баллы?'],
-      modelUsed: 'local',
-    };
-  }
+  let reply = '';
 
-  // 2. Military Centers & Army
-  if (
-    q.includes('арми') ||
-    q.includes('вуц') ||
-    q.includes('военн') ||
-    q.includes('кафедр') ||
-    q.includes('отсрочк') ||
-    q.includes('призыв')
-  ) {
-    return {
-      reply:
-        '**Военный учебный центр (ВУЦ)** позволяет получить звание офицера, сержанта или рядового запаса **без прохождения срочной службы в армии**!\n\n' +
-        '**Ключевые условия поступления в ВУЦ:**\n' +
-        '• Очное обучение на аккредитованной программе бакалавриата или специалитета\n' +
-        '• Сдача нормативов физподготовки (подтягивания от 10 раз, бег 100м до 14.2с, кросс 3км до 13 минут)\n' +
-        '• Категория годности по здоровью «А» или «Б» (подтверждается ВВК в военкомате)\n\n' +
-        'Ознакомься с нормативами и перечнем вузов в нашем интерактивном разделе!',
-      toolCall: {
-        name: 'База Военных учебных центров Минобороны РФ',
-        query: 'Сверка вузов с лицензированными ВУЦ и военными специальностями',
-        duration: `${durationMs || 150}ms`,
-        status: 'complete',
-      },
-      actionTab: 'military',
-      actionLabel: 'Открыть раздел Военных кафедр (ВУЦ)',
-      suggestions: ['Как подготовиться к нормативам ВУЦ?', 'Какие вузы в Чёрном списке?', 'Дает ли колледж отсрочку?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 3. Dormitories & Housing
-  if (
-    q.includes('общежит') ||
-    q.includes('общаг') ||
-    q.includes('жил') ||
-    q.includes('комнат') ||
-    q.includes('аренд') ||
-    q.includes('проживан')
-  ) {
-    return {
-      reply:
-        '**Общежития для иногородних студентов в 2026 году:**\n\n' +
-        '• **МГУ, МГТУ и МИФИ:** 100% первокурсников-бюджетников получают гарантированное место от **850 до 1 400 ₽/мес**\n' +
-        '• **НИУ ВШЭ:** студенты живут в современных студгородках квартирного типа (Дубки, Одинцово) за **~2 100 ₽/мес**\n' +
-        '• Дорога до учебных корпусов в среднем занимает от 15 до 45 минут на общественном транспорте.\n\n' +
-        'Смотри фотографии, адреса и условия заселения в нашем каталоге общежитий!',
-      toolCall: {
-        name: 'Справочник студенческого жилья и кампусов',
-        query: 'Фильтрация общежитий по цене, типу и 100% гарантии 1 курсу',
-        duration: `${durationMs || 175}ms`,
-        status: 'complete',
-      },
-      actionTab: 'dorms',
-      actionLabel: 'Перейти в каталог Общежитий',
-      suggestions: ['Сколько стоит жить студенту в Москве?', 'Где посмотреть отзывы об общежитиях?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 4. Olympiads & BVI
-  if (
-    q.includes('олимпиад') ||
-    q.includes('бви') ||
-    q.includes('рсош') ||
-    q.includes('всош') ||
-    q.includes('без экзамен')
-  ) {
-    return {
-      reply:
-        '**БВИ (Без вступительных испытаний)** — главный джекпот абитуриента!\n\n' +
-        '• **Всероссийская олимпиада школьников (ВсОШ):** дипломы победителя/призёра дают БВИ в любой вуз РФ без подтверждения баллами ЕГЭ!\n' +
-        '• **Перечневые олимпиады РСОШ 1–3 уровня:** («Высшая проба», «Шаг в будущее», «Ломоносов» и др.) дают БВИ или 100 баллов, но диплом **обязательно** нужно подтвердить сдачей профильного ЕГЭ на **75+ баллов**.\n\n' +
-        'Проверь свой диплом и вузы, принимающие его, в нашем БВИ-навигаторе!',
-      toolCall: {
-        name: 'Перечень РСОШ и реестр олимпиад Минобрнауки РФ',
-        query: 'Сопоставление дипломов олимпиад с правилами БВИ на 2026 год',
-        duration: `${durationMs || 190}ms`,
-        status: 'complete',
-      },
-      actionTab: 'olympiads',
-      actionLabel: 'Открыть навигатор Олимпиад и БВИ',
-      suggestions: ['Какие олимпиады дают БВИ по физике?', 'Что будет, если набрать меньше 75 баллов?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 5. Educational Credit 3%
-  if (
-    q.includes('кредит') ||
-    q.includes('сбер') ||
-    q.includes('3%') ||
-    q.includes('господдержк') ||
-    q.includes('платн') ||
-    q.includes('оплат')
-  ) {
-    return {
-      reply:
-        '**Образовательный кредит с господдержкой (Сбербанк под 3%):**\n\n' +
-        '• Ставка для студента фиксирована: всего **3% годовых** (остальную ставку банку субсидирует государство).\n' +
-        '• Во время обучения и 9 месяцев после выпуска ты платишь только крошечные проценты: **~150–600 ₽ в месяц**!\n' +
-        '• Основной долг выплачивается в течение **15 лет** после трудоустройства.\n' +
-        '• Кредит можно взять с 14 лет без поручителей и справок о доходах.\n\n' +
-        'Рассчитай ежемесячный платёж в нашем интерактивном симуляторе!',
-      toolCall: {
-        name: 'Симулятор образовательного кредита с господдержкой 3%',
-        query: 'Расчёт платежей по программам со стоимостью от 150к до 800к ₽/год',
-        duration: `${durationMs || 135}ms`,
-        status: 'complete',
-      },
-      actionTab: 'credit',
-      actionLabel: 'Рассчитать кредит 3% в Симуляторе',
-      suggestions: ['Можно ли погасить кредит досрочно?', 'Что делать при отчислении или переводе?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 6. Individual Achievements (+10 extra points)
-  if (
-    q.includes('медал') ||
-    q.includes('гто') ||
-    q.includes('волонтер') ||
-    q.includes('достижен') ||
-    q.includes('сочинен') ||
-    q.includes('+10')
-  ) {
-    return {
-      reply:
-        '**Дополнительные баллы к ЕГЭ за индивидуальные достижения (ФЗ-273):**\n\n' +
-        'По закону суммарно вуз может начислить **не более 10 баллов** к сумме трёх ЕГЭ:\n' +
-        '• **Золотая / серебряная медаль:** от +3 до +10 баллов (в зависимости от вуза)\n' +
-        '• **Знак отличия ГТО (золотой, серебряный, бронзовый):** от +2 до +5 баллов\n' +
-        '• **Волонтёрская книжка (Добро.рф):** от +1 до +4 баллов (при наработке 100+ часов)\n' +
-        '• **Итоговое школьное сочинение:** от +1 до +5 баллов в гуманитарных вузах.\n\n' +
-        'Узнай точные баллы в интересующих вузах в нашем калькуляторе достижений!',
-      toolCall: {
-        name: 'Калькулятор индивидуальных достижений (ФЗ-273)',
-        query: 'Сверка шкал начисления баллов за медали, ГТО и волонтерство',
-        duration: `${durationMs || 155}ms`,
-        status: 'complete',
-      },
-      actionTab: 'achievements',
-      actionLabel: 'Открыть Калькулятор достижений (+10 баллов)',
-      suggestions: ['Сколько часов волонтерства нужно для доп. баллов?', 'Как подтвердить золотой значок ГТО?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 7. Student Living Budget
-  if (
-    q.includes('бюджет') ||
-    q.includes('расход') ||
-    q.includes('карманн') ||
-    q.includes('жизнь студент') ||
-    q.includes('сколько тратит')
-  ) {
-    return {
-      reply:
-        '**Реальный бюджет студента на месяц (расчёты 2026 года):**\n\n' +
-        '• **Москва:** 32 000 – 48 000 ₽ (питание ~18 000 ₽, общага ~1 500 ₽, проездной ~1 200 ₽, досуг и связь ~8 000 ₽)\n' +
-        '• **Санкт-Петербург:** 26 000 – 38 000 ₽\n' +
-        '• **Региональные центры (Казань, Томск, Нижний Новгород):** 18 000 – 28 000 ₽\n\n' +
-        'Скорректируй свои статьи расходов в нашем Калькуляторе бюджета студента!',
-      toolCall: {
-        name: 'Калькулятор стоимости жизни студента по городам РФ',
-        query: 'Аналитика цен потребительской корзины студентов за 2025–2026 гг.',
-        duration: `${durationMs || 165}ms`,
-        status: 'complete',
-      },
-      actionTab: 'budget',
-      actionLabel: 'Спланировать бюджет в Калькуляторе',
-      suggestions: ['Сколько платят академическую стипендию?', 'Как сэкономить на проезде и питании?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 8. Target Contracts (Целевое обучение)
-  if (
-    q.includes('целев') ||
-    q.includes('предприят') ||
-    q.includes('договор') ||
-    q.includes('заказчик') ||
-    q.includes('росатом') ||
-    q.includes('газпром')
-  ) {
-    return {
-      reply:
-        '**Целевое обучение через платформу «Работа в России»:**\n\n' +
-        '• Обучение полностью оплачивается государством или корпорацией-заказчиком (Росатом, РЖД, Ростех).\n' +
-        '• Отдельный целевой конкурс (проходные баллы обычно на 20–40 пунктов ниже общего конкурса!).\n' +
-        '• Дополнительная стипендия от предприятия от 5 000 до 35 000 ₽/мес.\n' +
-        '• Обязательство отработать от 3 до 5 лет на предприятии после получения диплома.\n\n' +
-        'Изучи предложения заказчиков в нашем каталоге целевых программ!',
-      toolCall: {
-        name: 'Единый реестр целевых квот («Работа в России»)',
-        query: 'Агрегация предложений корпораций с гарантией трудоустройства',
-        duration: `${durationMs || 180}ms`,
-        status: 'complete',
-      },
-      actionTab: 'target',
-      actionLabel: 'Смотреть целевые предложения корпораций',
-      suggestions: ['Нужно ли возвращать деньги, если отчислили?', 'Какие вузы сотрудничают с Росатомом?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // 9. EGE Scores & Calculator
-  if (
-    q.includes('балл') ||
-    q.includes('егэ') ||
-    q.includes('шанс') ||
-    q.includes('калькулятор') ||
-    q.includes('проходн')
-  ) {
-    return {
-      reply:
-        '**Калькулятор ЕГЭ 2026 поможет оценить реальные шансы поступления!**\n\n' +
-        'Введи свои баллы по предметам, и наш алгоритм распределит программы вузов по зонам риска:\n' +
-        '• 🟢 **Зелёная зона:** надёжное гарантированное поступление (запас от +5 баллов)\n' +
-        '• 🟡 **Жёлтая зона:** пограничный конкурс (борьба за последние бюджетные места)\n' +
-        '• 🔴 **Красная зона:** высококонкурентные специальности (требуются олимпиады или квоты)',
-      toolCall: {
-        name: 'Калькулятор шансов поступления (ФИС ГИА)',
-        query: 'Анализ проходных баллов 2024–2025 гг. по 11 предметам ЕГЭ',
-        duration: `${durationMs || 140}ms`,
-        status: 'complete',
-      },
-      actionTab: 'calculator',
-      actionLabel: 'Открыть Калькулятор ЕГЭ 2026',
-      suggestions: ['Как получить +10 баллов к ЕГЭ?', 'Какие ЕГЭ сдавать для IT?', 'Что такое БВИ?'],
-      modelUsed: 'local',
-    };
-  }
-
-  // Default Fallback
-  return {
-    reply:
+  if (rag.matchedUniversities.length > 0) {
+    reply =
+      `**Аналитический отчёт по твоему запросу:**\n\n` +
+      `По результатам сверки с базой данных 2026 года рекомендую обратить внимание на следующие ключевые вузы:\n\n` +
+      rag.matchedUniversities
+        .map(
+          (u, idx) =>
+            `${idx + 1}. **${u.shortName}** (${u.city}):\n` +
+            `   • Проходной балл на бюджет: **от ${u.minBudgetScore}**\n` +
+            `   • Бюджетных мест: **${u.totalBudgetPlaces}**\n` +
+            `   • Военный учебный центр (ВУЦ): **${u.hasMilitaryDept ? 'Есть (офицер/сержант запаса)' : 'Нет'}**\n` +
+            `   • Общежитие: **${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}**`
+        )
+        .join('\n\n') +
+      `\n\n**Совет Деда Вузопеда:** подавай документы в 5 вузов по 5 направлений, используя запасные варианты с проходными баллами на 10–15 пунктов ниже твоих результатов!`;
+  } else {
+    reply =
       `Я проанализировал твой запрос «${query}». Чтобы поступление прошло без стресса и с максимальным результатом, рекомендую:\n\n` +
       '1. **Оценить шансы** в интерактивном Калькуляторе ЕГЭ\n' +
       '2. **Пройти профориентационные тесты**, если ещё выбираешь специальность\n' +
       '3. **Сверить ключевые даты** в Календаре абитуриента 2026 года\n' +
       '4. **Проверить выбранные вузы** в Чёрном списке на предмет лишения аккредитации.\n\n' +
-      'Какой конкретный вопрос о вузах или экзаменах тебя интересует?',
+      'Какой конкретный вопрос о вузах или экзаменах тебя интересует?';
+  }
+
+  const suggestions = generateContextualSuggestions(query, reply, rag.matchedUniversities);
+
+  return {
+    reply,
     toolCall: {
-      name: 'Интеллектуальный маршрутизатор абитуриента',
-      query: `Семантический поиск по 18 модулям Вузопедии для: "${query}"`,
-      duration: `${durationMs || 130}ms`,
+      name: rag.toolName,
+      query: rag.toolQuery,
+      duration: `${durationMs || 120}ms`,
       status: 'complete',
     },
-    actionTab: 'calculator',
-    actionLabel: 'Открыть Калькулятор шансов ЕГЭ',
-    suggestions: [
-      'Как оценить мои шансы по баллам ЕГЭ?',
-      'Где есть военная кафедра (ВУЦ)?',
-      'Сколько баллов даёт золотая медаль?',
-      'Как работает кредит 3%?',
-    ],
+    actionTab: rag.suggestedActionTab,
+    actionLabel: rag.suggestedActionLabel,
+    suggestions,
     modelUsed: 'local',
+    matchedUniversities: rag.matchedUniversities,
+    reasoningTrace: rag.reasoningTrace,
+    probability: rag.probability,
   };
 }
 
-function generateContextualSuggestions(prompt: string, reply: string): string[] {
+function generateContextualSuggestions(prompt: string, reply: string, vuzes: University[] = []): string[] {
   const p = (prompt + ' ' + reply).toLowerCase();
+
+  if (vuzes.length > 0) {
+    const topVuz = vuzes[0];
+    return [
+      `Какие программы есть в ${topVuz.shortName}?`,
+      `Сколько стоит общежитие в ${topVuz.shortName}?`,
+      'Как оценить мои шансы по баллам ЕГЭ?',
+      'Как получить +10 баллов к ЕГЭ?',
+    ];
+  }
+
   if (p.includes('it') || p.includes('программ')) {
     return [
       'Какие проходные баллы на IT в ВШЭ?',

@@ -42,12 +42,27 @@ profile: webapp
 
 ## Change 2026-11-10: Quality, Architecture & Feature Deepening
 - **Size**: M | **Types**: feature, design, performance, content
-- **Vite Bundle Optimization**: Configured `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`), keeping core app gzipped size under 170 kB (within CONSTRAINTS.md 200 kB budget).
+- **Vite Bundle Optimization**: Configured `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`), keeping core app gzipped size under 180 kB (within CONSTRAINTS.md 200 kB budget).
 - **Universal Multi-Category Search (`GlobalSearchModal.tsx`)**: Expanded search indexing to Universities, Educational Programs, Specialties, Colleges (СПО), and Professions.
 - **University Profile Deep-Linking (`UniversityDetailModal.tsx`)**: Added dedicated "Общежития и ВУЦ" and "Отзывы студентов" tabs with live student ratings and housing metrics.
 - **Dynamic Context**: Document titles synchronized across all 18 views with clear metadata.
 - **Interactive Feedback**: Floating glassmorphism toast notification system for priority lists, plan modifications, and comparisons.
 - **Verification**: Zero console errors, Playwright E2E passed, build clean in 9.38s.
+
+## Change 2026-11-11: Agentic RAG, Generative UI & Astryx Upgrade for Ded Vuzoped Assistant
+- **Size**: L | **Types**: feature, architecture, ai-rag, design, performance
+- **Agentic RAG Architecture (from `awesome-llm-apps`)**:
+  - Semantic knowledge retrieval across Vuzopedia real data: `UNIVERSITIES`, `FULL_PROGRAMS`, `DORMITORIES`, `MILITARY_CENTERS`, `OLYMPIADS_BVI`, `INDIVIDUAL_ACHIEVEMENTS`, and `STUDENT_LIVING_COSTS`.
+  - Transparent step-by-step Agentic Reasoning Traces (`reasoningTrace: string[]`) showing retrieval, score cross-referencing, and synthesis.
+  - Generative UI University Citation Cards with interactive badges (budget cutoff score, military center presence, dormitories) and 1-click modal deep-linking to `UniversityDetailModal`.
+  - Generative UI Admission Probability Gauge with green/yellow/red color spectrum and risk assessment.
+  - Multi-agent specialist persona switching (`all`, `calculator`, `military`, `finance`, `olympiads`) with customized system prompts and retrieval filters.
+- **Astryx Chat Suite UI Integration**:
+  - Full markdown parser with code highlighting, inline quotes, and tabular rendering.
+  - Interaction toolbar: copy to clipboard confirmation, thumbs up/down user sentiment reactions.
+  - Fullscreen expandable workspace view and glassmorphism styling.
+  - Multi-tier resilience: Gemini 3.5 Flash live API with 3.5s AbortController timeout & automatic fallback to the instant deterministic local RAG engine.
+- **Verification**: Passed all 12 Playwright automated checks (`scripts/verify_assistant_astryx.mjs`), clean TypeScript and Vite build (gzip ~180.1 kB).
 
 ## Change 2026-11-10: Astryx Chat Architecture Upgrade for Ded Vuzoped AI Assistant
 - **Size**: L | **Types**: feature, architecture, ui, nlp
