@@ -39,3 +39,12 @@ profile: webapp
 
 ## Unresolved
 (None)
+
+## Change 2026-11-10: Quality, Architecture & Feature Deepening
+- **Size**: M | **Types**: feature, design, performance, content
+- **Vite Bundle Optimization**: Configured `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`), keeping core app gzipped size under 170 kB (within CONSTRAINTS.md 200 kB budget).
+- **Universal Multi-Category Search (`GlobalSearchModal.tsx`)**: Expanded search indexing to Universities, Educational Programs, Specialties, Colleges (СПО), and Professions.
+- **University Profile Deep-Linking (`UniversityDetailModal.tsx`)**: Added dedicated "Общежития и ВУЦ" and "Отзывы студентов" tabs with live student ratings and housing metrics.
+- **Dynamic Context**: Document titles synchronized across all 18 views with clear metadata.
+- **Interactive Feedback**: Floating glassmorphism toast notification system for priority lists, plan modifications, and comparisons.
+- **Verification**: Zero console errors, Playwright E2E passed, build clean in 9.38s.
