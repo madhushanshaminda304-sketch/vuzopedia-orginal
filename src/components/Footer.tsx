@@ -4,9 +4,10 @@ import { GraduationCap, Send, Play } from 'lucide-react';
 interface FooterProps {
   onSelectTab: (tab: string) => void;
   onSelectCity: (city: string) => void;
+  onOpenDedAssistant?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => {
+export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity, onOpenDedAssistant }) => {
   return (
     <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -203,7 +204,13 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onSelectCity }) => 
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <button
-                  onClick={() => alert('Служба поддержки: support@vuzopedia.ru')}
+                  onClick={() => {
+                    if (onOpenDedAssistant) {
+                      onOpenDedAssistant();
+                    } else {
+                      alert('Служба поддержки: support@vuzopedia.ru');
+                    }
+                  }}
                   className="hover:text-white transition uppercase font-semibold text-[11px]"
                 >
                   ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ

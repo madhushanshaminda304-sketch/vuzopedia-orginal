@@ -415,7 +415,7 @@ export const App: React.FC = () => {
       {/* Floating Ded Vuzoped launcher for mobile & desktop */}
       <button
         onClick={() => setIsDedAssistantOpen(true)}
-        className="fixed bottom-6 right-6 z-30 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-amber-500 via-brand-600 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-extrabold text-xs shadow-2xl transition transform hover:scale-110 animate-bounce"
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-amber-500 via-brand-600 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-extrabold text-xs shadow-2xl transition-all transform hover:scale-105 active:scale-95"
         title="Спросить Деда Вузопеда"
       >
         <span className="text-xl">🧙‍♂️</span>
@@ -431,7 +431,11 @@ export const App: React.FC = () => {
       )}
 
       {/* Global Footer */}
-      <Footer onSelectTab={setCurrentTab} onSelectCity={setSelectedCity} />
+      <Footer
+        onSelectTab={setCurrentTab}
+        onSelectCity={setSelectedCity}
+        onOpenDedAssistant={() => setIsDedAssistantOpen(true)}
+      />
     </div>
   );
 };

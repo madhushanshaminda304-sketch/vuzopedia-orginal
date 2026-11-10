@@ -48,3 +48,14 @@ profile: webapp
 - **Dynamic Context**: Document titles synchronized across all 18 views with clear metadata.
 - **Interactive Feedback**: Floating glassmorphism toast notification system for priority lists, plan modifications, and comparisons.
 - **Verification**: Zero console errors, Playwright E2E passed, build clean in 9.38s.
+
+## Change 2026-11-10: Astryx Chat Architecture Upgrade for Ded Vuzoped AI Assistant
+- **Size**: L | **Types**: feature, architecture, ui, nlp
+- **Astryx Chat Pattern Integration**: Rebuilt `DedVuzopedAssistantModal.tsx` following open-source Astryx design system (`packages/core/src/Chat`):
+  - Added simulated agent tool calls (`ChatToolCalls`) displaying tool name, execution duration badge (e.g. `140ms`), status icon, and collapsible query parameter inspector.
+  - Multi-domain NLP knowledge router matching 9 key admission domains (IT programs, Military Centers/VUTs, Dormitories & campus living, Olympiads & BVI 75-point rule, 3% Educational Credit, Individual Achievements & +10 extra points, Student living budget, Target enterprise contracts, and USE Calculator).
+  - Contextual action pills with deep links to navigate directly into related application tabs (`programs`, `calculator`, `military`, `dorms`, etc.).
+  - Interactive suggestion chips dynamically tailored to each message topic.
+  - Dictation voice input simulation, message copying with toast confirmation, chat history reset, auto-scroll to bottom with floating helper, and accessible keyboard shortcuts.
+- **Omnipresent Entry Points**: Wired Header assistant button, mobile/desktop floating action button (with smooth scale interactive transitions), and Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" link.
+- **Verification**: Playwright automated suite (`verify_assistant_astryx.mjs`) ran all 7 checks (Header launch, NLP query matching, ChatToolCall rendering & expansion, deep-link navigation, floating widget launch, suggestion chips, clipboard copy, Footer trigger) with 0 errors. Screenshots captured to `.pipeline/after/feature_assistant_astryx.png` and `.pipeline/after/feature_assistant_toolcalls.png`.
