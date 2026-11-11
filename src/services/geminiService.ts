@@ -1,10 +1,12 @@
 /**
- * Gemini Agentic RAG Service for Ded Vuzoped Assistant
- * Incorporates production RAG architectures from:
- * - RAGFlow: Multi-query expansion, hybrid search re-ranking, verifiable chunking & confidence score calculation.
- * - Dify: Extracted metadata parameters, knowledge retrieval pipeline, and structured entity binding.
- * - Open-WebUI: Citations modal/drawer architecture, source document chunk inspector, relevance color calculation, and scope filtering.
- * - Frontier System Prompts: Perplexity comparative matrix & inline citations, Gemini Flash formatting, and Anthropic anti-sycophancy.
+ * Honest Retrieval & Gemini Service for Ded Vuzoped Assistant
+ *
+ * Provides structured query parsing and retrieval against the local curated
+ * database of Russian universities, programs, dormitories, military training
+ * centers (ВУЦ), olympiads, and 2026 admissions regulations.
+ *
+ * Transparently indicates whether responses are AI-generated via Google Gemini
+ * or answered directly from the local database.
  */
 
 import { UNIVERSITIES } from '../data/mockData';
@@ -26,10 +28,11 @@ export type SpecialistMode = 'all' | 'calculator' | 'military' | 'finance' | 'ol
 export type RAGScopeFilter = 'all' | 'moscow' | 'spb' | 'it' | 'military' | 'olympiads';
 
 export interface AdmissionProbability {
-  percentage: number;
   level: 'high' | 'medium' | 'low';
   label: string;
   description: string;
+  scoreDiff?: number;
+  referenceCutoff?: number;
 }
 
 export interface ComparisonMatrix {
@@ -48,7 +51,7 @@ export interface ClarificationOption {
 }
 
 /**
- * Interactive Admission Artifact (Claude Artifacts / Canvas style)
+ * Interactive Admission Artifact (Strategy checklist / Action plan)
  */
 export interface AdmissionArtifact {
   id: string;
@@ -72,15 +75,15 @@ export interface AdmissionArtifact {
 }
 
 /**
- * Open-WebUI & RAGFlow verifiable document chunk
+ * Verified document chunk from local curated catalogs
  */
 export interface RetrievedCitationChunk {
   id: string;
   source: string;
   title: string;
   snippet: string;
-  relevanceScore: number; // 0 to 1
   category: 'university' | 'program' | 'military' | 'dorm' | 'credit' | 'olympiad' | 'achievements';
+  categoryLabel?: string;
   metadata: {
     city?: string;
     minScore?: number;
@@ -94,7 +97,7 @@ export interface RetrievedCitationChunk {
 }
 
 /**
- * Dify extracted query filters
+ * Query filter predicates extracted from user prompt
  */
 export interface ExtractedQueryFilters {
   score?: number | null;
@@ -112,7 +115,7 @@ export interface GeneratedAssistantResponse {
   toolCall: {
     name: string;
     query: string;
-    duration: string;
+    duration?: string;
     status: 'complete' | 'running' | 'error';
   };
   actionTab?: string;
@@ -123,7 +126,6 @@ export interface GeneratedAssistantResponse {
   comparisonMatrix?: ComparisonMatrix;
   citationChunks?: RetrievedCitationChunk[];
   extractedFilters?: ExtractedQueryFilters;
-  groundingConfidence?: number;
   modelUsed: 'gemini' | 'local';
   matchedUniversities?: University[];
   reasoningTrace?: string[];
@@ -176,7 +178,6 @@ export interface RAGRetrievalResult {
   followUps?: string[];
   citationChunks: RetrievedCitationChunk[];
   extractedFilters: ExtractedQueryFilters;
-  groundingConfidence: number;
   artifact?: AdmissionArtifact;
 }
 
@@ -241,14 +242,12 @@ function findMentionedUniversities(text: string): University[] {
 }
 
 /**
- * High-performance Agentic RAG Context Retriever
- * Infused with Open-WebUI Citations, Dify Metadata Extraction, and RAGFlow Hybrid Re-ranking
+ * Structured Query & Retrieval Engine over local university and admission data
  */
 export function retrieveRAGContext(
   query: string,
   mode: SpecialistMode = 'all',
-  scope: RAGScopeFilter = 'all',
-  useWebSearch: boolean = false
+  scope: RAGScopeFilter = 'all'
 ): RAGRetrievalResult {
   const q = query.toLowerCase().trim();
   const reasoningTrace: string[] = [];
@@ -256,33 +255,8 @@ export function retrieveRAGContext(
   const citationChunks: RetrievedCitationChunk[] = [];
   let evidence = '';
 
-  // 1. RAGFlow Multi-Query Intent & Decomposition
-  reasoningTrace.push('1. RAGFlow декомпозиция запроса: семантический анализ, расширение синонимов и извлечение фильтров.');
-
-  // Live Web Search grounding chunks injection
-  if (useWebSearch) {
-    reasoningTrace.push('1.1. Активирован режим Live Web Search: онлайн-верификация актуальных приказов и сайтов приемных комиссий.');
-    citationChunks.unshift({
-      id: 'web-priem-msu',
-      source: '🌐 Live Web: priem.msu.ru (ЦПК МГУ)',
-      title: 'МГУ имени М.В. Ломоносова: Правила приёма и ДВИ 2026',
-      snippet: 'Официальные минимальные баллы ЕГЭ, график дополнительных вступительных испытаний (ДВИ) и расписание приёма документов.',
-      relevanceScore: 0.98,
-      category: 'university',
-      metadata: { tags: ['Live Web', 'priem.msu.ru'] },
-      vuzId: 'mgu',
-    });
-    citationChunks.unshift({
-      id: 'web-hse-ba',
-      source: '🌐 Live Web: ba.hse.ru (Приёмная комиссия НИУ ВШЭ)',
-      title: 'НИУ ВШЭ Бакалавриат 2026: Скидки до 70% и зеленые волны',
-      snippet: 'Критерии заключения договоров, регламент скидок за высокие баллы ЕГЭ и список перечневых олимпиад БВИ.',
-      relevanceScore: 0.96,
-      category: 'program',
-      metadata: { tags: ['Live Web', 'ba.hse.ru'] },
-      vuzId: 'hse',
-    });
-  }
+  // 1. Query Parameter Extraction
+  reasoningTrace.push('1. Извлечение ключевых параметров запроса (баллы ЕГЭ, город, требования к ВУЦ и общежитию).');
 
   // 2. Score extraction
   const scoreMatch = q.match(/\b([1-3]\d{2})\b/);
@@ -291,7 +265,7 @@ export function retrieveRAGContext(
   // 3. Detect University Mentions
   const mentionedVuzes = findMentionedUniversities(q);
 
-  // 4. Comparison Query Detection (Perplexity)
+  // 4. Comparison Query Detection
   const isComparisonQuery =
     (q.includes('сравн') || q.includes('против') || q.includes(' vs ') || q.includes(' или ') || q.includes('лучше') || q.includes('отлич')) &&
     mentionedVuzes.length >= 2;
@@ -307,7 +281,7 @@ export function retrieveRAGContext(
       headers: ['Критерий', v1.shortName, v2.shortName],
       rows: [
         {
-          criterion: 'Проходной балл на бюджет',
+          criterion: 'Проходной балл на бюджет прошлых лет',
           values: [`от ${v1.minBudgetScore} б.`, `от ${v2.minBudgetScore} б.`],
         },
         {
@@ -340,11 +314,11 @@ export function retrieveRAGContext(
     };
 
     reasoningTrace.push(
-      `2. Выявлен интент прямого сравнения вузов: ${v1.shortName} и ${v2.shortName}. Построена сравнительная матрица параметров.`
+      `2. Выявлено сравнение двух вузов: ${v1.shortName} и ${v2.shortName}. Составлена сравнительная таблица параметров.`
     );
   }
 
-  // 5. Underspecified Query Clarification (Anthropic)
+  // 5. Underspecified Query Clarification
   const isVagueAdviceRequest =
     !userScore &&
     mentionedVuzes.length === 0 &&
@@ -379,7 +353,7 @@ export function retrieveRAGContext(
     ];
 
     reasoningTrace.push(
-      '2. Запрос не содержит конкретных баллов или специальности. Активирован протокол уточняющих сценариев (Clarification Protocol).'
+      '2. Запрос общего характера. Сформированы варианты уточнения для точного подбора.'
     );
   }
 
@@ -398,7 +372,7 @@ export function retrieveRAGContext(
   const wantsFinance = mode === 'finance' || q.includes('кредит') || q.includes('сбер') || q.includes('3%') || q.includes('стоимост') || q.includes('бюджет');
   const wantsOlympiads = scope === 'olympiads' || mode === 'olympiads' || q.includes('олимпиад') || q.includes('бви') || q.includes('рсош') || q.includes('всош');
 
-  // Dify Extracted Filters Object
+  // Extracted Query Filters Object
   const extractedFilters: ExtractedQueryFilters = {
     score: userScore,
     city: targetCity,
@@ -412,7 +386,7 @@ export function retrieveRAGContext(
 
   if (!isComparisonQuery && matchedUniversities.length === 0) {
     reasoningTrace.push(
-      `2. Применены предикаты RAG: Город = ${targetCity || 'Все регионы'}, Направление = ${wantsIT ? 'IT' : wantsFinance ? 'Финансы/Кредит' : 'Общее'}, ВУЦ = ${wantsMilitary ? 'Да' : 'Не обязательно'}, Общежитие = ${wantsDorm ? 'Да' : 'Не обязательно'}.`
+      `2. Поиск в каталоге: Город = ${targetCity || 'Все регионы'}, Направление = ${wantsIT ? 'IT' : wantsFinance ? 'Финансы/Кредит' : 'Общее'}, ВУЦ = ${wantsMilitary ? 'Да' : 'Не обязательно'}, Общежитие = ${wantsDorm ? 'Да' : 'Не обязательно'}.`
     );
 
     // Candidate filtering
@@ -458,29 +432,26 @@ export function retrieveRAGContext(
     }
 
     reasoningTrace.push(
-      `3. Отобрано ${matchedUniversities.length} профильных университета: ${matchedUniversities.map((u) => u.shortName).join(', ')}.`
+      `3. Отобрано в локальном каталоге: ${matchedUniversities.map((u) => u.shortName).join(', ')}.`
     );
   }
 
-  // 8. Open-WebUI & RAGFlow: Document Chunk Extraction & Relevance Scoring
-  matchedUniversities.forEach((u, uIdx) => {
-    const scoreDiff = userScore ? Math.abs(u.minBudgetScore - userScore) : 0;
-    const baseRelevance = userScore ? Math.max(0.72, 0.98 - scoreDiff * 0.005) : 0.96 - uIdx * 0.03;
-
+  // 8. Document Chunk Extraction from local curated catalogs
+  matchedUniversities.forEach((u) => {
     // Admission & Budget Chunk
     citationChunks.push({
       id: `chunk-${u.id}-admission`,
-      source: 'ФИС ГИА: Официальный реестр проходных баллов 2026',
+      source: 'Локальный каталог Вузопедии: Справочные проходные баллы прошлых лет',
       title: `${u.shortName} (${u.fullName}) • Бюджетные места и конкурс`,
-      snippet: `Минимальный проходной балл на бюджет: ${u.minBudgetScore}. Выделено бюджетных мест: ${u.totalBudgetPlaces}. Стоимость платного обучения от ${u.minAnnualFee.toLocaleString()} ₽/год. Город: ${u.city}${u.metro ? ', метро ' + u.metro : ''}.`,
-      relevanceScore: Math.round(baseRelevance * 100) / 100,
+      snippet: `Минимальный проходной балл на бюджет прошлых лет: ${u.minBudgetScore}. Выделено бюджетных мест: ${u.totalBudgetPlaces}. Стоимость платного обучения от ${u.minAnnualFee.toLocaleString()} ₽/год. Город: ${u.city}${u.metro ? ', метро ' + u.metro : ''}.`,
       category: 'university',
+      categoryLabel: 'Карточка вуза',
       metadata: {
         city: u.city,
         minScore: u.minBudgetScore,
         budgetPlaces: u.totalBudgetPlaces,
         annualFee: u.minAnnualFee,
-        tags: [u.city, 'Бюджет 2026', `Топ #${u.ratingRank}`],
+        tags: [u.city, 'Бюджет прошлых лет', `Топ #${u.ratingRank}`],
       },
       vuzId: u.id,
     });
@@ -489,13 +460,13 @@ export function retrieveRAGContext(
     if (wantsMilitary || u.hasMilitaryDept) {
       citationChunks.push({
         id: `chunk-${u.id}-vuc`,
-        source: 'Минобороны РФ: Реестр ВУЦ при высших учебных заведениях',
+        source: 'Справочник Военных учебных центров (ВУЦ) Вузопедии',
         title: `${u.shortName} • Военный учебный центр (ВУЦ)`,
         snippet: u.hasMilitaryDept
-          ? `Военный учебный центр аккредитован. Программы подготовки офицеров и сержантов запаса. Студенты освобождаются от прохождения срочной службы по призыву.`
-          : `В данном вузе военный учебный центр отсутствует. Предоставляется стандартная академическая отсрочка по ст. 24 ФЗ-53.`,
-        relevanceScore: u.hasMilitaryDept ? 0.94 : 0.65,
+          ? `Военный учебный центр действует. Программы подготовки офицеров и сержантов запаса. Студенты освобождаются от прохождения срочной службы по призыву при успешном окончании.`
+          : `В данном вузе военный учебный центр отсутствует. Предоставляется стандартная академическая отсрочка по ст. 24 ФЗ-53 на время обучения.`,
         category: 'military',
+        categoryLabel: 'Военный учебный центр',
         metadata: {
           hasMilitary: u.hasMilitaryDept,
           tags: ['ВУЦ', 'Офицер запаса'],
@@ -508,13 +479,13 @@ export function retrieveRAGContext(
     if (wantsDorm || u.hasDormitory) {
       citationChunks.push({
         id: `chunk-${u.id}-dorm`,
-        source: 'Справочник студенческих общежитий РФ 2026',
+        source: 'Справочник студенческих общежитий Вузопедии',
         title: `${u.shortName} • Общежития и проживание`,
         snippet: u.hasDormitory
-          ? `Студенческий кампус предоставляет места иногородним первокурсникам очной формы. Стоимость от ${u.dormitoryInfo?.costMonth || 1200} ₽/месяц.`
-          : `Вуз не располагает собственным общежитием. Рекомендуется аренда партнерских апартаментов.`,
-        relevanceScore: u.hasDormitory ? 0.92 : 0.6,
+          ? `Студенческий кампус предоставляет места иногородним первокурсникам очной формы. Ориентировочная стоимость от ${u.dormitoryInfo?.costMonth || 1200} ₽/месяц.`
+          : `Вуз не располагает собственным общежитием. Рекомендуется поиск партнерского или коммерческого жилья.`,
         category: 'dorm',
+        categoryLabel: 'Студенческое общежитие',
         metadata: {
           hasDorm: u.hasDormitory,
           tags: ['Общежитие', 'Кампус'],
@@ -524,15 +495,15 @@ export function retrieveRAGContext(
     }
   });
 
-  // Additional Special Regs Chunks
+  // Additional Special Reference Chunks
   if (wantsOlympiads) {
     citationChunks.push({
       id: 'chunk-reg-olympiads',
-      source: 'РСОШ: Порядок проведения олимпиад школьников 2026',
+      source: 'Справочник олимпиад школьников и порядка БВИ Вузопедии',
       title: 'Правила льготы БВИ и подтверждение 75 баллов ЕГЭ',
-      snippet: 'Дипломы олимпиад РСОШ 1–3 уровней дают льготу БВИ при подтверждении предметом ЕГЭ на 75+ баллов. Диплом победителя/призера ВсОШ дает безусловное зачисление БВИ.',
-      relevanceScore: 0.98,
+      snippet: 'Дипломы олимпиад РСОШ 1–3 уровней дают льготу БВИ при подтверждении профильным предметом ЕГЭ на 75+ баллов. Диплом победителя/призера заключительного этапа ВсОШ дает безусловное зачисление БВИ.',
       category: 'olympiad',
+      categoryLabel: 'Олимпиады и БВИ',
       metadata: { tags: ['БВИ', 'РСОШ', 'ВсОШ'] },
     });
   }
@@ -540,65 +511,65 @@ export function retrieveRAGContext(
   if (wantsFinance) {
     citationChunks.push({
       id: 'chunk-reg-credit',
-      source: 'Минобрнауки РФ & Сбербанк: Господдержка образовательного кредитования',
+      source: 'Справочник условий образовательного кредита с господдержкой (Сбербанк)',
       title: 'Условия кредита на образование под 3% годовых',
-      snippet: 'Льготная процентная ставка 3% годовых субсидируется государством. Во время обучения и 9 месяцев после выпуска выплачиваются только проценты. Основной долг гасится в течение 15 лет.',
-      relevanceScore: 0.97,
+      snippet: 'Льготная процентная ставка 3% годовых субсидируется государством. Во время обучения и 9 месяцев после выпуска выплачиваются только проценты. Основной долг выплачивается в течение 15 лет после выпуска.',
       category: 'credit',
+      categoryLabel: 'Образовательный кредит',
       metadata: { tags: ['Кредит 3%', 'Сбер', 'Господдержка'] },
     });
   }
 
-  // Calculate Overall Grounding Confidence (RAGFlow)
-  const avgRelevance =
-    citationChunks.reduce((acc, c) => acc + c.relevanceScore, 0) / (citationChunks.length || 1);
-  const groundingConfidence = Math.min(99, Math.max(75, Math.round(avgRelevance * 100)));
-
-  // 9. Compute Probability Gauge
+  // 9. Qualitative Comparative Assessment (NO invented probabilities)
   let probability: AdmissionProbability | undefined;
-  if (userScore) {
-    const avgThreshold = matchedUniversities.reduce((acc, u) => acc + u.minBudgetScore, 0) / (matchedUniversities.length || 1);
-    if (userScore >= avgThreshold + 8) {
+  if (userScore && matchedUniversities.length > 0) {
+    const avgThreshold = Math.round(
+      matchedUniversities.reduce((acc, u) => acc + u.minBudgetScore, 0) / matchedUniversities.length
+    );
+    const diff = userScore - avgThreshold;
+    if (diff >= 8) {
       probability = {
-        percentage: 94,
         level: 'high',
-        label: 'Высокая вероятность поступления (Безопасная зона)',
-        description: `Твой балл (${userScore}) превышает минимальные проходные пороги рекомендованных вузов с комфортным запасом (+8...15 баллов).`,
+        label: 'Балл выше минимального проходного прошлых лет',
+        description: `Сумма баллов (${userScore}) превышает средний проходной балл выбранных вузов прошлых лет (~${avgThreshold} б.) с комфортным запасом (+${diff} б.). Обратите внимание: конкурс 2026 года формируется заново.`,
+        scoreDiff: diff,
+        referenceCutoff: avgThreshold,
       };
-    } else if (userScore >= avgThreshold - 8) {
+    } else if (diff >= -8) {
       probability = {
-        percentage: 65,
         level: 'medium',
-        label: 'Пограничный конкурс (Жёлтая зона)',
-        description: `Твой балл (${userScore}) находится в зоне плотной конкуренции. Обязательно используй запасные варианты и отслеживай согласие на зачисление.`,
+        label: 'Балл в зоне плотной конкуренции',
+        description: `Сумма баллов (${userScore}) находится близко к среднему проходному баллу прошлых лет (~${avgThreshold} б., разница ${diff >= 0 ? '+' : ''}${diff} б.). Рекомендуется подавать документы и в запасные вузы с меньшим порогом.`,
+        scoreDiff: diff,
+        referenceCutoff: avgThreshold,
       };
     } else {
       probability = {
-        percentage: 28,
         level: 'low',
-        label: 'Высокий риск не пройти на бюджет (Красная зона)',
-        description: `Твой балл (${userScore}) ниже среднего проходного (${Math.round(avgThreshold)}). Рекомендуем рассмотреть целевое обучение от предприятий, кредит 3% от Сбера или сильные региональные вузы.`,
+        label: 'Балл ниже проходного порога прошлых лет',
+        description: `Сумма баллов (${userScore}) ниже среднего проходного балла прошлых лет (~${avgThreshold} б., отставание ${Math.abs(diff)} б.). Рекомендуем рассмотреть менее конкурентные специальности, целевой приём или платное обучение.`,
+        scoreDiff: diff,
+        referenceCutoff: avgThreshold,
       };
     }
   } else if (wantsIT) {
     probability = {
-      percentage: 78,
       level: 'medium',
-      label: 'Конкурсная ситуация IT-направлений 2026',
-      description: 'Средний балл на бюджет в ведущие IT-вузы колеблется от 270 до 298. Рекомендуется сдавать информатику и физику одновременно.',
+      label: 'Справочные пороги по IT-направлениям',
+      description: 'В ведущих вузах из каталога проходные баллы прошлых лет на IT-программы составляли 260–295 баллов. Укажите сумму баллов ЕГЭ для точного сопоставления.',
     };
   }
 
   reasoningTrace.push(
-    `4. Сформирована верифицированная справка: ${citationChunks.length} доказательных чанков с доверием RAG ${groundingConfidence}%.`
+    `4. Отобрано ${citationChunks.length} справочных фрагментов из локального каталога.`
   );
 
   // Evidence Text construction
   let evidenceLines: string[] = [];
-  evidenceLines.push('РЕКОМЕНДОВАННЫЕ ВУЗЫ ИЗ БАЗЫ ДАННЫХ ВУЗОПЕДИИ:');
+  evidenceLines.push('СПРАВОЧНЫЕ ДАННЫЕ ИЗ ЛОКАЛЬНОГО КАТАЛОГА ВУЗОПЕДИИ:');
   matchedUniversities.forEach((u) => {
     evidenceLines.push(
-      `• [vuz:${u.id}:${u.shortName}] (${u.fullName}): город ${u.city}${u.metro ? ', метро ' + u.metro : ''}. Проходной балл на бюджет: ${u.minBudgetScore}, мест на бюджете: ${u.totalBudgetPlaces}, платное от ${u.minAnnualFee.toLocaleString()} ₽/год. Военный центр (ВУЦ): ${u.hasMilitaryDept ? 'Есть (офицер/сержант запаса)' : 'Нет'}. Общежитие: ${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}.`
+      `• [vuz:${u.id}:${u.shortName}] (${u.fullName}): город ${u.city}${u.metro ? ', метро ' + u.metro : ''}. Проходной балл на бюджет прошлых лет: ${u.minBudgetScore}, мест на бюджете: ${u.totalBudgetPlaces}, платное от ${u.minAnnualFee.toLocaleString()} ₽/год. Военный учебный центр (ВУЦ): ${u.hasMilitaryDept ? 'Есть' : 'Нет'}. Общежитие: ${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}.`
     );
   });
 
@@ -614,54 +585,54 @@ export function retrieveRAGContext(
   // Domain supplements
   let suggestedActionTab = 'catalog';
   let suggestedActionLabel = 'Открыть каталог вузов';
-  let toolName = 'Аналитический модуль Вузопедия RAG';
-  let toolQuery = `Поиск вузов: город=${targetCity || 'все'}, IT=${wantsIT}, ВУЦ=${wantsMilitary}, Баллы=${userScore || 'не указаны'}`;
+  let toolName = 'Поиск по локальному каталогу Вузопедии';
+  let toolQuery = `Параметры: город=${targetCity || 'все'}, IT=${wantsIT}, ВУЦ=${wantsMilitary}, баллы=${userScore || 'не указаны'}`;
 
   if (isComparisonQuery) {
     suggestedActionTab = 'comparison';
     suggestedActionLabel = 'Сравнить вузы детально';
-    toolName = 'Модуль сравнительного анализа вузов РФ';
-    toolQuery = `Сравнение вузов: ${matchedUniversities.map((u) => u.shortName).join(' vs ')}`;
+    toolName = 'Сравнительная таблица вузов каталога';
+    toolQuery = `Сравнение: ${matchedUniversities.map((u) => u.shortName).join(' vs ')}`;
   } else if (wantsIT) {
     suggestedActionTab = 'programs';
     suggestedActionLabel = 'Смотреть IT-программы вузов';
-    toolName = 'Реестр программ IT и программной инженерии';
+    toolName = 'Каталог образовательных программ IT';
     toolQuery = 'Выборка направлений 09.03.01, 09.03.04, 01.03.02';
   } else if (wantsMilitary) {
     suggestedActionTab = 'military';
     suggestedActionLabel = 'Открыть реестр ВУЦ и нормативы';
-    toolName = 'База Военных учебных центров Минобороны РФ';
-    toolQuery = 'Вузы с программами офицеров и сержантов запаса';
-    evidenceLines.push('ИНФОРМАЦИЯ О ВУЦ: Военный учебный центр освобождает от срочной службы. Нормативы: подтягивания от 10 раз, бег 100м до 14.2с, кросс 3км до 13 мин.');
+    toolName = 'Справочник Военных учебных центров (ВУЦ)';
+    toolQuery = 'Вузы с программами подготовки офицеров и сержантов запаса';
+    evidenceLines.push('СПРАВКА О ВУЦ: Военный учебный центр освобождает от срочной службы при успешном завершении обучения. Нормативы: подтягивания от 10 раз, бег 100м до 14.2с, кросс 3км до 13 мин.');
   } else if (wantsDorm) {
     suggestedActionTab = 'dorms';
     suggestedActionLabel = 'Перейти в каталог общежитий';
-    toolName = 'Справочник студенческих общежитий РФ';
-    toolQuery = 'Фильтр по 100% гарантии для 1 курса и стоимости';
-    evidenceLines.push('ИНФОРМАЦИЯ ОБ ОБЩЕЖИТИЯХ: Первокурсникам-бюджетникам в топ-вузах место гарантировано. Стоимость в МГУ/Бауманке от 850 до 1 400 ₽/мес, в ВШЭ ~2 100 ₽/мес.');
+    toolName = 'Справочник студенческих общежитий';
+    toolQuery = 'Общежития для студентов 1 курса и стоимость проживания';
+    evidenceLines.push('СПРАВКА ОБ ОБЩЕЖИТИЯХ: Первокурсникам-бюджетникам место предоставляется в порядке очередности. Стоимость в МГУ/Бауманке от 850 до 1 400 ₽/мес, в ВШЭ ~2 100 ₽/мес.');
   } else if (wantsOlympiads) {
     suggestedActionTab = 'olympiads';
     suggestedActionLabel = 'Открыть навигатор Олимпиад и БВИ';
-    toolName = 'Перечень олимпиад РСОШ и реестр БВИ';
-    toolQuery = 'Правила подтверждения 75+ баллов ЕГЭ';
-    evidenceLines.push('ПРАВИЛА БВИ: Дипломы олимпиад РСОШ 1–3 уровней требуют подтверждения профильным ЕГЭ на 75+ баллов. ВсОШ даёт безусловное БВИ без подтверждения.');
+    toolName = 'Справочник олимпиад РСОШ и льгот БВИ';
+    toolQuery = 'Правила подтверждения льготы 75+ баллами профильного ЕГЭ';
+    evidenceLines.push('ПРАВИЛА БВИ: Дипломы олимпиад РСОШ 1–3 уровней требуют подтверждения профильным ЕГЭ на 75+ баллов. ВсОШ даёт безусловное право БВИ без подтверждения.');
   } else if (wantsFinance) {
     suggestedActionTab = 'credit';
     suggestedActionLabel = 'Рассчитать кредит 3% в Симуляторе';
-    toolName = 'Симулятор образовательного кредита 3%';
-    toolQuery = 'Субсидированная ставка Сбера с 15-летним сроком';
-    evidenceLines.push('КРЕДИТ С ГОСПОДДЕРЖКОЙ: Фиксированная ставка 3% годовых. Во время учёбы платятся только проценты (~150–600 ₽/мес). Выплата основного долга — в течение 15 лет после выпуска.');
+    toolName = 'Калькулятор образовательного кредита 3%';
+    toolQuery = 'Льготный образовательный кредит с господдержкой (Сбербанк)';
+    evidenceLines.push('КРЕДИТ С ГОСПОДДЕРЖКОЙ: Фиксированная ставка 3% годовых. Во время учёбы выплачиваются только проценты (~150–600 ₽/мес). Выплата основного долга — в течение 15 лет после выпуска.');
   } else if (q.includes('медал') || q.includes('гто') || q.includes('достижен')) {
     suggestedActionTab = 'achievements';
     suggestedActionLabel = 'Калькулятор достижений (+10 баллов)';
-    toolName = 'Калькулятор индивидуальных достижений (ФЗ-273)';
-    toolQuery = 'Суммарный лимит +10 баллов за медали, ГТО и волонтерство';
+    toolName = 'Справочник индивидуальных достижений (ФЗ-273)';
+    toolQuery = 'Учет медалей, знаков ГТО и волонтерства (до +10 баллов к ЕГЭ)';
     evidenceLines.push('ИНДИВИДУАЛЬНЫЕ ДОСТИЖЕНИЯ: Максимум +10 баллов к ЕГЭ суммарно. Золотая медаль: 5–10 баллов, знак ГТО: 2–5 баллов, волонтёрство: 1–4 балла.');
   } else if (userScore) {
     suggestedActionTab = 'calculator';
     suggestedActionLabel = 'Открыть Калькулятор шансов ЕГЭ';
-    toolName = 'Калькулятор шансов поступления (ФИС ГИА)';
-    toolQuery = `Распределение программ по конкурсу для суммы: ${userScore} баллов`;
+    toolName = 'Сопоставление баллов с порогом каталога';
+    toolQuery = `Сравнение с проходными баллами прошлых лет для суммы: ${userScore} баллов`;
   }
 
   // Check for Strategy / Roadmap / Checklist Artifact
@@ -689,9 +660,9 @@ export function retrieveRAGContext(
         { stepNumber: 2, title: 'Электронная подача через Госуслуги', description: 'Заполнение заявления единым пакетом с расстановкой приоритетов от 1 до 5.', status: 'in_progress' },
         { stepNumber: 3, title: 'Финальный выбор по оригиналам', description: '3 августа оценивайте только абитуриентов, подавших оригинал. Не пугайтесь общего списка копий!', status: 'pending' },
       ],
-      markdownContent: `## Стратегия гарантированного поступления на бюджет 2026\n\n1. **Правило запасного аэродрома:** средний проходной балл запасного вуза должен быть минимум на 15 пунктов ниже вашей суммы.\n2. **Приоритеты:** зачисление происходит строго по наивысшему приоритету, на который вы проходите по конкурсу среди подавших оригинал.\n3. **Оригинал:** электронная отметка на Госуслугах юридически полностью эквивалентна бумажному аттестату.`,
+      markdownContent: `## Стратегия поступления на бюджет 2026\n\n1. **Правило запасного варианта:** средний проходной балл запасного вуза должен быть минимум на 15 пунктов ниже вашей суммы.\n2. **Приоритеты:** зачисление происходит строго по наивысшему приоритету, на который вы проходите по конкурсу среди подавших оригинал.\n3. **Оригинал:** электронная отметка на Госуслугах юридически полностью эквивалентна бумажному аттестату.`,
     };
-    reasoningTrace.push('3. Сформирован интерактивный артефакт: Персональный чек-лист и дорожная карта поступления 2026.');
+    reasoningTrace.push('3. Сформирован пошаговый чек-лист и дорожная карта поступления.');
   }
 
   const followUps = generateDynamicFollowUps(q, matchedUniversities, userScore, isComparisonQuery);
@@ -713,7 +684,6 @@ export function retrieveRAGContext(
     followUps,
     citationChunks,
     extractedFilters,
-    groundingConfidence,
     artifact,
   };
 }
@@ -780,34 +750,30 @@ function generateDynamicFollowUps(
   }
 
   return [
-    'Как рассчитать точные шансы по сумме баллов трёх предметов ЕГЭ?',
+    'Как сопоставить баллы с проходными порогами прошлых лет?',
     'В каких вузах первокурсникам гарантируют общежитие?',
     'Как получить максимальные +10 баллов за индивидуальные достижения?',
   ];
 }
 
-const SYSTEM_INSTRUCTION_BASE = `Ты — Дед Вузопед, авторитетный, проницательный и дружелюбный AI-наставник всероссийского портала Вузопедия (vuzopedia.ru) по приёмной кампании 2026 года.
-Твоя цель — дать абитуриенту или родителю исчерпывающий, структурированный, математически точный и практически применимый ответ.
+const SYSTEM_INSTRUCTION_BASE = `Ты — Дед Вузопед, доброжелательный консультант портала Вузопедия (vuzopedia.ru) по приёмной кампании 2026 года.
+Твоя цель — дать абитуриенту или родителю ясный, структурированный, честный и практически применимый ответ.
 
-АРХИТЕКТУРНЫЕ ПРАВИЛА ОТВЕТА (Стандарты Perplexity & Gemini Flash):
-1. **Прямой ответ сразу**: Начинай с 1–2 ёмких предложений с прямым выводом по сути запроса. Никаких шаблонных вводных слов («Конечно, с удовольствием помогу вам в этом вопросе»).
-2. **Сканируемая структура**:
-   - Используй чёткие заголовки разделов (##, ### до 5 слов).
-   - Выделяй ключевые цифры, пороги и вузы **жирным шрифтом**.
-   - Не делай вложенные списки глубже одного уровня.
-3. **Сравнительные таблицы**:
-   - При сравнении двух и более вузов или направлений ОБЯЗАТЕЛЬНО формируй Markdown таблицу (| Критерий | Вуз 1 | Вуз 2 |).
-4. **Инлайн-цитирование вузов (Citations)**:
-   - При упоминании вузов используй строгий формат токенов: [vuz:<id>:<КраткоеНазвание>], например: [vuz:mgu:МГУ], [vuz:hse:НИУ ВШЭ], [vuz:bmstu:МГТУ им. Баумана], [vuz:mirea:РТУ МИРЭА], [vuz:itmo:ИТМО].
-5. **Честность и анти-поддакивание (Anti-Sycophancy)**:
-   - Если баллов абитуриента статистически недостаточно для бюджета в выбранный вуз, скажи об этом прямо и тактично.
-   - Оцени разрыв в баллах и СРАЗУ предложи альтернативные пути: целевую квоту от предприятий, скидки до 70% на платном, льготный кредит 3% от Сбера или сильные региональные университеты.
-6. **Правила приёма 2026 года в РФ**:
-   - БВИ (Без вступительных испытаний) по олимпиадам РСОШ 1–3 уровней требует подтверждения профильным ЕГЭ на 75+ баллов. ВсОШ не требует подтверждения.
-   - Льготный образовательный кредит с господдержкой (Сбербанк): фиксированная ставка 3% годовых, льготный период во время учёбы + 9 месяцев, срок погашения до 15 лет.
-   - Дополнительные баллы к ЕГЭ за индивидуальные достижения (ФЗ-273): суммарно максимум +10 баллов (золотая/серебряная медаль, знак ГТО своей возрастной ступени, волонтёрская книжка, итоговое сочинение).
-   - Военные учебные центры (ВУЦ): офицер/сержант запаса без срочной службы.
-   - Общежития: гарантия для очников-бюджетников, стоимость от 800 до 2500 руб/мес.
+ВАЖНЫЕ ПРАВИЛА ЧЕСТНОСТИ И ТОЧНОСТИ:
+1. **Строго по фактам**:
+   - Опирайся на переданный контекст из локальной базы данных Вузопедии.
+   - Если информации о каком-то конкретном вузе, направлении или общежитии нет в переданном контексте, прямо и честно скажи: «В моей локальной базе нет подробных данных по этому запросу». Не выдумывай несуществующие баллы, кафедры или правила.
+   - Не заявляй, что у тебя есть доступ к «онлайн-выгрузке ФИС ГИА в реальном времени» или «живому поиску в интернете». Твои данные — это справочный каталог вузов и правила приёма прошлых лет.
+2. **Проходные баллы — это ориентир, а не гарантия**:
+   - Ясно поясняй, что проходные баллы из базы — это минимальные баллы зачисленных на бюджет в прошлые приёмные кампании. Конкурс 2026 года зависит от реального числа поданных заявлений.
+3. **Прямой ответ сразу**:
+   - Начинай с 1–2 ёмких предложений с прямым выводом по сути вопроса. Избегай пустых шаблонных вступлений.
+4. **Сравнительные таблицы**:
+   - При сравнении двух и более вузов формируй Markdown таблицу (| Критерий | Вуз 1 | Вуз 2 |).
+5. **Инлайн-ссылки на вузы**:
+   - Используй строгий формат токенов: [vuz:<id>:<КраткоеНазвание>], например: [vuz:mgu:МГУ], [vuz:hse:НИУ ВШЭ], [vuz:bmstu:МГТУ им. Баумана], [vuz:mirea:РТУ МИРЭА], [vuz:itmo:ИТМО].
+6. **Конструктивная поддержка**:
+   - Если баллов недостаточно для бюджета в выбранный вуз, прямо скажи об этом и предложи альтернативные варианты: запасные вузы, целевое обучение, льготный кредит 3% или скидки на платном отделении.
 7. **Инструменты и действия в конце ответа**:
    [TOOL: <Название инструмента> | <Краткий поисковый запрос/база данных>]
    [ACTION: <tab_id> | <Название кнопки>]
@@ -826,30 +792,34 @@ const SYSTEM_INSTRUCTION_BASE = `Ты — Дед Вузопед, авторит�
 - catalog (Каталог вузов России)`;
 
 /**
- * Ask Gemini Agentic RAG Assistant with Grounding & Fallback
+ * Query Ded Vuzoped Assistant with honest model mode reporting
  */
 export async function queryDedAssistant(
   prompt: string,
   history: Array<{ sender: 'ded' | 'user'; text: string }> = [],
   mode: SpecialistMode = 'all',
-  scope: RAGScopeFilter = 'all',
-  useWebSearch: boolean = false
+  scope: RAGScopeFilter = 'all'
 ): Promise<GeneratedAssistantResponse> {
   const startTime = performance.now();
   const apiKey = getStoredApiKey();
 
-  // Step 1: Agentic RAG Retrieval & Intent Analysis
-  const rag = retrieveRAGContext(prompt, mode, scope, useWebSearch);
+  // Step 1: Retrieval & Intent Analysis against local database
+  const rag = retrieveRAGContext(prompt, mode, scope);
+
+  // If no API key configured, use local engine immediately without network lag
+  if (!apiKey || !apiKey.trim()) {
+    return queryLocalFallbackEngine(prompt, startTime, rag);
+  }
 
   const augmentedSystemInstruction = `${SYSTEM_INSTRUCTION_BASE}
 
-АКТУАЛЬНЫЙ КОНТЕКСТ ИЗ БАЗЫ ДАННЫХ ВУЗОПЕДИИ (RAG ${rag.groundingConfidence}%):
+СПРАВОЧНЫЙ КОНТЕКСТ ИЗ ЛОКАЛЬНОГО КАТАЛОГА ВУЗОПЕДИИ:
 ${rag.evidence}
 
-Используй эти точные факты, баллы, таблицы и инлайн-ссылки [vuz:id:Name] в ответе!`;
+Используй эти факты, баллы, таблицы и инлайн-ссылки [vuz:id:Name] в ответе! Если данных недостаточно для ответа на вопрос, честно сообщи об этом.`;
 
-  // Step 2: Try Gemini 3.5 Flash, then Gemini 3.5 Flash Lite
-  const modelsToTry = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+  // Step 2: Try Gemini API
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash'];
 
   for (const model of modelsToTry) {
     let timeoutId: any = null;
@@ -868,7 +838,7 @@ ${rag.evidence}
       ];
 
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 3500);
+      timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const res = await fetch(url, {
         method: 'POST',
@@ -878,7 +848,7 @@ ${rag.evidence}
           systemInstruction: { parts: [{ text: augmentedSystemInstruction }] },
           contents,
           generationConfig: {
-            temperature: 0.35,
+            temperature: 0.3,
             maxOutputTokens: 1200,
           },
         }),
@@ -933,7 +903,6 @@ ${rag.evidence}
           comparisonMatrix: rag.comparisonMatrix,
           citationChunks: rag.citationChunks,
           extractedFilters: rag.extractedFilters,
-          groundingConfidence: rag.groundingConfidence,
           modelUsed: 'gemini',
           matchedUniversities: rag.matchedUniversities,
           reasoningTrace: rag.reasoningTrace,
@@ -952,7 +921,7 @@ ${rag.evidence}
 }
 
 /**
- * Local Grounded Fallback Engine incorporating RAG evidence, Open-WebUI chunks & Dify filters
+ * Local Grounded Engine relying exclusively on curated database records
  */
 function queryLocalFallbackEngine(
   query: string,
@@ -965,50 +934,51 @@ function queryLocalFallbackEngine(
 
   if (rag.isUnderspecified && rag.clarificationOptions) {
     reply =
-      `Чтобы точно оценить шансы и подобрать вуз без гаданий, мне необходимы 2 ключевых параметра:\n\n` +
-      `1. **Твои предметы ЕГЭ и примерная сумма баллов** (или победы в олимпиадах)\n` +
-      `2. **Желаемый город или профиль** (IT, инженерия, экономика, медицина)\n\n` +
-      `Выбери один из готовых сценариев ниже или напиши свои баллы:`;
+      `Чтобы подобрать подходящие варианты из каталога вузов, укажите ключевые параметры:\n\n` +
+      `1. **Ваши предметы ЕГЭ и примерную сумму баллов**\n` +
+      `2. **Желаемый город или направление обучения** (IT, инженерия, экономика и др.)\n\n` +
+      `Вы можете выбрать один из готовых сценариев ниже либо ввести свои баллы:`;
   } else if (rag.isComparison && rag.comparisonMatrix && rag.matchedUniversities.length >= 2) {
     const v1 = rag.matchedUniversities[0];
     const v2 = rag.matchedUniversities[1];
     reply =
-      `## Сравнительный анализ: [vuz:${v1.id}:${v1.shortName}] против [vuz:${v2.id}:${v2.shortName}]\n\n` +
-      `Оба университета входят в высшую лигу высшего образования РФ. Вот ключевое сопоставление по базе 2026 года:\n\n` +
+      `## Сравнительный анализ: [vuz:${v1.id}:${v1.shortName}] vs [vuz:${v2.id}:${v2.shortName}]\n\n` +
+      `Сравнение на основе данных локального каталога Вузопедии:\n\n` +
       `| Критерий | ${v1.shortName} | ${v2.shortName} |\n` +
       `|---|---|---|\n` +
       rag.comparisonMatrix.rows.map((r) => `| ${r.criterion} | ${r.values[0]} | ${r.values[1]} |`).join('\n') +
       `\n\n` +
-      `### Резюме Деда Вузопеда:\n` +
-      `• Если в приоритете фундаментальная академическая подготовка и научные школы — выбирай **[vuz:${v1.id}:${v1.shortName}]**.\n` +
-      `• Если важны проектная деятельность, гибкие образовательные треки и прямые стажировки в индустрии — отличным выбором станет **[vuz:${v2.id}:${v2.shortName}]**.`;
+      `### Справочный вывод:\n` +
+      `• **[vuz:${v1.id}:${v1.shortName}]**: минимальный проходной балл прошлых лет от ${v1.minBudgetScore} б., бюджетных мест: ${v1.totalBudgetPlaces}.\n` +
+      `• **[vuz:${v2.id}:${v2.shortName}]**: минимальный проходной балл прошлых лет от ${v2.minBudgetScore} б., бюджетных мест: ${v2.totalBudgetPlaces}.\n\n` +
+      `*Примечание: приведены ориентировочные проходные баллы прошлых лет. Актуальные условия приёма 2026 года уточняйте на сайтах приёмных комиссий.*`;
   } else if (rag.matchedUniversities.length > 0) {
     reply =
-      `## Аналитический отчёт по твоему запросу\n\n` +
-      `По результатам сверки с базой данных 2026 года рекомендую обратить внимание на следующие ключевые вузы:\n\n` +
+      `## Результаты подбора по локальному каталогу\n\n` +
+      `По вашим критериям в каталоге найдены следующие университеты:\n\n` +
       rag.matchedUniversities
         .map(
           (u, idx) =>
             `${idx + 1}. **[vuz:${u.id}:${u.shortName}]** (${u.city}):\n` +
-            `   • Проходной балл на бюджет: **от ${u.minBudgetScore} б.**\n` +
+            `   • Минимальный проходной балл прошлых лет: **от ${u.minBudgetScore} б.**\n` +
             `   • Бюджетных мест: **${u.totalBudgetPlaces}**\n` +
-            `   • Военный учебный центр (ВУЦ): **${u.hasMilitaryDept ? 'Есть (офицер/сержант запаса)' : 'Нет'}**\n` +
+            `   • Военный учебный центр (ВУЦ): **${u.hasMilitaryDept ? 'Есть' : 'Нет'}**\n` +
             `   • Общежитие: **${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}**`
         )
         .join('\n\n') +
-      `\n\n**Совет Деда Вузопеда:** подавай заявления в 5 вузов по 5 направлений, используя запасные варианты с проходными баллами на 10–15 пунктов ниже твоих результатов!`;
+      `\n\n💡 **Рекомендация:** для гарантированного поступления распределяйте 5 заявлений на 3 уровня: вузы мечты, реалистичные варианты и надежный запасной вуз с проходным баллом на 15–20 пунктов ниже вашей суммы.`;
   } else {
     reply =
-      `Я проанализировал твой запрос «${query}». Чтобы поступление прошло без стресса и с максимальным результатом, рекомендую:\n\n` +
-      '1. **Оценить шансы** в интерактивном Калькуляторе ЕГЭ\n' +
-      '2. **Пройти профориентационные тесты**, если ещё выбираешь специальность\n' +
-      '3. **Сверить ключевые даты** в Календаре абитуриента 2026 года\n' +
-      '4. **Проверить выбранные вузы** в Чёрном списке на предмет лишения аккредитации.\n\n' +
-      'Какой конкретный вопрос о вузах или экзаменах тебя интересует?';
+      `В локальной выборке ассистента представлены 10 ведущих университетов России (МГУ, НИУ ВШЭ, МГТУ им. Баумана, МФТИ, НИЯУ МИФИ, ИТМО, СПбГУ, РТУ МИРЭА, РАНХиГС, НИУ МЭИ).\n\n` +
+      `По запросу «${query}» точных совпадений среди них не обнаружено (вуз или регион не входит в текущую локальную выборку).\n\n` +
+      `Что можно сделать:\n` +
+      `1. Перейти во вкладку **«Каталог вузов»** для просмотра полного каталога университетов России\n` +
+      `2. Воспользоваться **«Калькулятором ЕГЭ»** для подбора программ по предметам и баллам\n` +
+      `3. Задать вопрос об одном из вузов локальной базы (например, «Какие проходные баллы в МГТУ им. Баумана?»).`;
   }
 
   if (rag.artifact) {
-    reply += '\n\n💡 *Я сформировал для тебя интерактивный артефакт поступления. Нажми кнопку «Интерактивный артефакт» ниже, чтобы открыть панель задач и чек-лист.*';
+    reply += '\n\n📋 *Сформирован интерактивный чек-лист абитуриента. Нажмите кнопку «Открыть холст» ниже для просмотра дорожной карты.*';
   }
 
   return {
@@ -1016,7 +986,7 @@ function queryLocalFallbackEngine(
     toolCall: {
       name: rag.toolName,
       query: rag.toolQuery,
-      duration: `${durationMs || 120}ms`,
+      duration: `${durationMs || 10}ms`,
       status: 'complete',
     },
     actionTab: rag.suggestedActionTab,
@@ -1027,7 +997,6 @@ function queryLocalFallbackEngine(
     comparisonMatrix: rag.comparisonMatrix,
     citationChunks: rag.citationChunks,
     extractedFilters: rag.extractedFilters,
-    groundingConfidence: rag.groundingConfidence,
     modelUsed: 'local',
     matchedUniversities: rag.matchedUniversities,
     reasoningTrace: rag.reasoningTrace,

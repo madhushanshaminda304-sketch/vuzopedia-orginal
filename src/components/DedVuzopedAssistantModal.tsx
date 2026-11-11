@@ -77,7 +77,7 @@ interface DedVuzopedAssistantModalProps {
 interface ToolCall {
   name: string;
   query: string;
-  duration: string;
+  duration?: string;
   status: 'running' | 'complete' | 'error';
 }
 
@@ -88,7 +88,6 @@ export interface ChatSession {
   messages: AssistantMessage[];
   activeMode: SpecialistMode;
   activeScope: RAGScopeFilter;
-  useWebSearch: boolean;
 }
 
 interface AssistantMessage {
@@ -105,7 +104,6 @@ interface AssistantMessage {
   comparisonMatrix?: ComparisonMatrix;
   citationChunks?: RetrievedCitationChunk[];
   extractedFilters?: ExtractedQueryFilters;
-  groundingConfidence?: number;
   modelUsed?: 'gemini' | 'local';
   feedback?: 'like' | 'dislike' | null;
   matchedUniversities?: University[];
@@ -124,36 +122,35 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     {
       id: 'msg-welcome',
       sender: 'ded',
-      text: 'Здравствуй, будущий студент! Я **Дед Вузопед** — твой персональный AI-консультант по приёмной кампании 2026 года на базе нейросети **Gemini 3.5 Flash**.\n\nЯ знаю всё о проходных баллах, общежитиях, военных кафедрах (ВУЦ), олимпиадах БВИ, льготном кредите 3% и доп. баллах к ЕГЭ. Спроси меня о любом вузе, сравни программы или укажи свои баллы для расчёта шансов!',
+      text: 'Здравствуй, будущий студент! Я **Дед Вузопед** — твой консультант по приёмной кампании 2026 года.\n\nВ моей локальной базе собраны сведения о ведущих университетах России: ориентировочные проходные баллы прошлых лет, наличие общежитий и военных учебных центров (ВУЦ), правила олимпиад БВИ и условия льготного кредита 3%.\n\nПри подключенном ключе Gemini ответы формулируются нейросетью с опорой на каталог, а в офлайн-режиме — напрямую из локального справочника. Спроси меня о вузах, сравни программы или введи свои баллы ЕГЭ!',
       timestamp: 'Только что',
-      modelUsed: 'gemini',
+      modelUsed: 'local',
       toolCall: {
-        name: 'База знаний приемной кампании РФ 2026',
-        query: 'Инициализация контекста: 1 200+ вузов, 11 предметов ЕГЭ, регламенты Минобрнауки',
-        duration: '60ms',
+        name: 'Локальная база вузов и справочников приёма 2026',
+        query: 'Загрузка каталога: 10 ведущих университетов РФ, правила ВУЦ, общежитий и олимпиад',
+        duration: '10ms',
         status: 'complete',
       },
       suggestions: [
-        'Как оценить мои шансы по баллам ЕГЭ?',
+        'Как сопоставить баллы с проходными прошлых лет?',
         'Сравни МГУ и ВШЭ по направлению IT',
         'Какие лучшие IT-вузы в Москве и СПб?',
         'Где есть военная кафедра (ВУЦ)?',
       ],
       followUps: [
-        'Как оценить мои шансы по баллам ЕГЭ?',
+        'Как сопоставить баллы с проходными прошлых лет?',
         'Сравни МГУ и ВШЭ по направлению IT',
         'Сколько баллов даёт золотая медаль и ГТО?',
       ],
-      groundingConfidence: 98,
       citationChunks: [
         {
           id: 'chunk-welcome-1',
-          source: 'Минобрнауки РФ: Порядок приёма в вузы 2026',
-          title: 'Официальный регламент приёмной кампании',
-          snippet: 'Приёмная кампания 2026 регламентирует подачу до 5 заявлений в 5 вузов через суперсервис Госуслуг и учёт до +10 баллов за индивидуальные достижения.',
-          relevanceScore: 0.98,
+          source: 'Локальный справочник правил приёма Вузопедии',
+          title: 'Порядок приёма и подача документов 2026',
+          snippet: 'Абитуриент вправе подать заявления максимум в 5 вузов (до 5 направлений в каждом). Электронная отметка о подаче оригинала на Госуслугах юридически эквивалентна бумажному оригиналу.',
           category: 'university',
-          metadata: { tags: ['Приказ Минобрнауки', 'Приём 2026'] },
+          categoryLabel: 'Правила приёма',
+          metadata: { tags: ['Правила приёма', 'Приём 2026', '5 вузов'] },
         },
       ],
     },
@@ -173,7 +170,6 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   });
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => `session-${Date.now()}`);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [useWebSearch, setUseWebSearch] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [activeArtifact, setActiveArtifact] = useState<AdmissionArtifact | null>(null);
 
@@ -187,7 +183,6 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const [expandedReasoningId, setExpandedReasoningId] = useState<string | null>(null);
   const [inspectedCitations, setInspectedCitations] = useState<{
     chunks: RetrievedCitationChunk[];
-    confidence: number;
   } | null>(null);
   const [isDictating, setIsDictating] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -292,7 +287,6 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       setMessages(target.messages);
       setActiveMode(target.activeMode || 'all');
       setActiveScope(target.activeScope || 'all');
-      setUseWebSearch(target.useWebSearch || false);
       setIsHistoryOpen(false);
     }
   };
@@ -446,15 +440,14 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
-    setCurrentToolRunning('RAG поиск в базе данных Вузопедии и гибридное ранжирование');
+    setCurrentToolRunning('Поиск по локальному каталогу вузов Вузопедии...');
 
     try {
       const response = await queryDedAssistant(
         text,
         messages.map((m) => ({ sender: m.sender, text: m.text })),
         activeMode,
-        activeScope,
-        useWebSearch
+        activeScope
       );
 
       const dedMsg: AssistantMessage = {
@@ -471,7 +464,6 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         comparisonMatrix: response.comparisonMatrix,
         citationChunks: response.citationChunks,
         extractedFilters: response.extractedFilters,
-        groundingConfidence: response.groundingConfidence,
         modelUsed: response.modelUsed,
         matchedUniversities: response.matchedUniversities,
         reasoningTrace: response.reasoningTrace,
@@ -497,7 +489,6 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           messages: updatedMessages,
           activeMode,
           activeScope,
-          useWebSearch,
         };
 
         if (existingIdx >= 0) {
@@ -688,11 +679,21 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     return elements;
   };
 
-  const getRelevanceBadgeColor = (percentage: number) => {
-    if (percentage >= 85) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300';
-    if (percentage >= 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300 border-yellow-300';
-    if (percentage >= 50) return 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-300';
-    return 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300';
+  const getCategoryBadgeClass = (category: string) => {
+    switch (category) {
+      case 'university':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300';
+      case 'military':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300';
+      case 'dorm':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300';
+      case 'olympiad':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300';
+      case 'credit':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300';
+      default:
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300';
+    }
   };
 
   const activeKey = getStoredApiKey();
@@ -722,34 +723,28 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
-                  Дед Вузопед AI
+                  Дед Вузопед
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  Gemini 3.5 Flash
-                </span>
+                {activeKey ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-300" />
+                    Режим: Google Gemini
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1">
+                    <Database className="w-3 h-3 text-blue-300" />
+                    Режим: Локальный каталог
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-300">
-                RAGFlow & Open-WebUI Архитектура • База ФИС ГИА 2026
+                Локальный каталог вузов и справочные правила приёма 2026
               </p>
             </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-1.5">
-            {/* Live Web Search Toggle (Perplexity Pro Web Mode) */}
-            <button
-              onClick={() => setUseWebSearch(!useWebSearch)}
-              className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${
-                useWebSearch
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-xs'
-                  : 'bg-white/10 hover:bg-white/20 text-white/80 border-white/15'
-              }`}
-              title={useWebSearch ? 'Поиск в реальном времени включён' : 'Включить поиск в реальном времени (Web Search)'}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{useWebSearch ? 'Live Web: ВКЛ' : 'Live Web'}</span>
-            </button>
 
             {/* Sessions History button (Open-WebUI / ChatGPT Sessions) */}
             <button
@@ -1023,9 +1018,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold truncate">
                           <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                           <span className="truncate">{m.toolCall.name}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-                            {m.toolCall.duration}
-                          </span>
+                          {m.toolCall.duration && (
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                              {m.toolCall.duration}
+                            </span>
+                          )}
                         </div>
                         {isToolExpanded ? (
                           <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
@@ -1047,7 +1044,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                     </div>
                   )}
 
-                  {/* Reasoning Trace Accordion (Agentic Reasoning & Grounding) */}
+                  {/* Reasoning Trace Accordion (Transparent Status Steps) */}
                   {m.reasoningTrace && m.reasoningTrace.length > 0 && (
                     <div className="rounded-2xl border border-indigo-100 dark:border-indigo-950/80 bg-indigo-50/50 dark:bg-indigo-950/20 text-xs overflow-hidden transition">
                       <button
@@ -1056,7 +1053,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                       >
                         <span className="flex items-center gap-1.5">
                           <span>🧠</span>
-                          <span>Ход рассуждений AI (Reasoning Trace)</span>
+                          <span>Этапы обработки запроса ({m.reasoningTrace.length})</span>
                         </span>
                         {expandedReasoningId === m.id ? (
                           <ChevronUp className="w-3.5 h-3.5" />
@@ -1089,10 +1086,25 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                       <p className="whitespace-pre-wrap">{m.text}</p>
                     ) : (
                       <div className="space-y-1">
-                        {/* Dify-Style Extracted Query Filter Tags */}
+                        {/* Response Source Badge */}
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-[10px]">
+                          {m.modelUsed === 'gemini' ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                              <span>🤖</span>
+                              <span>Ответ сгенерирован Google Gemini</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                              <span>📖</span>
+                              <span>Данные локального каталога</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Extracted Query Filter Tags */}
                         {m.extractedFilters && (m.extractedFilters.score || m.extractedFilters.city || m.extractedFilters.direction || m.extractedFilters.wantsMilitary || m.extractedFilters.wantsDorm) && (
                           <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 mb-2.5 pb-1 border-b border-slate-100 dark:border-slate-800">
-                            <span className="font-bold text-slate-400">Предикаты RAG:</span>
+                            <span className="font-bold text-slate-400">Параметры поиска:</span>
                             {m.extractedFilters.score && (
                               <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-900">
                                 🎯 {m.extractedFilters.score} б.
@@ -1123,7 +1135,14 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
                         {renderFormattedText(m.text)}
 
-                        {/* Clarification Options (Anthropic Clarification Protocol from system prompt leaks) */}
+                        {/* AI disclaimer note */}
+                        {m.modelUsed === 'gemini' && (
+                          <p className="text-[10px] text-slate-400 italic pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                            ℹ️ Ответ сгенерирован нейросетью на основе запроса и справочных данных каталога. Точные условия приёма и конкурсные списки проверяйте в приёмной комиссии вуза.
+                          </p>
+                        )}
+
+                        {/* Clarification Options */}
                         {m.clarificationOptions && m.clarificationOptions.length > 0 && (
                           <div className="space-y-2 my-2.5 p-3 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 animate-fadeIn">
                             <div className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 mb-1.5">
@@ -1152,44 +1171,40 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                           </div>
                         )}
 
-                        {/* Admission Probability Gauge (Generative UI from awesome-llm-apps) */}
+                        {/* Admission Qualitative Comparison Card (NO invented percentage) */}
                         {m.probability && (
                           <div className="rounded-2xl p-3.5 bg-gradient-to-br from-slate-900 to-blue-950 text-white border border-blue-500/30 shadow-md my-2.5 animate-fadeIn">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs font-bold flex items-center gap-1.5 text-blue-200">
                                 <span>📊</span>
-                                <span>Оценка шансов поступления:</span>
+                                <span>Сопоставление с баллами прошлых лет:</span>
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                                   m.probability.level === 'high'
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                                     : m.probability.level === 'medium'
-                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                                 }`}
                               >
-                                {m.probability.percentage}%
+                                {m.probability.level === 'high'
+                                  ? 'Комфортный балл'
+                                  : m.probability.level === 'medium'
+                                  ? 'Плотная конкуренция'
+                                  : 'Высокий порог'}
                               </span>
                             </div>
-                            <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden mb-2">
-                              <div
-                                className={`h-full rounded-full transition-all duration-700 ${
-                                  m.probability.level === 'high'
-                                    ? 'bg-emerald-500'
-                                    : m.probability.level === 'medium'
-                                    ? 'bg-amber-500'
-                                    : 'bg-rose-500'
-                                }`}
-                                style={{ width: `${m.probability.percentage}%` }}
-                              />
+                            <p className="text-xs font-bold text-white mb-1">{m.probability.label}</p>
+                            <p className="text-[11px] text-slate-300 leading-relaxed mb-2">{m.probability.description}</p>
+                            <div className="pt-2 border-t border-white/10 text-[10px] text-slate-400 flex items-center gap-1">
+                              <span>ℹ️</span>
+                              <span>Сравнение со средним минимальным проходным баллом прошлых лет. Не является гарантией зачисления в 2026 году.</span>
                             </div>
-                            <p className="text-[11px] font-semibold text-white mb-0.5">{m.probability.label}</p>
-                            <p className="text-[10px] text-slate-300 leading-relaxed">{m.probability.description}</p>
                           </div>
                         )}
 
-                        {/* Open-WebUI Style Citation Sources Button */}
+                        {/* Citation Sources Button */}
                         {m.citationChunks && m.citationChunks.length > 0 && (
                           <div className="pt-2">
                             <button
@@ -1197,15 +1212,14 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                               onClick={() =>
                                 setInspectedCitations({
                                   chunks: m.citationChunks!,
-                                  confidence: m.groundingConfidence || 95,
                                 })
                               }
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-blue-600 text-xs font-semibold transition border border-slate-200 dark:border-slate-700 shadow-2xs group"
                             >
                               <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition" />
-                              <span>Источники данных ({m.citationChunks.length})</span>
-                              <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-                                {m.groundingConfidence || 95}% релевантность
+                              <span>Использованные материалы каталога ({m.citationChunks.length})</span>
+                              <span className="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
+                                Локальная база
                               </span>
                             </button>
                           </div>
@@ -1530,9 +1544,9 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
           <div className="mt-2 px-1 flex items-center justify-between text-[11px] text-slate-400">
             <span>Нажмите Enter для отправки</span>
-            <span className="flex items-center gap-1 text-[10px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Gemini 3.5 Flash • Приём 2026
+            <span className="flex items-center gap-1.5 text-[10px]">
+              <span className={`w-1.5 h-1.5 rounded-full ${activeKey ? 'bg-emerald-500' : 'bg-blue-400'}`} />
+              <span>{activeKey ? 'Google Gemini API • Каталог Вузопедии' : 'Локальный каталог • Офлайн-режим'}</span>
             </span>
           </div>
         </div>
@@ -1703,7 +1717,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           </div>
         )}
 
-        {/* Open-WebUI Style Citations & Sources Modal / Drawer */}
+        {/* Citations & Sources Modal / Drawer */}
         {inspectedCitations && (
           <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 animate-fadeIn">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-slideUp">
@@ -1713,17 +1727,17 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                   <BookOpen className="w-5 h-5 text-blue-400" />
                   <div>
                     <h4 className="font-extrabold text-sm text-white">
-                      Источники и фрагменты базы знаний (RAG)
+                      Справочные материалы локальной базы данных
                     </h4>
                     <p className="text-[11px] text-slate-300">
-                      Верифицированные данные ФИС ГИА, Минобрнауки и Вузопедии
+                      Карточки вузов и справочники приёма Вузопедии
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold">
-                    {inspectedCitations.confidence}% доверие
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-extrabold">
+                    Локальный каталог
                   </span>
                   <button
                     data-testid="close-citations-modal"
@@ -1739,8 +1753,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               {/* Drawer Body */}
               <div className="p-4 space-y-3.5 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-950/50">
                 {inspectedCitations.chunks.map((chunk, cIdx) => {
-                  const relevancePct = Math.round(chunk.relevanceScore * 100);
-                  const colorClass = getRelevanceBadgeColor(relevancePct);
+                  const colorClass = getCategoryBadgeClass(chunk.category);
                   const vuzObj = chunk.vuzId ? UNIVERSITIES.find((u) => u.id === chunk.vuzId) : null;
 
                   return (
@@ -1758,7 +1771,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                           </h5>
                         </div>
                         <span className={`px-2 py-0.5 rounded-full border text-[10px] font-extrabold shrink-0 ${colorClass}`}>
-                          {relevancePct}% релевантность
+                          {chunk.categoryLabel || 'Справочный материал'}
                         </span>
                       </div>
 
@@ -1800,7 +1813,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               {/* Drawer Footer */}
               <div className="p-3 bg-slate-100 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-[11px] text-slate-500">
-                  Все чанки верифицированы семантическим сопоставителем Вузопедии
+                  Сведения приведены из локального каталога Вузопедии для ознакомления
                 </span>
                 <button
                   onClick={() => setInspectedCitations(null)}
