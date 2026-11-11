@@ -62,6 +62,8 @@ export interface ArtifactChecklistItem {
   id: string;
   label: string;
   deadline?: string;
+  deadlineSource?: string;
+  isDeadlineVerified?: boolean;
   checked: boolean;
   priority: 'high' | 'medium' | 'low';
 }

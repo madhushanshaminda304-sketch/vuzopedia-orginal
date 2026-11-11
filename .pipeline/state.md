@@ -40,6 +40,34 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Student Profile, Conversation Continuity & Privacy-First Personalisation
+- **Size**: M | **Types**: feature, architecture, privacy, personalisation, continuity, ui
+- **Explicit Editable Student Profile (`src/services/assistant/studentProfile.ts` & `StudentProfileModal.tsx`)**:
+  - Maintained strictly in `localStorage` under key `vuzopedia_student_profile_v1`, isolated from ephemeral chat messages.
+  - Supports education context (`school_11`, `college_spo`, `graduate_past_years`, `bachelor`), verified subjects with scores (auto-sums `totalScore`), preferred study areas, regional city preferences, budget constraints (`only_budget`, `paid_with_loan`, `paid_direct`, `any`), accommodation need, military VUC preference, shortlisted universities/programs, and preferred language.
+  - Complete data governance with on-device local storage transparency banner and complete wipe controls (`clearAllAssistantData()` purges profile, checklist, and conversation sessions).
+- **Honest Prompt Enhancement (No Fabricated Conditions)**:
+  - Eliminated hardcoded 265 score and unstated conditions in `enhanceStudentPrompt`.
+  - Enriches queries with confirmed student facts when explicitly saved in profile; produces generic structural guidance when profile is empty. Never fabricates imaginary scores, military requirements, or dorm preferences.
+- **Separation of Temporary Conversation Context from Profile**:
+  - `isHypotheticalQuery` detects "что если", "а если", "допустим", preventing what-if explorations from corrupting confirmed profile facts.
+  - `mergeProfileWithQueryFilters` isolates temporary exploration filters from saved facts.
+- **Pathway-Tailored Interactive Checklists & Sourced Deadlines**:
+  - `createAdmissionArtifact` adapts to applicant profile: college/SPO applicants receive internal entrance exam steps (`item-exam-spo`, `item-dvi-spo`); credit applicants receive Sber 3% loan contract steps (`item-loan-contract`).
+  - Tasks start `checked: false` by default.
+  - All federal regulatory deadlines cite `Приказ Минобрнауки РФ №1076` with `isDeadlineVerified: true`. Campus-specific procedures (dorm allocation, VUC medical checks) carry `isDeadlineVerified: false` with explanatory notice (`Срок не верифицирован (уточняется в вузе)`).
+  - Checklist item completion state persists across page reloads via `vuzopedia_student_checklist_v1`.
+- **In-Flight Conversation Switching Protection**:
+  - Guarded active stream chunks and completed response resolvers using `currentSessionIdRef`.
+  - Switching sessions or starting a new consultation cancels generation in the previous session and prevents responses from contaminating the newly opened conversation.
+- **Verification**:
+  - `scripts/verify_student_profile_and_continuity.mjs`: 13/13 tests passed (0 failures). Screenshot: `feature_student_profile_and_continuity.png`.
+  - `scripts/verify_assistant_action_registry.mjs`: 16/16 passed.
+  - `scripts/verify_secure_deployment.mjs`: All passed (0 errors).
+  - `scripts/verify_evidence_system.mjs`: 13/13 passed.
+  - `scripts/verify_entity_matching_and_retrieval.mjs`: 13/13 passed.
+  - TypeScript & Vite build: 0 errors.
+
 ## Change 2026-11-11: Public Deployment Security, Zero Key Exposure & Server-Side Abuse Prevention
 - **Size**: M | **Types**: security, backend, architecture, upgrade
 - **Key Isolation & Zero-Exposure Architecture**:

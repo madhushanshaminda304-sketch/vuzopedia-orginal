@@ -8,6 +8,7 @@ import {
   Maximize2,
   Minimize2,
   X,
+  User,
 } from 'lucide-react';
 
 interface AssistantHeaderProps {
@@ -15,6 +16,8 @@ interface AssistantHeaderProps {
   sessionsCount: number;
   isHistoryOpen: boolean;
   isFullscreen: boolean;
+  profileBadgeCount?: number;
+  onOpenProfile?: () => void;
   onToggleHistory: () => void;
   onOpenSettings: () => void;
   onRestart: () => void;
@@ -26,6 +29,8 @@ export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
   isAiAvailable,
   sessionsCount,
   isFullscreen,
+  profileBadgeCount,
+  onOpenProfile,
   onToggleHistory,
   onOpenSettings,
   onRestart,
@@ -69,6 +74,21 @@ export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
 
       {/* Action buttons */}
       <div className="flex items-center gap-1.5">
+        {/* Student Profile button */}
+        {onOpenProfile && (
+          <button
+            data-testid="open-student-profile-btn"
+            onClick={onOpenProfile}
+            className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition relative"
+            title="Мой профиль абитуриента"
+          >
+            <User className="w-4 h-4 text-amber-300" />
+            {profileBadgeCount && profileBadgeCount > 0 ? (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-slate-900" />
+            ) : null}
+          </button>
+        )}
+
         {/* Sessions History button */}
         <button
           onClick={onToggleHistory}

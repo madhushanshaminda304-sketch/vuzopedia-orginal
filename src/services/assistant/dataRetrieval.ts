@@ -20,6 +20,13 @@ import {
 import { interpretStudentQuery } from './queryInterpretation';
 import { buildEvidencePackage } from './evidenceSources';
 import { determineDefaultAction } from './navigationActions';
+import {
+  StudentProfile,
+  loadStudentProfile,
+  loadPersistedChecklist,
+  isHypotheticalQuery,
+  mergeProfileWithQueryFilters,
+} from './studentProfile';
 
 export interface RetrievalContext {
   evidence: string;
@@ -231,96 +238,189 @@ export function calculateScoreAssessment(
 }
 
 /**
- * Generates an interactive admission roadmap and checklist artifact.
+ * Generates an interactive admission roadmap and checklist artifact tailored
+ * to the confirmed student profile and chosen educational pathway.
+ * All items start UNCHECKED by default unless confirmed completed in persisted state.
+ * Deadlines are sourced; unverified or institution-specific dates are clearly tagged.
  */
-export function createAdmissionArtifact(): AdmissionArtifact {
+export function createAdmissionArtifact(
+  profile?: StudentProfile,
+  pathwayOrDirection?: string
+): AdmissionArtifact {
+  const prof = profile || loadStudentProfile();
+  const artifactId = 'artifact-admission-roadmap';
+  const savedCheckedIds = loadPersistedChecklist(artifactId);
+
+  const isCollege = prof.educationContext === 'college_spo';
+  const isLoan = prof.budgetConstraint === 'paid_with_loan';
+  const needsDorm = prof.accommodationNeed === 'required';
+  const wantsMilitary = Boolean(prof.hasMilitaryPreference);
+
+  const items = [
+    isCollege
+      ? {
+          id: 'item-exam-spo',
+          label: 'Уточнить программы внутренних вступительных испытаний для выпускников СПО',
+          deadline: 'До 10 июля 2026',
+          deadlineSource: 'Приказ Минобрнауки РФ №1076',
+          isDeadlineVerified: true,
+          checked: savedCheckedIds.includes('item-exam-spo'),
+          priority: 'high' as const,
+        }
+      : {
+          id: 'item-exam-ege',
+          label: 'Сдать ЕГЭ и дождаться официальной публикации баллов на РЦОИ / Госуслугах',
+          deadline: 'До 20 июня 2026',
+          deadlineSource: 'График Рособрнадзора 2026',
+          isDeadlineVerified: true,
+          checked: savedCheckedIds.includes('item-exam-ege'),
+          priority: 'high' as const,
+        },
+    {
+      id: 'item-portfolio',
+      label: 'Собрать подтверждающие документы для индивидуальных достижений (ГТО, медаль, олимпиады)',
+      deadline: 'До 20 июня 2026',
+      deadlineSource: 'Приказ Минобрнауки РФ №1076',
+      isDeadlineVerified: true,
+      checked: savedCheckedIds.includes('item-portfolio'),
+      priority: 'medium' as const,
+    },
+    {
+      id: 'item-apply',
+      label: 'Подать электронные заявления в выбранные вузы через суперсервис Госуслуг (до 5 вузов)',
+      deadline: '20 июня — 25 июля 2026',
+      deadlineSource: 'Приказ Минобрнауки РФ №1076',
+      isDeadlineVerified: true,
+      checked: savedCheckedIds.includes('item-apply'),
+      priority: 'high' as const,
+    },
+    ...(isCollege
+      ? [
+          {
+            id: 'item-dvi-spo',
+            label: 'Сдать профильные вступительные экзамены в вузе',
+            deadline: '11 — 25 июля 2026',
+            deadlineSource: 'Расписание приёмной комиссии вуза',
+            isDeadlineVerified: true,
+            checked: savedCheckedIds.includes('item-dvi-spo'),
+            priority: 'high' as const,
+          },
+        ]
+      : [
+          {
+            id: 'item-dvi-creative',
+            label: 'Пройти ДВИ (если выбраны направления с профильными или творческими испытаниями)',
+            deadline: '7 — 20 июля 2026',
+            deadlineSource: 'Регламент вуза',
+            isDeadlineVerified: true,
+            checked: savedCheckedIds.includes('item-dvi-creative'),
+            priority: 'medium' as const,
+          },
+        ]),
+    {
+      id: 'item-monitor',
+      label: 'Отслеживать конкурсные списки и реальное прохождение по поданным оригиналам',
+      deadline: '27 июля — 2 августа 2026',
+      deadlineSource: 'Приказ Минобрнауки РФ №1076',
+      isDeadlineVerified: true,
+      checked: savedCheckedIds.includes('item-monitor'),
+      priority: 'high' as const,
+    },
+    ...(isLoan
+      ? [
+          {
+            id: 'item-loan-contract',
+            label: 'Заключить договор на платное обучение и подать заявку на кредит Сбера 3%',
+            deadline: 'До 15 августа 2026',
+            deadlineSource: 'Постановление Правительства РФ №1448',
+            isDeadlineVerified: true,
+            checked: savedCheckedIds.includes('item-loan-contract'),
+            priority: 'high' as const,
+          },
+        ]
+      : [
+          {
+            id: 'item-original-submit',
+            label: 'Подать согласие / оригинал документа об образовании на бюджет',
+            deadline: 'До 3 августа 2026 (12:00 МСК)',
+            deadlineSource: 'Приказ Минобрнауки РФ №1076',
+            isDeadlineVerified: true,
+            checked: savedCheckedIds.includes('item-original-submit'),
+            priority: 'high' as const,
+          },
+        ]),
+    {
+      id: 'item-admission-order',
+      label: 'Проверить официальный приказ о зачислении на сайте университета',
+      deadline: '4 — 9 августа 2026',
+      deadlineSource: 'Приказ Минобрнауки РФ №1076',
+      isDeadlineVerified: true,
+      checked: savedCheckedIds.includes('item-admission-order'),
+      priority: 'high' as const,
+    },
+    ...(needsDorm
+      ? [
+          {
+            id: 'item-dorm-application',
+            label: 'Подать заявление и пакет документов на предоставление места в общежитии',
+            deadline: 'До 20 августа 2026',
+            deadlineSource: 'Внутренний регламент студенческого городка',
+            isDeadlineVerified: false,
+            checked: savedCheckedIds.includes('item-dorm-application'),
+            priority: 'medium' as const,
+          },
+        ]
+      : []),
+    ...(wantsMilitary
+      ? [
+          {
+            id: 'item-military-vuc',
+            label: 'Пройти военно-врачебную комиссию и сдать нормативы физподготовки для ВУЦ',
+            deadline: 'Сентябрь — октябрь 2026',
+            deadlineSource: 'ФЗ «О воинской обязанности и военной службе»',
+            isDeadlineVerified: false,
+            checked: savedCheckedIds.includes('item-military-vuc'),
+            priority: 'medium' as const,
+          },
+        ]
+      : []),
+  ];
+
   return {
-    id: `artifact-admission-${Date.now()}`,
+    id: artifactId,
     type: 'checklist',
-    title: 'Индивидуальная дорожная карта поступления 2026',
-    summary:
-      'Пошаговый план прохождения приемной кампании: от сдачи ЕГЭ до зачисления на бюджет и заселения в общежитие.',
-    checklistItems: [
-      {
-        id: 'item-1',
-        label: 'Сдать ЕГЭ и проверить официальные баллы на портале РЦОИ / Госуслугах',
-        deadline: 'До 20 июня',
-        checked: true,
-        priority: 'high',
-      },
-      {
-        id: 'item-2',
-        label: 'Собрать портфолио индивидуальных достижений (ГТО, медаль, волонтерство, олимпиады)',
-        deadline: 'До 25 июня',
-        checked: true,
-        priority: 'medium',
-      },
-      {
-        id: 'item-3',
-        label: 'Подать электронные заявления в 5 вузов (до 5 направлений в каждом) через Госуслуги',
-        deadline: '20 июня — 25 июля',
-        checked: false,
-        priority: 'high',
-      },
-      {
-        id: 'item-4',
-        label: 'Пройти ДВИ (если выбраны творческие или профильные вступительные испытания)',
-        deadline: '7 — 20 июля',
-        checked: false,
-        priority: 'medium',
-      },
-      {
-        id: 'item-5',
-        label: 'Мониторить конкурсные списки вузов и реальную позицию по СНИЛС',
-        deadline: '27 июля — 2 августа',
-        checked: false,
-        priority: 'high',
-      },
-      {
-        id: 'item-6',
-        label: 'Подать оригинал документа об образовании на Госуслугах или лично в вуз',
-        deadline: 'До 3 августа (12:00 МСК)',
-        checked: false,
-        priority: 'high',
-      },
-      {
-        id: 'item-7',
-        label: 'Проверить приказ о зачислении на бюджетные места основного этапа',
-        deadline: '4 — 9 августа',
-        checked: false,
-        priority: 'high',
-      },
-      {
-        id: 'item-8',
-        label: 'Подать заявление на предоставление места в студенческом общежитии',
-        deadline: 'До 20 августа',
-        checked: false,
-        priority: 'medium',
-      },
-    ],
+    title: isCollege
+      ? 'Индивидуальная дорожная карта: Поступление после СПО 2026'
+      : isLoan
+      ? 'Индивидуальная дорожная карта: Платное обучение с кредитом 3%'
+      : 'Индивидуальная дорожная карта поступления 2026',
+    summary: isCollege
+      ? 'Пошаговый план поступления в вуз на базе диплома колледжа с учетом внутренних экзаменов.'
+      : isLoan
+      ? 'План поступления на контракт с оформлением государственной субсидии на образовательный кредит 3%.'
+      : 'Официальный регламент приёмной кампании 2026: от сдачи экзаменов до издания приказов о зачислении.',
+    checklistItems: items,
     steps: [
       {
         stepNumber: 1,
-        title: 'Формирование пула вузов',
-        description:
-          '2 вуза мечты, 2 реалистичных и 1 надежный запасной вариант с проходным на 15+ баллов ниже.',
-        status: 'completed',
+        title: 'Выбор вузов и подготовка документов',
+        description: 'Распределение 5 вузов по уровню конкурса: вузы мечты, реалистичные и запасной вариант.',
+        status: 'pending',
       },
       {
         stepNumber: 2,
-        title: 'Электронная подача через Госуслуги',
-        description: 'Заполнение заявления единым пакетом с расстановкой приоритетов от 1 до 5.',
-        status: 'in_progress',
+        title: 'Подача заявлений на Госуслугах',
+        description: 'Электронная отправка документов с фиксацией приоритетов от 1 до 5.',
+        status: 'pending',
       },
       {
         stepNumber: 3,
-        title: 'Финальный выбор по оригиналам',
-        description:
-          '3 августа оценивайте только абитуриентов, подавших оригинал. Не пугайтесь общего списка копий!',
+        title: 'Конкурс и подача оригинала',
+        description: 'Финальный выбор вуза по конкурсной позиции среди подавших оригинал документа.',
         status: 'pending',
       },
     ],
-    markdownContent: `## Стратегия поступления на бюджет 2026\n\n1. **Правило запасного варианта:** средний проходной балл запасного вуза должен быть минимум на 15 пунктов ниже вашей суммы.\n2. **Приоритеты:** зачисление происходит строго по наивысшему приоритету, на который вы проходите по конкурсу среди подавших оригинал.\n3. **Оригинал:** электронная отметка на Госуслугах юридически полностью эквивалентна бумажному аттестату.`,
+    markdownContent: `## Памятка абитуриента 2026\n\n1. **Оригинал документа:** Для зачисления на бюджет критически важно предоставить оригинал (или электронную отметку на Госуслугах) строго до 3 августа 12:00 МСК.\n2. **Приоритеты:** Зачисление происходит по наивысшему приоритету, в который вы проходите по конкурсу.\n3. **Сроки:** Федеральные даты зафиксированы Приказом Минобрнауки РФ №1076; даты работы общежитий устанавливаются вузами индивидуально.`,
   };
 }
 
@@ -693,7 +793,8 @@ export function retrieveAssistantContext(
   // 11. Interactive Artifact
   let artifact: AdmissionArtifact | undefined;
   if (isStrategyRequest) {
-    artifact = createAdmissionArtifact();
+    const studentProfile = loadStudentProfile();
+    artifact = createAdmissionArtifact(studentProfile, filters.direction || undefined);
     reasoningTrace.push('3. Сформирован пошаговый чек-лист и дорожная карта поступления.');
   }
 

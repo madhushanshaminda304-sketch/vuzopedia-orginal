@@ -1,6 +1,7 @@
 import { ExtractedQueryFilters, SpecialistMode, RAGScopeFilter } from './types';
 import { normalizeText, resolveActiveEntityFromHistory } from './entityResolution';
 import { University } from '../../types';
+import { loadStudentProfile, StudentProfile } from './studentProfile';
 
 export interface QueryInterpretationResult {
   filters: ExtractedQueryFilters;
@@ -25,28 +26,30 @@ export interface QueryInterpretationResult {
 }
 
 /**
- * Transforms raw, brief, or vague student input into an enriched admissions prompt.
+ * Transforms raw, brief, or vague student input into an enriched admissions prompt
+ * WITHOUT adding invented scores, military requirements, accommodation preferences,
+ * or other unstated conditions.
  */
-export function enhanceStudentPrompt(raw: string): string {
+export function enhanceStudentPrompt(raw: string, profileOverride?: StudentProfile): string {
   const trimmed = raw.trim();
+  const profile = profileOverride || loadStudentProfile();
+
   if (!trimmed) {
-    return 'У меня 265 баллов ЕГЭ. Порекомендуй лучшие IT-вузы в Москве с военной кафедрой (ВУЦ) и общежитием, и составь пошаговую стратегию поступления.';
+    if (profile.totalScore && profile.totalScore > 0) {
+      const subjectList = profile.subjects.map((s) => `${s.subject}: ${s.score}`).join(', ');
+      return `У меня подтверждённые баллы ЕГЭ: ${profile.totalScore} б.${subjectList ? ` (${subjectList})` : ''}. Подбери подходящие варианты поступления и объясни порядок действий в 2026 году.`;
+    }
+    return 'Помоги составить план поступления 2026 года и расскажи, какие параметры и баллы нужны для точной оценки шансов.';
   }
 
-  const scoreMatch = trimmed.match(/\b([1-3]\d{2})\b/);
-  const hasMilitary = /(?:^|[^а-яa-z0-9])(воен|вуц|кафедр)(?:[^а-яa-z0-9]|$)/i.test(trimmed);
-  const hasDorm = /(?:^|[^а-яa-z0-9])(общаг|общежит)(?:[^а-яa-z0-9]|$)/i.test(trimmed);
-  const hasStrategy = /(?:^|[^а-яa-z0-9])(стратег|план|чек[- ]?лист)(?:[^а-яa-z0-9]|$)/i.test(trimmed);
-
-  if (scoreMatch && (!hasMilitary || !hasDorm || !hasStrategy)) {
-    return `${trimmed}. Какие лучшие государственные вузы с бюджетными местами, военной кафедрой (ВУЦ) и общежитием? Составь пошаговый чек-лист действий.`;
-  }
-
+  // If user prompt is very brief (e.g. single word, abbreviation, or short question)
   if (trimmed.length < 25) {
-    return `Подробно разбери запрос «${trimmed}»: проходные баллы на бюджет 2026, конкурс, наличие общежития и военной кафедры, а также составь дорожную карту.`;
+    return `Подробно разбери вопрос «${trimmed}»: официальные правила приёма 2026 года, ориентировочные проходные баллы прошлых лет, конкурс и ключевые сроки подачи документов.`;
   }
 
-  return `${trimmed}. Оцени шансы поступления на бюджет, укажи проходные баллы, наличие общежития и составь интерактивный чек-лист абитуриента.`;
+  // Clean trailing punctuation and structure the request cleanly without inventing unstated conditions
+  const cleanPrompt = trimmed.replace(/[.!?]+$/, '');
+  return `${cleanPrompt}. Укажи официальные требования приёма 2026 года, статистику проходных баллов прошлых лет и пошаговый порядок действий абитуриента.`;
 }
 
 /**

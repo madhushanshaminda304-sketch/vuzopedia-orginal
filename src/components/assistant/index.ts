@@ -7,3 +7,4 @@ export * from './ArtifactCanvasModal';
 export * from './CitationsDrawer';
 export * from './SessionsHistoryDrawer';
 export * from './AssistantComposer';
+export * from './StudentProfileModal';

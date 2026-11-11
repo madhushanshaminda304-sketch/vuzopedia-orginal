@@ -17,6 +17,12 @@ import {
   createAssistantMessageFromResponse,
   AppAssistantAction,
   resolveAction,
+  StudentProfile,
+  loadStudentProfile,
+  getProfileSummaryBadges,
+  savePersistedChecklist,
+  loadPersistedChecklist,
+  clearAllAssistantData,
 } from '../services/assistant';
 import { University } from '../types';
 import {
@@ -28,6 +34,7 @@ import {
   CitationsDrawer,
   SessionsHistoryDrawer,
   AssistantComposer,
+  StudentProfileModal,
 } from './assistant';
 
 interface DedVuzopedAssistantModalProps {
@@ -48,6 +55,9 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const [messages, setMessages] = useState<AssistantMessage[]>([createInitialWelcomeMessage()]);
   const [sessions, setSessions] = useState<ChatSession[]>(() => loadSessions());
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => `session-${Date.now()}`);
+
+  const [studentProfile, setStudentProfile] = useState<StudentProfile>(() => loadStudentProfile());
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -89,6 +99,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       try {
         localStorage.removeItem('vuzopedia_gemini_api_key');
       } catch {}
+      setStudentProfile(loadStudentProfile());
       refreshServerStatus();
     }
   }, [isOpen]);
@@ -97,6 +108,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
+  const currentSessionIdRef = useRef<string>(currentSessionId);
+
+  useEffect(() => {
+    currentSessionIdRef.current = currentSessionId;
+  }, [currentSessionId]);
 
   const handleStopGeneration = () => {
     if (activeAbortControllerRef.current) {
@@ -193,7 +209,9 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
   const createNewSession = () => {
     stopSpeaking();
+    handleStopGeneration();
     const newId = `session-${Date.now()}`;
+    currentSessionIdRef.current = newId;
     setCurrentSessionId(newId);
     setMessages([
       {
@@ -218,8 +236,10 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
   const switchSession = (sessionId: string) => {
     stopSpeaking();
+    handleStopGeneration();
     const target = sessions.find((s) => s.id === sessionId);
     if (target) {
+      currentSessionIdRef.current = target.id;
       setCurrentSessionId(target.id);
       setMessages(target.messages);
       setActiveMode(target.activeMode || 'all');
@@ -293,6 +313,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       const updated = prev.checklistItems.map((item) =>
         item.id === itemId ? { ...item, checked: !item.checked } : item
       );
+      const checkedIds = updated.filter((item) => item.checked).map((item) => item.id);
+      savePersistedChecklist(prev.id, checkedIds);
       return { ...prev, checklistItems: updated };
     });
   };
@@ -317,17 +339,21 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     }
 
     if (action.type === 'create_checklist') {
+      const persistedChecked = new Set(loadPersistedChecklist(action.id));
       setActiveArtifact({
         id: action.id,
         type: 'checklist',
         title: action.title,
         summary: `Интерактивный чек-лист поступления (${action.items.length} пунктов)`,
-        checklistItems: action.items.map((item, idx) => ({
-          id: item.id || `item-${idx + 1}`,
-          label: item.text,
-          checked: !!item.checked,
-          priority: (item.category === 'essential' ? 'high' : 'medium') as 'high' | 'medium' | 'low',
-        })),
+        checklistItems: action.items.map((item, idx) => {
+          const itemId = item.id || `item-${idx + 1}`;
+          return {
+            id: itemId,
+            label: item.text,
+            checked: persistedChecked.has(itemId) ? true : !!item.checked,
+            priority: (item.category === 'essential' ? 'high' : 'medium') as 'high' | 'medium' | 'low',
+          };
+        }),
       });
       return;
     }
@@ -386,6 +412,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     const text = textToSend.trim();
     if (!text || isTyping) return;
 
+    const sendingSessionId = currentSessionId;
+
     const userMsg: AssistantMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
@@ -419,9 +447,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         {
           abortSignal: abortCtrl.signal,
           onStreamChunk: (accumulated) => {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === streamMsgId ? { ...m, text: accumulated } : m))
-            );
+            if (currentSessionIdRef.current === sendingSessionId) {
+              setMessages((prev) =>
+                prev.map((m) => (m.id === streamMsgId ? { ...m, text: accumulated } : m))
+              );
+            }
           },
         }
       );
@@ -431,21 +461,29 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         id: streamMsgId,
       };
 
-      setMessages((prev) =>
-        prev.map((m) => (m.id === streamMsgId ? finalMsg : m))
-      );
+      if (currentSessionIdRef.current === sendingSessionId) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === streamMsgId ? finalMsg : m))
+        );
+      }
 
-      // Auto update sessions
+      // Auto update sessions in background
       setSessions((prev) => {
-        const existingIdx = prev.findIndex((s) => s.id === currentSessionId);
+        const existingIdx = prev.findIndex((s) => s.id === sendingSessionId);
+        const targetSession = existingIdx >= 0 ? prev[existingIdx] : null;
         const title =
-          existingIdx >= 0 && prev[existingIdx].title && !prev[existingIdx].title.startsWith('Новый')
-            ? prev[existingIdx].title
+          targetSession && targetSession.title && !targetSession.title.startsWith('Новый')
+            ? targetSession.title
             : text.slice(0, 36) + (text.length > 36 ? '...' : '');
 
-        const updatedMessages = [...messages, userMsg, finalMsg];
+        const priorMessages = targetSession ? targetSession.messages : messages;
+        const updatedMessages = [
+          ...priorMessages.filter((m) => m.id !== streamMsgId),
+          userMsg,
+          finalMsg,
+        ];
         const newSession: ChatSession = {
-          id: currentSessionId,
+          id: sendingSessionId,
           title,
           updatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           messages: updatedMessages,
@@ -473,9 +511,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         suggestions: ['Как оценить шансы по баллам?'],
         modelUsed: 'local',
       };
-      setMessages((prev) =>
-        prev.map((m) => (m.id === streamMsgId ? errorMsg : m))
-      );
+      if (currentSessionIdRef.current === sendingSessionId) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === streamMsgId ? errorMsg : m))
+        );
+      }
     } finally {
       activeAbortControllerRef.current = null;
       setIsTyping(false);
@@ -484,6 +524,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   };
 
   const isAiAvailable = serverStatus?.aiAvailable ?? false;
+  const profileBadges = getProfileSummaryBadges(studentProfile);
 
   if (!isOpen) return null;
 
@@ -507,6 +548,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           onRestart={createNewSession}
           onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
           onClose={onClose}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          profileBadgeCount={profileBadges.length}
         />
 
         {/* Sessions History Drawer */}
@@ -542,6 +585,32 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           }}
           onSelectScope={setActiveScope}
         />
+
+        {/* Confirmed Student Profile Banner (explicitly saved preferences) */}
+        {profileBadges.length > 0 && (
+          <div className="bg-blue-50/90 dark:bg-blue-950/50 border-b border-blue-200 dark:border-blue-900/60 px-4 py-2 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar">
+              <span className="font-semibold text-blue-900 dark:text-blue-300 shrink-0">
+                Ваш профиль:
+              </span>
+              {profileBadges.map((badge) => (
+                <span
+                  key={badge.id}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800 text-[11px] whitespace-nowrap font-medium shadow-2xs"
+                >
+                  {badge.label}
+                </span>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsProfileModalOpen(true)}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-semibold shrink-0 text-[11px]"
+            >
+              Изменить
+            </button>
+          </div>
+        )}
 
         {/* Messages Body */}
         <div
@@ -633,7 +702,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           onStopGeneration={handleStopGeneration}
           onToggleDictation={toggleDictation}
           onEnhancePrompt={() => {
-            const enriched = enhanceStudentPrompt(inputValue);
+            const enriched = enhanceStudentPrompt(inputValue, studentProfile);
             setInputValue(enriched);
           }}
         />
@@ -651,6 +720,20 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           inspectedCitations={inspectedCitations}
           onClose={() => setInspectedCitations(null)}
           onSelectUniversity={onSelectUniversity}
+        />
+
+        {/* Student Profile & Local Storage Governance Modal */}
+        <StudentProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          onProfileUpdated={(updated) => setStudentProfile(updated)}
+          onAllDataCleared={() => {
+            clearAllAssistantData();
+            setStudentProfile(loadStudentProfile());
+            createNewSession();
+            setSessions([]);
+            setIsProfileModalOpen(false);
+          }}
         />
 
         {/* Action Confirmation Dialog for Irreversible Operations */}

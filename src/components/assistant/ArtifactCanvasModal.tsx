@@ -104,9 +104,20 @@ export const ArtifactCanvasModal: React.FC<ArtifactCanvasModalProps> = ({
                         {item.label}
                       </span>
                       {item.deadline && (
-                        <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
-                          Срок: {item.deadline}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                            Срок: {item.deadline}
+                          </span>
+                          {item.isDeadlineVerified ? (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
+                              ✓ {item.deadlineSource || 'Порядок приёма 2026'}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800">
+                              ⚠ Срок не верифицирован ({item.deadlineSource || 'уточняется в вузе'})
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </label>
