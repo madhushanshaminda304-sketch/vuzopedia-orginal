@@ -192,6 +192,9 @@ ${context.evidence}
           extractedFilters: context.extractedFilters,
           citationChunks: context.citationChunks,
           matchedUniversities: context.matchedUniversities,
+          matchedPrograms: context.matchedPrograms,
+          alternatives: context.alternatives,
+          ambiguousEntity: context.ambiguousEntity,
           probability: context.probability,
         };
 

@@ -86,7 +86,8 @@ export async function queryDedAssistant(
 export function retrieveRAGContext(
   query: string,
   mode: SpecialistMode = 'all',
-  scope: RAGScopeFilter = 'all'
+  scope: RAGScopeFilter = 'all',
+  history: Array<{ sender: 'ded' | 'user'; text: string }> = []
 ): RAGRetrievalResult {
-  return retrieveAssistantContext(query, mode, scope);
+  return retrieveAssistantContext(query, mode, scope, history);
 }

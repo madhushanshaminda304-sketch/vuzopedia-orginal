@@ -1,5 +1,5 @@
 import { University } from '../../types';
-import { RetrievedCitationChunk, ExtractedQueryFilters } from './types';
+import { RetrievedCitationChunk, ExtractedQueryFilters, ProgramMatch } from './types';
 
 /**
  * Creates a verified admission citation chunk for a given university.
@@ -20,6 +20,27 @@ export function createUniversityAdmissionChunk(u: University): RetrievedCitation
       tags: [u.city, 'Бюджет прошлых лет', `Топ #${u.ratingRank}`],
     },
     vuzId: u.id,
+  };
+}
+
+/**
+ * Creates a verified programme citation chunk.
+ */
+export function createProgramCitationChunk(p: ProgramMatch): RetrievedCitationChunk {
+  return {
+    id: `chunk-prog-${p.id}`,
+    source: `Каталог образовательных программ: ${p.universityShort}`,
+    title: `${p.code} ${p.name} • ${p.universityShort}`,
+    snippet: `Специальность ${p.code} «${p.name}» (${p.faculty || 'Профильный факультет'}). Проходной балл на бюджет: ${p.minBudgetScore}. Бюджетных мест: ${p.budgetPlaces}. Платное обучение от ${p.annualFee.toLocaleString()} ₽/год.`,
+    category: 'program',
+    categoryLabel: 'Образовательная программа',
+    metadata: {
+      minScore: p.minBudgetScore,
+      budgetPlaces: p.budgetPlaces,
+      annualFee: p.annualFee,
+      tags: [p.code, p.universityShort, 'Программа бакалавриата'],
+    },
+    vuzId: p.universityId,
   };
 }
 
@@ -98,11 +119,12 @@ export function createCreditChunk(): RetrievedCitationChunk {
 }
 
 /**
- * Builds all citation chunks and formatted ground-truth evidence text for matched universities.
+ * Builds all citation chunks and formatted ground-truth evidence text for matched universities and programs.
  */
 export function buildEvidencePackage(
   matchedUniversities: University[],
-  filters: ExtractedQueryFilters
+  filters: ExtractedQueryFilters,
+  matchedPrograms: ProgramMatch[] = []
 ): { citationChunks: RetrievedCitationChunk[]; evidenceText: string } {
   const citationChunks: RetrievedCitationChunk[] = [];
   const lines: string[] = ['СПРАВОЧНЫЕ ДАННЫЕ ИЗ ЛОКАЛЬНОГО КАТАЛОГА ВУЗОПЕДИИ:'];
@@ -111,13 +133,13 @@ export function buildEvidencePackage(
     // 1. Admission Chunk
     citationChunks.push(createUniversityAdmissionChunk(u));
 
-    // 2. Military Chunk
-    if (filters.wantsMilitary || u.hasMilitaryDept) {
+    // 2. Military Chunk (only if not explicitly negated/unwanted)
+    if (filters.wantsMilitary !== false && (filters.wantsMilitary || u.hasMilitaryDept)) {
       citationChunks.push(createMilitaryChunk(u));
     }
 
-    // 3. Dormitory Chunk
-    if (filters.wantsDorm || u.hasDormitory) {
+    // 3. Dormitory Chunk (only if not explicitly negated/unwanted)
+    if (filters.wantsDorm !== false && (filters.wantsDorm || u.hasDormitory)) {
       citationChunks.push(createDormitoryChunk(u));
     }
 
@@ -125,6 +147,17 @@ export function buildEvidencePackage(
       `• [vuz:${u.id}:${u.shortName}] (${u.fullName}): город ${u.city}${u.metro ? ', метро ' + u.metro : ''}. Проходной балл на бюджет прошлых лет: ${u.minBudgetScore}, мест на бюджете: ${u.totalBudgetPlaces}, платное от ${u.minAnnualFee.toLocaleString()} ₽/год. Военный учебный центр (ВУЦ): ${u.hasMilitaryDept ? 'Есть' : 'Нет'}. Общежитие: ${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}.`
     );
   });
+
+  // Program-level citation chunks
+  if (matchedPrograms.length > 0) {
+    lines.push('\nПРОГРАММЫ ОБУЧЕНИЯ ПО ВЫБРАННОМУ НАПРАВЛЕНИЮ:');
+    matchedPrograms.slice(0, 4).forEach((prog) => {
+      citationChunks.push(createProgramCitationChunk(prog));
+      lines.push(
+        `• ${prog.universityShort} — ${prog.code} «${prog.name}» (${prog.faculty || 'Факультет'}). Проходной балл на бюджет: ${prog.minBudgetScore}, мест: ${prog.budgetPlaces}, платное от ${prog.annualFee.toLocaleString()} ₽/год.`
+      );
+    });
+  }
 
   if (filters.wantsOlympiads) {
     citationChunks.push(createOlympiadsChunk());

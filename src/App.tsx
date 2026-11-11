@@ -35,6 +35,11 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { UniversityDetailModal } from './components/UniversityDetailModal';
 import { DedVuzopedAssistantModal } from './components/DedVuzopedAssistantModal';
 import { Footer } from './components/Footer';
+import * as AssistantServices from './services/assistant';
+
+if (typeof window !== 'undefined') {
+  (window as any).__ASSISTANT__ = AssistantServices;
+}
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<string>('catalog');

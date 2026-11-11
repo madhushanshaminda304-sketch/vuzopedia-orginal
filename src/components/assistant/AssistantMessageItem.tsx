@@ -371,6 +371,92 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
           </div>
         )}
 
+        {/* Relevant Academic Programmes */}
+        {m.response?.matchedPrograms && m.response.matchedPrograms.length > 0 && (
+          <div className="space-y-1.5 pt-1 animate-fadeIn">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <span>📚 Релевантные программы направления:</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {m.response.matchedPrograms.slice(0, 4).map((prog) => (
+                <div
+                  key={prog.id}
+                  className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-2xs"
+                >
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                      {prog.code}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      от {prog.minBudgetScore} б.
+                    </span>
+                  </div>
+                  <h6 className="font-bold text-[11px] text-slate-900 dark:text-white line-clamp-1">
+                    {prog.name}
+                  </h6>
+                  <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                    {prog.universityShort} • {prog.budgetPlaces} мест
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Clearly Labelled Alternatives when exact criteria yielded no matches */}
+        {m.response?.alternatives && m.response.alternatives.length > 0 && (
+          <div className="space-y-2 pt-1 animate-fadeIn">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span>💡 Доступные альтернативные варианты:</span>
+            </div>
+            <div className="space-y-2">
+              {m.response.alternatives.map((alt, aIdx) => (
+                <div
+                  key={aIdx}
+                  className="p-3 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 text-xs space-y-2"
+                >
+                  <div>
+                    <h6 className="font-bold text-xs text-amber-900 dark:text-amber-200">
+                      {alt.title}
+                    </h6>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                      {alt.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {alt.universities.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => {
+                          if (onSelectUniversity) onSelectUniversity(u);
+                          if (onCloseModal) onCloseModal();
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-amber-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-[10px] hover:border-amber-400 transition"
+                      >
+                        🏛️ {u.shortName} (от {u.minBudgetScore} б.)
+                      </button>
+                    ))}
+                  </div>
+                  {alt.actionTab && (
+                    <div className="pt-1">
+                      <button
+                        onClick={() => {
+                          onNavigateTab(alt.actionTab!);
+                          if (onCloseModal) onCloseModal();
+                        }}
+                        className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1"
+                      >
+                        <span>{alt.actionLabel || 'Смотреть варианты'}</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Interactive Admission Artifact Canvas Trigger */}
         {m.artifact && (
           <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-800/90 dark:via-indigo-950/40 dark:to-slate-800/90 border border-blue-200/80 dark:border-indigo-800/60 shadow-xs flex items-center justify-between gap-3 animate-fadeIn my-2">

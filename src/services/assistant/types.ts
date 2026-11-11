@@ -94,15 +94,54 @@ export interface RetrievedCitationChunk {
   vuzId?: string;
 }
 
+export interface ProgramMatch {
+  id: string;
+  code: string;
+  name: string;
+  universityId: string;
+  universityShort: string;
+  faculty?: string;
+  minBudgetScore: number;
+  budgetPlaces: number;
+  annualFee: number;
+  scoreDiff?: number;
+}
+
+export interface AlternativeOption {
+  title: string;
+  description: string;
+  universities: University[];
+  actionTab?: ValidActionTab;
+  actionLabel?: string;
+}
+
+export interface AmbiguousEntity {
+  term: string;
+  candidates: Array<{
+    id: string;
+    name: string;
+    city: string;
+    description: string;
+  }>;
+}
+
 export interface ExtractedQueryFilters {
   score?: number | null;
   city?: string | null;
+  isCityHard?: boolean;
+  excludedCities?: string[];
   direction?: string | null;
   wantsMilitary?: boolean;
+  isMilitaryHard?: boolean;
   wantsDorm?: boolean;
+  isDormHard?: boolean;
+  wantsBudgetOnly?: boolean;
   wantsFinance?: boolean;
   wantsOlympiads?: boolean;
   scope?: string;
+  hardRequirements?: string[];
+  softPreferences?: string[];
+  anaphoricEntityId?: string;
 }
 
 export interface ToolCall {
@@ -150,6 +189,12 @@ export interface AssistantResponse {
   citationChunks: RetrievedCitationChunk[];
   /** Matched university entities from dataset */
   matchedUniversities: University[];
+  /** Specific matched and ranked academic programs */
+  matchedPrograms?: ProgramMatch[];
+  /** Distinctly labelled alternatives when hard criteria yielded no matches */
+  alternatives?: AlternativeOption[];
+  /** Ambiguous entity information when multiple universities could match */
+  ambiguousEntity?: AmbiguousEntity;
 }
 
 /**
@@ -217,6 +262,19 @@ export function validateAssistantResponse(input: any): AssistantResponse {
     ? input.matchedUniversities
     : [];
 
+  const matchedPrograms: ProgramMatch[] | undefined = Array.isArray(input.matchedPrograms)
+    ? input.matchedPrograms
+    : undefined;
+
+  const alternatives: AlternativeOption[] | undefined = Array.isArray(input.alternatives)
+    ? input.alternatives
+    : undefined;
+
+  const ambiguousEntity: AmbiguousEntity | undefined =
+    input.ambiguousEntity && typeof input.ambiguousEntity === 'object'
+      ? input.ambiguousEntity
+      : undefined;
+
   const toolCall: ToolCall = {
     name: input.toolCall?.name || 'Поиск по локальному каталогу Вузопедии',
     query: input.toolCall?.query || '',
@@ -224,13 +282,15 @@ export function validateAssistantResponse(input: any): AssistantResponse {
     status: input.toolCall?.status === 'error' ? 'error' : input.toolCall?.status === 'running' ? 'running' : 'complete',
   };
 
-  const extractedFilters: ExtractedQueryFilters = input.extractedFilters && typeof input.extractedFilters === 'object'
-    ? input.extractedFilters
-    : {};
+  const extractedFilters: ExtractedQueryFilters =
+    input.extractedFilters && typeof input.extractedFilters === 'object'
+      ? input.extractedFilters
+      : {};
 
-  const missingInfoNotice = typeof input.missingInfoNotice === 'string' && input.missingInfoNotice.trim()
-    ? input.missingInfoNotice.trim()
-    : undefined;
+  const missingInfoNotice =
+    typeof input.missingInfoNotice === 'string' && input.missingInfoNotice.trim()
+      ? input.missingInfoNotice.trim()
+      : undefined;
 
   return {
     text: text || 'Ответ сформирован на основе локального каталога.',
@@ -250,6 +310,9 @@ export function validateAssistantResponse(input: any): AssistantResponse {
     extractedFilters,
     citationChunks,
     matchedUniversities,
+    matchedPrograms,
+    alternatives,
+    ambiguousEntity,
   };
 }
 

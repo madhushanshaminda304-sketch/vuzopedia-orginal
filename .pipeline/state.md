@@ -40,6 +40,35 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Correctness of Entity Matching, Negation, Programme Ranking & Alternatives
+- **Size**: M | **Types**: bugfix, nlp, retrieval, architecture, ui
+- **Bauman Alias Defect Fixed (`src/services/assistant/entityResolution.ts`)**:
+  - Replaced loop-assigned aliases with static, strictly isolated `UNIVERSITY_EXPLICIT_ALIASES: UniversityAliasMap[]`.
+  - BMSTU is the only entity possessing Bauman stems; other universities (MGU, HSE, MIPT, etc.) never receive Bauman tokens.
+- **Ambiguity Detection & Interactive Clarification**:
+  - Identifies polysemous terms (e.g., "политех" referring to BMSTU vs TPU) via `findMentionedUniversitiesDetailed()`.
+  - Generates `AmbiguousEntity` state and renders interactive clarification choice buttons in the chat UI.
+- **Strict Boundary Matching & False-Positive Prevention (`queryInterpretation.ts`)**:
+  - Removed arbitrary substring matches that falsely classified words like "кредит", "депозит", "посетить", or "история" as IT.
+  - Strict regex boundary checks distinguish financial questions from computer science programs.
+- **Separation of Hard Requirements vs Soft Preferences**:
+  - Parses constraint modalities: "строго", "только", "обязательно" generate hard requirements (`isCityHard`, `isDormHard`, `isMilitaryHard`, `wantsBudgetOnly`).
+  - Softer cues generate `softPreferences` for secondary ranking.
+- **Negation Predicate Parsing**:
+  - Successfully handles negation: "без общежития" (`wantsDorm = false`), "не в Москве" (`excludedCities = ['Москва']`), "без ВУЦ" (`wantsMilitary = false`).
+- **Zero-Match Integrity & Labeled Alternatives (No Silent Discard)**:
+  - Required filters (city, accommodation, budget, score) are NEVER silently dropped.
+  - When no university matches all hard criteria, `hasZeroMatches = true`, an explicit explanation of conflicting constraints is returned, and structured `alternatives` (regional alternatives, 3% credit paid options) are provided and rendered in the UI with navigation buttons.
+- **Programme-Level Ranking (`dataRetrieval.ts`)**:
+  - Searches and ranks specific academic programs (`matchedPrograms`) using program-level minimum budget scores, codes (e.g., `09.03.04`), intake volumes, and faculties rather than solely university-wide aggregates.
+- **Multi-turn Contextual Follow-up Resolution (Anaphora)**:
+  - `resolveActiveEntityFromHistory` resolves pronouns ("в нём", "там", "его", "its") from preceding turns to preserve active entity context.
+- **Verification**:
+  - `scripts/verify_entity_matching_and_retrieval.mjs`: 13/13 tests passed (0 errors). Screenshot: `feature_assistant_entity_matching_alternatives.png`.
+  - `scripts/verify_rag_features.mjs`: passed (0 errors).
+  - `scripts/verify_advanced_assistant_v4.mjs`: passed (0 errors).
+  - TypeScript & Vite build: 0 errors.
+
 ## Change 2026-11-11: Advanced Assistant v4 (Artifacts Canvas, Live Web Search, Sessions History, Voice TTS & Prompt Optimizer)
 - **Size**: M | **Types**: feature, architecture, nlp, audio, canvas, ui
 - **Interactive Admission Artifact Canvas (`AdmissionArtifact`)**:

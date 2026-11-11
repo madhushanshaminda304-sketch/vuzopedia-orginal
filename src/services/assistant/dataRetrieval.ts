@@ -1,4 +1,5 @@
 import { UNIVERSITIES } from '../../data/mockData';
+import { FULL_PROGRAMS } from '../../data/extendedData';
 import { University } from '../../types';
 import {
   AdmissionProbability,
@@ -9,8 +10,13 @@ import {
   ExtractedQueryFilters,
   SpecialistMode,
   RAGScopeFilter,
+  ProgramMatch,
+  AlternativeOption,
+  AmbiguousEntity,
 } from './types';
-import { findMentionedUniversities } from './entityResolution';
+import {
+  findMentionedUniversitiesDetailed,
+} from './entityResolution';
 import { interpretStudentQuery } from './queryInterpretation';
 import { buildEvidencePackage } from './evidenceSources';
 import { determineDefaultAction } from './navigationActions';
@@ -18,6 +24,10 @@ import { determineDefaultAction } from './navigationActions';
 export interface RetrievalContext {
   evidence: string;
   matchedUniversities: University[];
+  matchedPrograms?: ProgramMatch[];
+  conflictingRequirements?: string[];
+  alternatives?: AlternativeOption[];
+  ambiguousEntity?: AmbiguousEntity;
   reasoningTrace: string[];
   suggestedActionTab: string;
   suggestedActionLabel: string;
@@ -32,6 +42,108 @@ export interface RetrievalContext {
   citationChunks: RetrievedCitationChunk[];
   extractedFilters: ExtractedQueryFilters;
   artifact?: AdmissionArtifact;
+  hasZeroMatches?: boolean;
+}
+
+/**
+ * Searches and ranks academic programmes using programme-level thresholds,
+ * faculties, and intake volumes rather than only university-wide minimums.
+ */
+export function searchAndRankPrograms(
+  direction: string | null | undefined,
+  userScore: number | null,
+  targetUniversities?: University[]
+): ProgramMatch[] {
+  const allCandidatePrograms: ProgramMatch[] = [];
+  const targetVuzIds = targetUniversities && targetUniversities.length > 0
+    ? targetUniversities.map((u) => u.id)
+    : null;
+
+  // 1. Gather programs from UNIVERSITIES[].programs
+  for (const u of UNIVERSITIES) {
+    if (targetVuzIds && !targetVuzIds.includes(u.id)) continue;
+    if (!u.programs) continue;
+
+    for (const p of u.programs) {
+      allCandidatePrograms.push({
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        universityId: u.id,
+        universityShort: u.shortName,
+        faculty: p.faculty,
+        minBudgetScore: p.minBudgetScore2025 || u.minBudgetScore,
+        budgetPlaces: p.budgetPlaces,
+        annualFee: p.annualFee || u.minAnnualFee,
+        scoreDiff: userScore ? userScore - (p.minBudgetScore2025 || u.minBudgetScore) : undefined,
+      });
+    }
+  }
+
+  // 2. Gather additional detailed programs from FULL_PROGRAMS
+  for (const fp of FULL_PROGRAMS) {
+    if (targetVuzIds && !targetVuzIds.includes(fp.universityId)) continue;
+    if (allCandidatePrograms.some((existing) => existing.id === fp.id)) continue;
+
+    allCandidatePrograms.push({
+      id: fp.id,
+      code: fp.code,
+      name: fp.name,
+      universityId: fp.universityId,
+      universityShort: fp.universityShort,
+      faculty: fp.faculty,
+      minBudgetScore: fp.minBudgetScore,
+      budgetPlaces: fp.budgetPlaces,
+      annualFee: fp.annualFee,
+      scoreDiff: userScore ? userScore - fp.minBudgetScore : undefined,
+    });
+  }
+
+  // 3. Filter by direction if specified
+  let filtered = allCandidatePrograms;
+  if (direction) {
+    const isIT = direction.includes('IT');
+    const isFinance = direction.includes('Финансы') || direction.includes('Экономика');
+
+    filtered = allCandidatePrograms.filter((p) => {
+      const code = p.code;
+      const nameLower = p.name.toLowerCase();
+      if (isIT) {
+        return (
+          code.startsWith('09.') ||
+          code.startsWith('01.03.02') ||
+          code.startsWith('02.03.02') ||
+          code.startsWith('10.') ||
+          nameLower.includes('программ') ||
+          nameLower.includes('информат') ||
+          nameLower.includes('компьютер') ||
+          nameLower.includes('интеллект')
+        );
+      }
+      if (isFinance) {
+        return code.startsWith('38.') || nameLower.includes('эконом') || nameLower.includes('финанс');
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      filtered = allCandidatePrograms;
+    }
+  }
+
+  // 4. Rank programmes
+  if (userScore) {
+    filtered.sort((a, b) => {
+      // Prioritize programs within +-15 points or where userScore >= minBudgetScore
+      const diffA = Math.abs(a.minBudgetScore - userScore);
+      const diffB = Math.abs(b.minBudgetScore - userScore);
+      return diffA - diffB || b.budgetPlaces - a.budgetPlaces;
+    });
+  } else {
+    filtered.sort((a, b) => b.budgetPlaces - a.budgetPlaces);
+  }
+
+  return filtered.slice(0, 5);
 }
 
 /**
@@ -282,24 +394,65 @@ export function generateDynamicFollowUps(
 
 /**
  * Orchestrates entity matching, filtering, candidate scoring, and context assembly.
+ * Strictly separates hard requirements from preferences. Never silently discards filters.
  */
 export function retrieveAssistantContext(
   query: string,
   mode: SpecialistMode = 'all',
-  scope: RAGScopeFilter = 'all'
+  scope: RAGScopeFilter = 'all',
+  history: Array<{ sender: string; text: string }> = []
 ): RetrievalContext {
   const reasoningTrace: string[] = [];
   const matchedUniversities: University[] = [];
 
   // 1. Interpret user query and extract preferences
   reasoningTrace.push('1. Извлечение ключевых параметров запроса (баллы ЕГЭ, город, требования к ВУЦ и общежитию).');
-  const interpretation = interpretStudentQuery(query, mode, scope);
-  const { filters, isComparison, isUnderspecified, isStrategyRequest, rawScore, targetCity } = interpretation;
+  const interpretation = interpretStudentQuery(query, mode, scope, history);
+  const {
+    filters,
+    isComparison,
+    isUnderspecified,
+    isStrategyRequest,
+    rawScore,
+    targetCity,
+    excludedCities,
+    wantsMilitary,
+    isMilitaryHard,
+    wantsDorm,
+    isDormHard,
+    wantsFinance,
+    wantsOlympiads,
+    wantsBudgetOnly,
+    anaphoricEntity,
+    hardRequirements,
+  } = interpretation;
 
-  // 2. Identify university mentions
-  const mentionedVuzes = findMentionedUniversities(query);
+  // 2. Identify university mentions using normalized isolated matching
+  const mentionResult = findMentionedUniversitiesDetailed(query);
+  let mentionedVuzes = mentionResult.matchedUniversities;
 
-  // 3. Comparison check
+  // If follow-up reference was resolved from history (e.g. "А что с общежитием в нём?")
+  if (mentionedVuzes.length === 0 && anaphoricEntity) {
+    mentionedVuzes = [anaphoricEntity];
+    reasoningTrace.push(
+      `2. Распознана отсылка к контексту предыдущего вопроса: [vuz:${anaphoricEntity.id}:${anaphoricEntity.shortName}].`
+    );
+  }
+
+  // 3. Ambiguity Handling: if user asked about "политех" without specifying which one
+  let clarificationOptions: ClarificationOption[] | undefined;
+  if (mentionedVuzes.length === 0 && mentionResult.isAmbiguous && mentionResult.ambiguousEntity) {
+    reasoningTrace.push(
+      `2. Обнаружено неоднозначное наименование «${mentionResult.ambiguousEntity.term}». Сформированы варианты уточнения.`
+    );
+    clarificationOptions = mentionResult.ambiguousEntity.candidates.map((c) => ({
+      icon: '🏛️',
+      label: `${c.name} (${c.city})`,
+      prompt: `Расскажи про ${c.name} в городе ${c.city}`,
+    }));
+  }
+
+  // 4. Comparison check
   let comparisonMatrix: ComparisonMatrix | undefined;
   const isComparisonQuery = isComparison && mentionedVuzes.length >= 2;
 
@@ -313,9 +466,8 @@ export function retrieveAssistantContext(
     );
   }
 
-  // 4. Underspecified Clarification Options
-  let clarificationOptions: ClarificationOption[] | undefined;
-  if (isUnderspecified && mentionedVuzes.length === 0) {
+  // 5. Underspecified Clarification Options (when no universities or criteria specified)
+  if (!clarificationOptions && isUnderspecified && mentionedVuzes.length === 0) {
     clarificationOptions = [
       {
         icon: '🎯',
@@ -341,63 +493,140 @@ export function retrieveAssistantContext(
     reasoningTrace.push('2. Запрос общего характера. Сформированы варианты уточнения для точного подбора.');
   }
 
-  // 5. University Candidate Filtering and Selection
-  if (!isComparisonQuery && matchedUniversities.length === 0) {
+  // 6. Strict Candidate Filtering & Zero-Match Alternative Generation
+  let conflictingRequirements: string[] | undefined;
+  let alternatives: AlternativeOption[] | undefined;
+  let hasZeroMatches = false;
+
+  if (!isComparisonQuery && matchedUniversities.length === 0 && !clarificationOptions) {
     reasoningTrace.push(
-      `2. Поиск в каталоге: Город = ${targetCity || 'Все регионы'}, Направление = ${
-        filters.direction || 'Общее'
-      }, ВУЦ = ${filters.wantsMilitary ? 'Да' : 'Не обязательно'}, Общежитие = ${
-        filters.wantsDorm ? 'Да' : 'Не обязательно'
+      `2. Фильтрация по критериям: Город = ${targetCity || 'Все'} (исключены: ${
+        excludedCities.length > 0 ? excludedCities.join(', ') : 'нет'
+      }), ВУЦ = ${wantsMilitary === true ? (isMilitaryHard ? 'Строго да' : 'Желательно') : wantsMilitary === false ? 'Не требуется' : 'Не важно'}, Общежитие = ${
+        wantsDorm === true ? (isDormHard ? 'Строго да' : 'Желательно') : wantsDorm === false ? 'Не требуется' : 'Не важно'
       }.`
     );
 
+    // Apply strict filtering (NEVER silently drop filters)
     let candidates = UNIVERSITIES.filter((u) => {
+      // Excluded cities
+      if (excludedCities.includes(u.city)) return false;
+      // Target city
       if (targetCity && u.city !== targetCity) return false;
-      if (filters.wantsMilitary && !u.hasMilitaryDept) return false;
-      if (filters.wantsDorm && !u.hasDormitory) return false;
+      // Hard military requirement
+      if (wantsMilitary === true && isMilitaryHard && !u.hasMilitaryDept) return false;
+      // Hard dormitory requirement
+      if (wantsDorm === true && isDormHard && !u.hasDormitory) return false;
+      // Hard budget-only requirement
+      if (wantsBudgetOnly && (!u.hasBudget || u.totalBudgetPlaces <= 0)) return false;
+      // Score threshold: if student gave score and asked for budget, filter out universities where cutoff is unreachable (> score + 15)
+      if (rawScore && wantsBudgetOnly && u.minBudgetScore > rawScore + 15) return false;
       return true;
     });
 
-    if (candidates.length === 0) {
-      candidates = UNIVERSITIES.filter((u) => {
-        if (filters.wantsMilitary && !u.hasMilitaryDept) return false;
-        return true;
-      });
-    }
-
-    if (candidates.length === 0) {
-      candidates = [...UNIVERSITIES];
-    }
-
     if (mentionedVuzes.length > 0) {
       matchedUniversities.push(...mentionedVuzes);
-    } else if (rawScore) {
-      candidates.sort((a, b) => {
-        const diffA = Math.abs(a.minBudgetScore - rawScore);
-        const diffB = Math.abs(b.minBudgetScore - rawScore);
-        return diffA - diffB;
-      });
+    } else if (candidates.length > 0) {
+      // Sort and select top candidates
+      if (rawScore) {
+        candidates.sort((a, b) => {
+          const diffA = Math.abs(a.minBudgetScore - rawScore);
+          const diffB = Math.abs(b.minBudgetScore - rawScore);
+          return diffA - diffB;
+        });
+      } else if (filters.direction?.includes('IT')) {
+        const itFavs = ['hse', 'bmstu', 'itmo', 'mgu', 'mipt', 'mirea'];
+        candidates.sort((a, b) => {
+          const aIsIt = itFavs.includes(a.id) ? 1 : 0;
+          const bIsIt = itFavs.includes(b.id) ? 1 : 0;
+          return bIsIt - aIsIt || a.ratingRank - b.ratingRank;
+        });
+      } else {
+        candidates.sort((a, b) => a.ratingRank - b.ratingRank);
+      }
       matchedUniversities.push(...candidates.slice(0, 3));
-    } else if (filters.direction?.includes('IT')) {
-      const itFavs = ['hse', 'bmstu', 'itmo', 'mgu', 'mipt', 'mirea'];
-      candidates.sort((a, b) => {
-        const aIsIt = itFavs.includes(a.id) ? 1 : 0;
-        const bIsIt = itFavs.includes(b.id) ? 1 : 0;
-        return bIsIt - aIsIt || a.ratingRank - b.ratingRank;
-      });
-      matchedUniversities.push(...candidates.slice(0, 3));
+      reasoningTrace.push(
+        `3. Отобрано в каталоге: ${matchedUniversities.map((u) => u.shortName).join(', ')}.`
+      );
     } else {
-      candidates.sort((a, b) => a.ratingRank - b.ratingRank);
-      matchedUniversities.push(...candidates.slice(0, 3));
-    }
+      // EXACT MATCHES = 0: Do NOT silently drop filters! Explain conflicting constraints and offer alternatives
+      hasZeroMatches = true;
+      conflictingRequirements = [...hardRequirements];
+      reasoningTrace.push(
+        `3. По заданным строгим критериям совпадений не найдено. Формирование альтернативных вариантов.`
+      );
 
-    reasoningTrace.push(
-      `3. Отобрано в локальном каталоге: ${matchedUniversities.map((u) => u.shortName).join(', ')}.`
-    );
+      // Construct clearly labelled alternative options
+      alternatives = [];
+
+      // Alternative A: Other regional hubs if city was restricted
+      if (targetCity) {
+        const otherCityMatches = UNIVERSITIES.filter(
+          (u) =>
+            u.city !== targetCity &&
+            !excludedCities.includes(u.city) &&
+            (!isMilitaryHard || u.hasMilitaryDept) &&
+            (!isDormHard || u.hasDormitory)
+        );
+        if (otherCityMatches.length > 0) {
+          alternatives.push({
+            title: `Альтернативные вузы в других регионах РФ (ВУЦ: ${wantsMilitary ? 'есть' : 'не важно'})`,
+            description: `Если расширить географию за пределы города ${targetCity}, подходящие варианты с общежитием и военной кафедрой есть в других городах каталога:`,
+            universities: otherCityMatches.slice(0, 3),
+            actionTab: 'catalog',
+            actionLabel: 'Смотреть вузы в других регионах',
+          });
+        }
+      }
+
+      // Alternative B: Relaxing military requirement in the same city
+      if (wantsMilitary && targetCity) {
+        const withoutMilitary = UNIVERSITIES.filter(
+          (u) => u.city === targetCity && !u.hasMilitaryDept && (!isDormHard || u.hasDormitory)
+        );
+        if (withoutMilitary.length > 0) {
+          alternatives.push({
+            title: `Вузы в городе ${targetCity} без военной кафедры`,
+            description: `Вузы с академической отсрочкой по закону (без ВУЦ), где проходной порог может быть доступнее:`,
+            universities: withoutMilitary.slice(0, 2),
+            actionTab: 'military',
+            actionLabel: 'Справочник отсрочек и ВУЦ',
+          });
+        }
+      }
+
+      // Alternative C: Paid education with 3% state loan if score was too low
+      if (rawScore) {
+        const paidOptions = UNIVERSITIES.filter((u) => {
+          if (targetCity && u.city !== targetCity) return false;
+          return u.minPaidScore <= rawScore;
+        });
+        if (paidOptions.length > 0) {
+          alternatives.push({
+            title: `Платное отделение с кредитом под 3% годовых`,
+            description: `При сумме ${rawScore} баллов вы гарантированно проходите на платное отделение по конкурсу аттестатов/ЕГЭ (льготный кредит Сбера под 3%):`,
+            universities: paidOptions.slice(0, 2),
+            actionTab: 'credit',
+            actionLabel: 'Рассчитать платеж по кредиту 3%',
+          });
+        }
+      }
+    }
   }
 
-  // 6. Build Evidence and Citations
-  const { citationChunks, evidenceText } = buildEvidencePackage(matchedUniversities, filters);
+  // 7. Search and Rank Academic Programmes using programme-level data
+  const matchedPrograms = searchAndRankPrograms(
+    filters.direction,
+    rawScore,
+    matchedUniversities.length > 0 ? matchedUniversities : undefined
+  );
+
+  // 8. Build Evidence and Citations
+  const { citationChunks, evidenceText } = buildEvidencePackage(
+    matchedUniversities,
+    filters,
+    matchedPrograms
+  );
 
   let fullEvidence = evidenceText;
   if (comparisonMatrix) {
@@ -409,7 +638,7 @@ export function retrieveAssistantContext(
     });
   }
 
-  // 7. Qualitative Probability Assessment
+  // 9. Qualitative Probability Assessment
   let probability: AdmissionProbability | undefined;
   if (rawScore && matchedUniversities.length > 0) {
     probability = calculateScoreAssessment(rawScore, matchedUniversities);
@@ -424,12 +653,12 @@ export function retrieveAssistantContext(
 
   reasoningTrace.push(`4. Отобрано ${citationChunks.length} справочных фрагментов из локального каталога.`);
 
-  // 8. Navigation action & Tool definition
+  // 10. Navigation Action & Tool Metadata
   const defaultAction = determineDefaultAction(query, filters, isComparisonQuery);
   let toolName = 'Поиск по локальному каталогу Вузопедии';
   let toolQuery = `Параметры: город=${targetCity || 'все'}, IT=${Boolean(
     filters.direction?.includes('IT')
-  )}, ВУЦ=${filters.wantsMilitary}, баллы=${rawScore || 'не указаны'}`;
+  )}, ВУЦ=${wantsMilitary}, баллы=${rawScore || 'не указаны'}`;
 
   if (isComparisonQuery) {
     toolName = 'Сравнительная таблица вузов каталога';
@@ -437,16 +666,16 @@ export function retrieveAssistantContext(
   } else if (filters.direction?.includes('IT')) {
     toolName = 'Каталог образовательных программ IT';
     toolQuery = 'Выборка направлений 09.03.01, 09.03.04, 01.03.02';
-  } else if (filters.wantsMilitary) {
+  } else if (wantsMilitary) {
     toolName = 'Справочник Военных учебных центров (ВУЦ)';
     toolQuery = 'Вузы с программами подготовки офицеров и сержантов запаса';
-  } else if (filters.wantsDorm) {
+  } else if (wantsDorm) {
     toolName = 'Справочник студенческих общежитий';
     toolQuery = 'Общежития для студентов 1 курса и стоимость проживания';
-  } else if (filters.wantsOlympiads) {
+  } else if (wantsOlympiads) {
     toolName = 'Справочник олимпиад РСОШ и льгот БВИ';
     toolQuery = 'Правила подтверждения льготы 75+ баллами профильного ЕГЭ';
-  } else if (filters.wantsFinance) {
+  } else if (wantsFinance) {
     toolName = 'Калькулятор образовательного кредита 3%';
     toolQuery = 'Льготный образовательный кредит с господдержкой (Сбербанк)';
   } else if (rawScore) {
@@ -454,7 +683,7 @@ export function retrieveAssistantContext(
     toolQuery = `Сравнение с проходными баллами прошлых лет для суммы: ${rawScore} баллов`;
   }
 
-  // 9. Interactive Artifact
+  // 11. Interactive Artifact
   let artifact: AdmissionArtifact | undefined;
   if (isStrategyRequest) {
     artifact = createAdmissionArtifact();
@@ -466,6 +695,10 @@ export function retrieveAssistantContext(
   return {
     evidence: fullEvidence,
     matchedUniversities,
+    matchedPrograms: matchedPrograms.length > 0 ? matchedPrograms : undefined,
+    conflictingRequirements,
+    alternatives,
+    ambiguousEntity: mentionResult.ambiguousEntity,
     reasoningTrace,
     suggestedActionTab: defaultAction.tabId,
     suggestedActionLabel: defaultAction.label,
@@ -480,5 +713,6 @@ export function retrieveAssistantContext(
     citationChunks,
     extractedFilters: filters,
     artifact,
+    hasZeroMatches,
   };
 }

@@ -43,8 +43,8 @@ export async function queryAssistant(
 ): Promise<AssistantResponse> {
   const startTime = performance.now();
 
-  // 1. Ground-truth retrieval and intent analysis
-  const context = retrieveAssistantContext(prompt, mode, scope);
+  // 1. Ground-truth retrieval and intent analysis (with conversation history for anaphora resolution)
+  const context = retrieveAssistantContext(prompt, mode, scope, history);
 
   // 2. Attempt AI Generation via Gemini Provider
   try {

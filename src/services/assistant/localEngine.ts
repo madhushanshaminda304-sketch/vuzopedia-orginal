@@ -5,6 +5,7 @@ import { extractReferencedEntityIds } from './entityResolution';
 /**
  * Generates local grounded responses relying strictly on curated catalog records.
  * Acts as primary offline engine and resilient fallback.
+ * Explains conflicting constraints and clearly offers alternatives when no exact matches exist.
  */
 export function queryLocalEngine(
   query: string,
@@ -16,13 +17,28 @@ export function queryLocalEngine(
   let replyText = '';
   let missingInfoNotice: string | undefined;
 
-  if (context.isUnderspecified && context.clarificationOptions) {
+  // Case 1: Ambiguous university mention (e.g. "политех")
+  if (context.ambiguousEntity && context.clarificationOptions) {
+    replyText =
+      `В вашем запросе встретилось наименование «**${context.ambiguousEntity.term}**», которое может относиться к разным университетам:\n\n` +
+      context.ambiguousEntity.candidates
+        .map(
+          (c, idx) =>
+            `${idx + 1}. **[vuz:${c.id}:${c.name}]** (${c.city}) — ${c.description}`
+        )
+        .join('\n') +
+      `\n\nУточните, какой именно университет вас интересует, или нажмите одну из кнопок ниже:`;
+  }
+  // Case 2: Underspecified generic query
+  else if (context.isUnderspecified && context.clarificationOptions) {
     replyText =
       `Чтобы подобрать подходящие варианты из каталога вузов, укажите ключевые параметры:\n\n` +
       `1. **Ваши предметы ЕГЭ и примерную сумму баллов**\n` +
       `2. **Желаемый город или направление обучения** (IT, инженерия, экономика и др.)\n\n` +
       `Вы можете выбрать один из готовых сценариев ниже либо ввести свои баллы:`;
-  } else if (context.isComparison && context.comparisonMatrix && context.matchedUniversities.length >= 2) {
+  }
+  // Case 3: Comparison query
+  else if (context.isComparison && context.comparisonMatrix && context.matchedUniversities.length >= 2) {
     const v1 = context.matchedUniversities[0];
     const v2 = context.matchedUniversities[1];
     replyText =
@@ -38,7 +54,45 @@ export function queryLocalEngine(
       `• **[vuz:${v1.id}:${v1.shortName}]**: минимальный проходной балл прошлых лет от ${v1.minBudgetScore} б., бюджетных мест: ${v1.totalBudgetPlaces}.\n` +
       `• **[vuz:${v2.id}:${v2.shortName}]**: минимальный проходной балл прошлых лет от ${v2.minBudgetScore} б., бюджетных мест: ${v2.totalBudgetPlaces}.\n\n` +
       `*Примечание: приведены ориентировочные проходные баллы прошлых лет. Актуальные условия приёма 2026 года уточняйте на сайтах приёмных комиссий.*`;
-  } else if (context.matchedUniversities.length > 0) {
+  }
+  // Case 4: Zero exact matches with conflicting requirements (never silently discard filters!)
+  else if (context.hasZeroMatches) {
+    const conflictsList = context.conflictingRequirements && context.conflictingRequirements.length > 0
+      ? context.conflictingRequirements.map((r) => `• ${r}`).join('\n')
+      : `• Заданные строгие параметры фильтрации`;
+
+    missingInfoNotice =
+      `По заданным строгим критериям в каталоге не найдено точных совпадений. Ни один вуз выборки не удовлетворяет одновременно всем установленным ограничениям.`;
+
+    replyText =
+      `## Результат поиска по заданным критериям\n\n` +
+      `По вашей комбинации условий в каталоге **не найдено прямых совпадений**.\n\n` +
+      `**Установленные строгие ограничения:**\n${conflictsList}\n\n`;
+
+    if (context.alternatives && context.alternatives.length > 0) {
+      replyText += `### Рекомендуемые альтернативные варианты:\n\n`;
+      replyText += context.alternatives
+        .map(
+          (alt, idx) =>
+            `**Альтернатива ${idx + 1}: ${alt.title}**\n` +
+            `${alt.description}\n` +
+            alt.universities
+              .map(
+                (u) =>
+                  `• **[vuz:${u.id}:${u.shortName}]** (${u.city}): проходной на бюджет от **${u.minBudgetScore} б.**, ВУЦ: ${
+                    u.hasMilitaryDept ? 'Есть' : 'Нет'
+                  }, общежитие: ${u.hasDormitory ? 'Предоставляется' : 'Нет'}`
+              )
+              .join('\n')
+        )
+        .join('\n\n');
+    } else {
+      replyText +=
+        `Рекомендация: попробуйте расширить географию поиска, рассмотреть смежные специальности или воспользоваться Калькулятором ЕГЭ для подбора по баллам.`;
+    }
+  }
+  // Case 5: Universities matched
+  else if (context.matchedUniversities.length > 0) {
     replyText =
       `## Результаты подбора по локальному каталогу\n\n` +
       `По вашим критериям в каталоге найдены следующие университеты:\n\n` +
@@ -51,11 +105,27 @@ export function queryLocalEngine(
             `   • Военный учебный центр (ВУЦ): **${u.hasMilitaryDept ? 'Есть' : 'Нет'}**\n` +
             `   • Общежитие: **${u.hasDormitory ? 'Предоставляется (' + (u.dormitoryInfo?.costMonth || 1200) + ' ₽/мес)' : 'Нет'}**`
         )
-        .join('\n\n') +
-      `\n\n💡 **Рекомендация:** для гарантированного поступления распределяйте 5 заявлений на 3 уровня: вузы мечты, реалистичные варианты и надежный запасной вуз с проходным баллом на 15–20 пунктов ниже вашей суммы.`;
-  } else {
+        .join('\n\n');
+
+    // Programme-level recommendations
+    if (context.matchedPrograms && context.matchedPrograms.length > 0) {
+      replyText += `\n\n### Релевантные программы обучения:\n`;
+      replyText += context.matchedPrograms
+        .slice(0, 3)
+        .map(
+          (p) =>
+            `• **${p.code} ${p.name}** ([vuz:${p.universityId}:${p.universityShort}]):\n` +
+            `   Проходной балл на бюджет: **${p.minBudgetScore} б.** | Бюджетных мест: **${p.budgetPlaces}** | Платное: от **${p.annualFee.toLocaleString()} ₽/год**`
+        )
+        .join('\n');
+    }
+
+    replyText += `\n\n💡 **Рекомендация:** для гарантированного поступления распределяйте 5 заявлений на 3 уровня: вузы мечты, реалистичные варианты и надежный запасной вуз с проходным баллом на 15–20 пунктов ниже вашей суммы.`;
+  }
+  // Case 6: Fallback when completely out of scope
+  else {
     missingInfoNotice =
-      `В локальной выборке ассистента представлены 10 ведущих университетов России (МГУ, НИУ ВШЭ, МГТУ им. Баумана, МФТИ, НИЯУ МИФИ, ИТМО, СПбГУ, РТУ МИРЭА, РАНХиГС, НИУ МЭИ). По запросу «${query}» точных совпадений среди них не обнаружено.`;
+      `В локальной выборке ассистента представлены 12 ведущих университетов России. По запросу «${query}» точных совпадений среди них не обнаружено.`;
 
     replyText =
       `${missingInfoNotice}\n\n` +
@@ -112,6 +182,9 @@ export function queryLocalEngine(
     extractedFilters: context.extractedFilters,
     citationChunks: context.citationChunks,
     matchedUniversities: context.matchedUniversities,
+    matchedPrograms: context.matchedPrograms,
+    alternatives: context.alternatives,
+    ambiguousEntity: context.ambiguousEntity,
   };
 
   return validateAssistantResponse(rawPayload);
