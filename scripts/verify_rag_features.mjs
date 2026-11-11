@@ -59,12 +59,12 @@ server.listen(PORT, async () => {
     await headerBtn.click();
     await page.waitForTimeout(500);
 
-    const modalTitle = page.locator('text=Дед Вузопед AI');
+    const modalTitle = page.locator('h3:has-text("Дед Вузопед")').first();
     await modalTitle.waitFor({ timeout: 5000 });
     console.log('Verified: Ded Vuzoped assistant opened.');
 
-    // Step 3: Test Open-WebUI Scope Filter Bar
-    console.log('3. Testing Open-WebUI RAG Scope Filter Bar...');
+    // Step 3: Test Scope Filter Bar
+    console.log('3. Testing RAG Scope Filter Bar...');
     const moscowScopeBtn = page.locator('button:has-text("📍 Москва")').first();
     await moscowScopeBtn.waitFor({ timeout: 3000 });
     await moscowScopeBtn.click();
@@ -90,35 +90,35 @@ server.listen(PORT, async () => {
     }
     await page.waitForTimeout(1000);
 
-    // Step 5: Check Dify-style Extracted Query Filters Chip Bar
-    console.log('6. Checking Dify Extracted Query Filters Bar...');
-    const difyFilterPill = page.locator('text=🎯 Баллы: 275, text=📍 Москва, text=🛡️ С ВУЦ').first();
-    if (await difyFilterPill.isVisible()) {
-      console.log('Verified: Dify-style Extracted Query Filters Pill Bar rendered.');
+    // Step 5: Check Extracted Query Filters Chip Bar
+    console.log('6. Checking Extracted Query Filters Bar...');
+    const filterPill = page.locator('text=275 б.').first();
+    if (await filterPill.isVisible()) {
+      console.log('Verified: Extracted Query Filters Pill Bar rendered.');
     } else {
-      console.log('Dify filter container found on message bubble.');
+      console.log('Filter container found on message bubble.');
     }
 
-    // Step 6: Check Open-WebUI Citation Sources Pill
-    console.log('7. Checking Open-WebUI Citation Sources Pill...');
-    const citationPill = page.locator('button:has-text("Источники данных")').last();
+    // Step 6: Check Honest Citation Sources Pill
+    console.log('7. Checking Honest Citation Sources Pill...');
+    const citationPill = page.locator('button:has-text("материалы каталога")').last();
     await citationPill.waitFor({ timeout: 5000 });
     const pillText = await citationPill.innerText();
     console.log(`Verified: Citation Pill rendered with text: "${pillText}"`);
 
-    // Step 7: Click Citation Pill to open Open-WebUI Citations Drawer
+    // Step 7: Click Citation Pill to open Citations Drawer
     console.log('8. Clicking Citation Sources Pill to open Citations Drawer...');
     await citationPill.click();
     await page.waitForTimeout(500);
 
-    const citationsDrawer = page.locator('text=Источники и фрагменты базы знаний (RAG)');
+    const citationsDrawer = page.locator('text=Справочные материалы локальной базы данных');
     await citationsDrawer.waitFor({ timeout: 5000 });
-    console.log('Verified: Open-WebUI Citations Drawer opened successfully!');
+    console.log('Verified: Citations Drawer opened successfully!');
 
-    // Check confidence indicator inside drawer
-    const confidenceBadge = page.locator('text=доверие').first();
-    await confidenceBadge.waitFor({ timeout: 5000 });
-    console.log('Verified: Grounding Confidence Indicator rendered.');
+    // Check honest badge inside drawer
+    const localCatalogBadge = page.locator('text=Локальный каталог').first();
+    await localCatalogBadge.waitFor({ timeout: 5000 });
+    console.log('Verified: Honest Local Catalog attribution rendered.');
 
     // Capture screenshot of Citations Drawer
     const drawerImg = path.join('.pipeline/after', 'feature_assistant_rag_citations_drawer.png');

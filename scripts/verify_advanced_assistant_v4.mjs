@@ -59,18 +59,16 @@ server.listen(PORT, async () => {
     await headerBtn.click();
     await page.waitForTimeout(500);
 
-    const modalTitle = page.locator('text=Дед Вузопед AI');
+    const modalTitle = page.locator('h3:has-text("Дед Вузопед")').first();
     await modalTitle.waitFor({ timeout: 5000 });
     console.log('Verified: Ded Vuzoped assistant opened.');
 
-    // Step 3: Test Live Web Search Toggle
-    console.log('3. Testing Live Web Search Toggle...');
-    const webSearchToggle = page.locator('button:has-text("Live Web")').first();
-    await webSearchToggle.waitFor({ timeout: 3000 });
-    await webSearchToggle.click();
-    await page.waitForTimeout(300);
-    const isWebActive = await page.locator('text=Live Web: ВКЛ').isVisible();
-    console.log(`Verified: Live Web Search mode toggled (active: ${isWebActive}).`);
+    // Step 3: Test Dynamic Operating Mode Badge
+    console.log('3. Testing Dynamic Mode Badge...');
+    const modeBadge = page.locator('span:has-text("Google Gemini"), span:has-text("Локальный каталог")').first();
+    await modeBadge.waitFor({ timeout: 5000 });
+    const modeText = await modeBadge.innerText();
+    console.log(`Verified: Honest Operating Mode Badge active: "${modeText}"`);
 
     // Step 4: Test Magic Prompt Enhancer
     console.log('4. Testing Magic Prompt Enhancer button...');
@@ -145,16 +143,16 @@ server.listen(PORT, async () => {
       await page.waitForTimeout(300);
     }
 
-    // Step 7: Test Open-WebUI Citations Drawer with Live Web sources
-    console.log('7. Testing Live Web Search citations...');
-    const citationPill = page.locator('button:has-text("Источники данных")').last();
+    // Step 7: Test Honest Citations Drawer
+    console.log('7. Testing Honest Local Citations Drawer...');
+    const citationPill = page.locator('button:has-text("материалы каталога")').last();
     if (await citationPill.isVisible()) {
       await citationPill.click();
       await page.waitForTimeout(500);
 
-      const webSourceBadge = page.locator('text=Live Web').first();
-      if (await webSourceBadge.isVisible()) {
-        console.log('Verified: Live Web Search grounding chunks verified!');
+      const catalogSourceBadge = page.locator('text=Локальный каталог').first();
+      if (await catalogSourceBadge.isVisible()) {
+        console.log('Verified: Honest Local Catalog grounding chunks verified!');
       }
 
       const webImg = path.join('.pipeline/after', 'feature_assistant_web_search.png');
@@ -162,7 +160,7 @@ server.listen(PORT, async () => {
       if (fs.existsSync(artifactDir)) {
         fs.copyFileSync(webImg, path.join(artifactDir, 'feature_assistant_web_search.png'));
       }
-      console.log('Captured: feature_assistant_web_search.png');
+      console.log('Captured: feature_assistant_web_search.png (updated honest citations)');
 
       const closeCitationsBtn = page.locator('[data-testid="close-citations-modal"]').first();
       await closeCitationsBtn.click();
