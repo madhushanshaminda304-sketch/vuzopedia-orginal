@@ -20,7 +20,7 @@ import {
 import { University } from '../types';
 
 const STORAGE_KEY = 'vuzopedia_gemini_api_key';
-export const DEFAULT_GEMINI_KEY = '';
+export const DEFAULT_GEMINI_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
 
 export type SpecialistMode = 'all' | 'calculator' | 'military' | 'finance' | 'olympiads';
 export type RAGScopeFilter = 'all' | 'moscow' | 'spb' | 'it' | 'military' | 'olympiads';
