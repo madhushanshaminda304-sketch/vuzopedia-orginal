@@ -32,6 +32,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Flame,
+  HelpCircle,
+  Layers,
 } from 'lucide-react';
 import {
   queryDedAssistant,
@@ -41,8 +43,11 @@ import {
   DEFAULT_GEMINI_KEY,
   SpecialistMode,
   AdmissionProbability,
+  ComparisonMatrix,
+  ClarificationOption,
 } from '../services/geminiService';
 import { University } from '../types';
+import { UNIVERSITIES } from '../data/mockData';
 
 interface DedVuzopedAssistantModalProps {
   isOpen: boolean;
@@ -67,6 +72,9 @@ interface AssistantMessage {
   actionTab?: string;
   actionLabel?: string;
   suggestions?: string[];
+  followUps?: string[];
+  clarificationOptions?: ClarificationOption[];
+  comparisonMatrix?: ComparisonMatrix;
   modelUsed?: 'gemini' | 'local';
   feedback?: 'like' | 'dislike' | null;
   matchedUniversities?: University[];
@@ -84,7 +92,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     {
       id: 'msg-welcome',
       sender: 'ded',
-      text: 'Здравствуй, будущий студент! Я **Дед Вузопед** — твой персональный AI-консультант по приёмной кампании 2026 года на базе нейросети **Gemini 3.5 Flash**.\n\nЯ знаю всё о проходных баллах, общежитиях, военных кафедрах (ВУЦ), олимпиадах БВИ, льготном кредите 3% и доп. баллах к ЕГЭ. Спроси меня о любом вузе, специальности или правилах приёма!',
+      text: 'Здравствуй, будущий студент! Я **Дед Вузопед** — твой персональный AI-консультант по приёмной кампании 2026 года на базе нейросети **Gemini 3.5 Flash**.\n\nЯ знаю всё о проходных баллах, общежитиях, военных кафедрах (ВУЦ), олимпиадах БВИ, льготном кредите 3% и доп. баллах к ЕГЭ. Спроси меня о любом вузе, сравни программы или укажи свои баллы для расчёта шансов!',
       timestamp: 'Только что',
       modelUsed: 'gemini',
       toolCall: {
@@ -95,8 +103,13 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       },
       suggestions: [
         'Как оценить мои шансы по баллам ЕГЭ?',
+        'Сравни МГУ и ВШЭ по направлению IT',
         'Какие лучшие IT-вузы в Москве и СПб?',
         'Где есть военная кафедра (ВУЦ)?',
+      ],
+      followUps: [
+        'Как оценить мои шансы по баллам ЕГЭ?',
+        'Сравни МГУ и ВШЭ по направлению IT',
         'Сколько баллов даёт золотая медаль и ГТО?',
       ],
     },
@@ -221,8 +234,13 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         modelUsed: 'gemini',
         suggestions: [
           'Как рассчитать шансы по баллам ЕГЭ?',
+          'Сравни МГУ и ВШЭ по направлению IT',
           'Какие вузы дают скидку до 70% на платном?',
           'Как подтвердить БВИ перечневой олимпиадой?',
+        ],
+        followUps: [
+          'Как рассчитать шансы по баллам ЕГЭ?',
+          'Сравни МГУ и ВШЭ по направлению IT',
           'Сколько стоит жизнь студента в Москве?',
         ],
       },
@@ -244,7 +262,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
-    setCurrentToolRunning('Анализ запроса абитуриента');
+    setCurrentToolRunning('Анализ запроса и сверка с базой данных Вузопедии');
 
     try {
       const response = await queryDedAssistant(
@@ -262,6 +280,9 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         actionTab: response.actionTab,
         actionLabel: response.actionLabel,
         suggestions: response.suggestions,
+        followUps: response.followUps,
+        clarificationOptions: response.clarificationOptions,
+        comparisonMatrix: response.comparisonMatrix,
         modelUsed: response.modelUsed,
         matchedUniversities: response.matchedUniversities,
         reasoningTrace: response.reasoningTrace,
@@ -289,21 +310,121 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     }
   };
 
-  // Re-ask / regenerate last response
-  const handleRegenerateLast = () => {
-    const lastUserMsg = [...messages].reverse().find((m) => m.sender === 'user');
-    if (lastUserMsg) {
-      handleSend(lastUserMsg.text);
-    }
+  // Helper to parse bold text AND inline clickable citations [vuz:id:Name]
+  const renderTextWithCitations = (text: string) => {
+    const regex = /(\[vuz:[a-z0-9_-]+:[^\]]+\]|\*\*[^*]+\*\*)/g;
+    const tokens = text.split(regex);
+
+    return tokens.map((token, tIdx) => {
+      if (token.startsWith('[vuz:') && token.endsWith(']')) {
+        const match = token.match(/^\[vuz:([a-z0-9_-]+):([^\]]+)\]$/);
+        if (match) {
+          const vuzId = match[1];
+          const vuzName = match[2];
+          const vuzObj = UNIVERSITIES.find((u) => u.id === vuzId);
+
+          return (
+            <button
+              key={tIdx}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (vuzObj && onSelectUniversity) {
+                  onSelectUniversity(vuzObj);
+                  onClose();
+                }
+              }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/70 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-xs transition transform hover:scale-105 cursor-pointer border border-blue-200 dark:border-blue-800"
+              title={`Открыть профиль ${vuzName}`}
+            >
+              <span>🏛️</span>
+              <span>{vuzName}</span>
+            </button>
+          );
+        }
+      }
+
+      if (token.startsWith('**') && token.endsWith('**')) {
+        return (
+          <strong key={tIdx} className="font-bold text-slate-900 dark:text-white">
+            {token.slice(2, -2)}
+          </strong>
+        );
+      }
+
+      return token;
+    });
   };
 
-  // Helper to render markdown-like formatting (bold, bullet points, headers)
+  // Helper to render markdown-like formatting with Table Support & Inline Citations
   const renderFormattedText = (raw: string) => {
     const lines = raw.split('\n');
-    return lines.map((line, idx) => {
-      let content: React.ReactNode = line;
+    const elements: React.ReactNode[] = [];
+    let i = 0;
 
-      // Handle bullet lists
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // 1. Detect Markdown Table
+      if (line.trim().startsWith('|') && line.trim().endsWith('|') && i + 1 < lines.length && lines[i + 1].includes('---')) {
+        const tableLines: string[] = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+
+        if (tableLines.length >= 2) {
+          const headerCells = tableLines[0]
+            .split('|')
+            .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+            .map((c) => c.trim());
+
+          const bodyLines = tableLines.slice(2);
+          const rowCells = bodyLines.map((bLine) =>
+            bLine
+              .split('|')
+              .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+              .map((c) => c.trim())
+          );
+
+          elements.push(
+            <div key={`table-${i}`} className="overflow-x-auto my-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                    {headerCells.map((h, hIdx) => (
+                      <th key={hIdx} className="px-3.5 py-2.5 whitespace-nowrap">
+                        {renderTextWithCitations(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                  {rowCells.map((row, rIdx) => (
+                    <tr key={rIdx} className="hover:bg-blue-50/50 dark:hover:bg-slate-800/50 transition">
+                      {row.map((cell, cIdx) => (
+                        <td
+                          key={cIdx}
+                          className={`px-3.5 py-2.5 ${
+                            cIdx === 0
+                              ? 'font-semibold text-slate-900 dark:text-white bg-slate-50/40 dark:bg-slate-900/40'
+                              : 'text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {renderTextWithCitations(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+      }
+
+      // 2. Normal Line Parsing
       const isBullet = line.trim().startsWith('•') || line.trim().startsWith('* ') || line.trim().startsWith('- ');
       const isNumbered = /^\d+\.\s/.test(line.trim());
       const isHeader = line.trim().startsWith('###') || line.trim().startsWith('##');
@@ -315,50 +436,39 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         cleanLine = line.replace(/^\s*#+\s*/, '');
       }
 
-      // Parse bold **text**
-      const parts = cleanLine.split(/(\*\*[^*]+\*\*)/g);
-      const parsedParts = parts.map((part, pIdx) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return (
-            <strong key={pIdx} className="font-bold text-slate-900 dark:text-white">
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return part;
-      });
+      const parsedContent = renderTextWithCitations(cleanLine);
 
       if (isHeader) {
-        return (
-          <h4 key={idx} className="font-extrabold text-sm text-slate-900 dark:text-white mt-2.5 mb-1">
-            {parsedParts}
+        elements.push(
+          <h4 key={i} className="font-extrabold text-sm text-slate-900 dark:text-white mt-3 mb-1">
+            {parsedContent}
           </h4>
         );
-      }
-
-      if (isBullet) {
-        return (
-          <div key={idx} className="flex items-start gap-2 ml-1 my-0.5 text-xs sm:text-sm">
+      } else if (isBullet) {
+        elements.push(
+          <div key={i} className="flex items-start gap-2 ml-1 my-0.5 text-xs sm:text-sm">
             <span className="text-blue-500 font-bold shrink-0">•</span>
-            <span>{parsedParts}</span>
+            <span>{parsedContent}</span>
           </div>
+        );
+      } else if (isNumbered) {
+        elements.push(
+          <div key={i} className="flex items-start gap-2 ml-1 my-0.5 text-xs sm:text-sm">
+            <span>{parsedContent}</span>
+          </div>
+        );
+      } else {
+        elements.push(
+          <p key={i} className={line.trim() === '' ? 'h-2' : 'my-0.5 text-xs sm:text-sm leading-relaxed'}>
+            {parsedContent}
+          </p>
         );
       }
 
-      if (isNumbered) {
-        return (
-          <div key={idx} className="flex items-start gap-2 ml-1 my-0.5 text-xs sm:text-sm">
-            <span>{parsedParts}</span>
-          </div>
-        );
-      }
+      i++;
+    }
 
-      return (
-        <p key={idx} className={line.trim() === '' ? 'h-2' : 'my-0.5 text-xs sm:text-sm leading-relaxed'}>
-          {parsedParts}
-        </p>
-      );
-    });
+    return elements;
   };
 
   const activeKey = getStoredApiKey();
@@ -372,7 +482,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 ${
           isFullscreen
             ? 'w-full h-full max-w-full max-h-full rounded-none'
-            : 'w-full max-w-3xl h-[88vh] max-h-[820px]'
+            : 'w-full max-w-3xl h-[88vh] max-h-[840px]'
         }`}
       >
         {/* Header (Astryx Chat Navigation Bar) */}
@@ -559,7 +669,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                   </div>
                 )}
 
-                <div className="space-y-2 max-w-[90%] sm:max-w-[82%]">
+                <div className="space-y-2 max-w-[92%] sm:max-w-[85%]">
                   {/* Astryx Tool Calls Component */}
                   {m.toolCall && (
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden text-xs transition">
@@ -637,6 +747,35 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                     ) : (
                       <div className="space-y-1">
                         {renderFormattedText(m.text)}
+
+                        {/* Clarification Options (Anthropic Clarification Protocol from system prompt leaks) */}
+                        {m.clarificationOptions && m.clarificationOptions.length > 0 && (
+                          <div className="space-y-2 my-2.5 p-3 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 animate-fadeIn">
+                            <div className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 mb-1.5">
+                              <span>💡</span>
+                              <span>Выберите подходящий сценарий для точного расчёта:</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {m.clarificationOptions.map((opt, optIdx) => (
+                                <button
+                                  key={optIdx}
+                                  onClick={() => handleSend(opt.prompt)}
+                                  className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100 dark:border-indigo-900/50 hover:border-blue-400 hover:shadow-xs transition text-left group flex items-start gap-2"
+                                >
+                                  <span className="text-base shrink-0 group-hover:scale-110 transition">{opt.icon || '🎯'}</span>
+                                  <div>
+                                    <p className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition leading-snug">
+                                      {opt.label}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
+                                      {opt.prompt}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Admission Probability Gauge (Generative UI from awesome-llm-apps) */}
                         {m.probability && (
@@ -809,18 +948,24 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                     </div>
                   )}
 
-                  {/* Suggestion Chips */}
-                  {m.suggestions && m.suggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {m.suggestions.map((sug, sIdx) => (
-                        <button
-                          key={sIdx}
-                          onClick={() => handleSend(sug)}
-                          className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition hover:border-blue-400 hover:text-blue-600 shadow-2xs"
-                        >
-                          {sug}
-                        </button>
-                      ))}
+                  {/* Leaked Prompt Architecture: Perplexity-Style Dynamic Conversational Handoffs */}
+                  {m.followUps && m.followUps.length > 0 && (
+                    <div className="pt-2 animate-fadeIn">
+                      <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <span>Рекомендуемые уточняющие вопросы:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {m.followUps.map((fu, fIdx) => (
+                          <button
+                            key={fIdx}
+                            onClick={() => handleSend(fu)}
+                            className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 border border-blue-200 dark:border-slate-700 text-blue-700 dark:text-blue-300 text-xs font-medium transition hover:border-blue-400 shadow-2xs text-left"
+                          >
+                            <span>{fu}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -867,6 +1012,28 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           </div>
         )}
 
+        {/* Quick Question Builder Toolbar (Above Input Field) */}
+        <div className="px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
+          <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">Быстрый вопрос:</span>
+          {[
+            { icon: '🎯', label: 'Шансы с 250 б.', query: 'У меня 250 баллов, куда я могу поступить на бюджет в Москве?' },
+            { icon: '⚖️', label: 'Сравнить МГУ и ВШЭ', query: 'Сравни МГУ и ВШЭ' },
+            { icon: '🛡️', label: 'ВУЦ и нормативы', query: 'В каких вузах Москвы есть ВУЦ и какие нормативы физподготовки?' },
+            { icon: '💰', label: 'Кредит 3%', query: 'Как работает образовательный кредит с господдержкой 3%?' },
+            { icon: '🏆', label: 'Олимпиады БВИ', query: 'Какие олимпиады дают БВИ без 75 баллов?' },
+            { icon: '🏢', label: 'Общежития', query: 'Сколько стоит общежитие в Бауманке и МГУ?' },
+          ].map((qp, qIdx) => (
+            <button
+              key={qIdx}
+              onClick={() => handleSend(qp.query)}
+              className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-[11px] font-medium transition shrink-0 flex items-center gap-1 shadow-2xs"
+            >
+              <span>{qp.icon}</span>
+              <span>{qp.label}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Composer (Astryx ChatComposer Component) */}
         <div className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
@@ -891,7 +1058,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend(inputValue)}
-              placeholder="Спросите о баллах ЕГЭ, вузах, общежитиях, ВУЦ или олимпиадах..."
+              placeholder="Спросите о баллах ЕГЭ, сравните вузы или выберите готовый сценарий..."
               className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
 

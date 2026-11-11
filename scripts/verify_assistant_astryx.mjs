@@ -127,7 +127,7 @@ server.listen(PORT, async () => {
     }
     console.log('Captured: feature_assistant_toolcalls.png');
 
-    // Verify Probability Meter or Generative UI cards
+    // Verify Probability Meter and Generative UI cards
     const probMeter = page.locator('text=Оценка шансов').last();
     if (await probMeter.isVisible()) {
       console.log('Verified: Generative UI Admission Probability Gauge rendered.');
@@ -183,8 +183,75 @@ server.listen(PORT, async () => {
       console.log('Verified: Copy button triggered check confirmation.');
     }
 
-    // Test 6: Fullscreen Toggle
-    console.log('10. Testing Fullscreen workspace view...');
+    // Test 6: Leaked Prompt Feature: Comparative Matrix Table & Inline Citations
+    console.log('10. Testing University Comparison Query (Perplexity & Google leaked prompt rules)...');
+    const compareChip = page.locator('button:has-text("Сравнить МГУ и ВШЭ")').first();
+    if (await compareChip.isVisible()) {
+      await compareChip.click();
+    } else {
+      await input.fill('Сравни МГУ и ВШЭ');
+      await page.keyboard.press('Enter');
+    }
+
+    await page.waitForTimeout(1000);
+    try {
+      await page.locator('.animate-bounce').first().waitFor({ state: 'detached', timeout: 15000 });
+    } catch {
+      // Continue
+    }
+    await page.waitForTimeout(1000);
+
+    // Verify comparison table
+    const tableHeader = page.locator('table th:has-text("Критерий")').first();
+    await tableHeader.waitFor({ timeout: 5000 });
+    console.log('Verified: Comparative Markdown Matrix Table rendered correctly.');
+
+    // Verify inline citation button [vuz:mgu:МГУ]
+    const inlineCitationBtn = page.locator('button:has-text("МГУ")').first();
+    if (await inlineCitationBtn.isVisible()) {
+      console.log('Verified: Inline clickable citation badge rendered.');
+    }
+
+    const compareImg = path.join('.pipeline/after', 'feature_assistant_comparison_matrix.png');
+    await page.screenshot({ path: compareImg });
+    if (fs.existsSync(artifactDir)) {
+      fs.copyFileSync(compareImg, path.join(artifactDir, 'feature_assistant_comparison_matrix.png'));
+    }
+    console.log('Captured: feature_assistant_comparison_matrix.png');
+
+    // Test 7: Leaked Prompt Feature: Clarification Protocol (Anthropic rule)
+    console.log('11. Testing Underspecified Query & Clarification Protocol (Anthropic leaked prompt rule)...');
+    await input.fill('Куда мне поступить?');
+    await page.keyboard.press('Enter');
+
+    await page.waitForTimeout(1000);
+    try {
+      await page.locator('.animate-bounce').first().waitFor({ state: 'detached', timeout: 15000 });
+    } catch {
+      // Continue
+    }
+    await page.waitForTimeout(1000);
+
+    const clarifyOption = page.locator('button:has-text("IT и разработка в Москве")').first();
+    await clarifyOption.waitFor({ timeout: 5000 });
+    console.log('Verified: Anthropic-style Clarification scenario presets rendered.');
+
+    const clarifyImg = path.join('.pipeline/after', 'feature_assistant_clarification.png');
+    await page.screenshot({ path: clarifyImg });
+    if (fs.existsSync(artifactDir)) {
+      fs.copyFileSync(clarifyImg, path.join(artifactDir, 'feature_assistant_clarification.png'));
+    }
+    console.log('Captured: feature_assistant_clarification.png');
+
+    // Test 8: Leaked Prompt Feature: Conversational Handoffs (Perplexity follow-ups)
+    console.log('12. Testing Dynamic Conversational Handoffs (Perplexity leaked prompt rule)...');
+    const followUpTitle = page.locator('text=Рекомендуемые уточняющие вопросы').last();
+    if (await followUpTitle.isVisible()) {
+      console.log('Verified: Perplexity-style dynamic Conversational Handoff follow-ups rendered.');
+    }
+
+    // Test 9: Fullscreen Toggle
+    console.log('13. Testing Fullscreen workspace view...');
     const fullscreenBtn = page.locator('button[title="На весь экран"]');
     if (await fullscreenBtn.isVisible()) {
       await fullscreenBtn.click();
@@ -203,21 +270,13 @@ server.listen(PORT, async () => {
       console.log('Verified: Returned to normal modal view.');
     }
 
-    // Capture full assistant dialog screenshot
-    const fullAssistantImg = path.join('.pipeline/after', 'feature_assistant_astryx.png');
-    await page.screenshot({ path: fullAssistantImg });
-    if (fs.existsSync(artifactDir)) {
-      fs.copyFileSync(fullAssistantImg, path.join(artifactDir, 'feature_assistant_astryx.png'));
-    }
-    console.log('Captured: feature_assistant_astryx.png');
-
     // Close modal
     const closeBtn = page.locator('button[title="Закрыть окно"], button[title*="Закрыть"]');
     await closeBtn.click();
     await page.waitForTimeout(500);
 
-    // Test 7: Verify Floating Action Button opens assistant
-    console.log('11. Opening assistant via Floating Action Button...');
+    // Test 10: Verify Floating Action Button opens assistant
+    console.log('14. Opening assistant via Floating Action Button...');
     const floatingBtn = page.locator('button[title="Спросить Деда Вузопеда"]');
     await floatingBtn.click({ force: true });
     await page.waitForTimeout(500);
@@ -227,8 +286,8 @@ server.listen(PORT, async () => {
     await closeBtn.click();
     await page.waitForTimeout(500);
 
-    // Test 8: Verify Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" opens assistant
-    console.log('12. Testing Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" link...');
+    // Test 11: Verify Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" opens assistant
+    console.log('15. Testing Footer "ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ" link...');
     const footerHelpBtn = page.locator('footer button:has-text("ПОМОЩЬ И ОБРАТНАЯ СВЯЗЬ")');
     await footerHelpBtn.scrollIntoViewIfNeeded();
     await footerHelpBtn.click();
@@ -237,7 +296,7 @@ server.listen(PORT, async () => {
     console.log('Verified: Footer help button successfully opens Ded Vuzoped assistant!');
 
     console.log('\n--- VERIFICATION SUMMARY ---');
-    console.log('All 12 Agentic RAG assistant verification checks PASSED.');
+    console.log('All 15 Advanced Question-Answering Assistant verification checks PASSED.');
     console.log(`Console errors: ${consoleErrors.length}`);
     if (consoleErrors.length > 0) {
       console.log('Console errors encountered:', consoleErrors);

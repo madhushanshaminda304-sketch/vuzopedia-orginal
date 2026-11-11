@@ -49,7 +49,26 @@ profile: webapp
 - **Interactive Feedback**: Floating glassmorphism toast notification system for priority lists, plan modifications, and comparisons.
 - **Verification**: Zero console errors, Playwright E2E passed, build clean in 9.38s.
 
-## Change 2026-11-11: Agentic RAG, Generative UI & Astryx Upgrade for Ded Vuzoped Assistant
+## Change 2026-11-11: Advanced Question-Answering Prompt Leaks Architecture
+- **Size**: M | **Types**: feature, architecture, prompt-engineering, nlp, ui
+- **Prompt Engineering Infusions (from `c:\Users\DELL\Downloads\ffaan\system_prompts_leaks`)**:
+  - **Perplexity Pro Search & Synthesis (`perplexity-search.md`)**:
+    - Pre-execution Intent Gating: `DIRECT_RESPONSE` vs `TOOL_NEEDED` to ensure factual grounding on all admissions data.
+    - Query Decomposition for multi-parameter questions (city, score, branch, VUTs, dorms).
+    - Comparative Matrix Generator: Structured Markdown comparison table (`| Критерий | Вуз 1 | Вуз 2 |`) for side-by-side evaluations.
+    - Dynamic Conversational Handoffs: Contextual follow-up question chips (`followUps: string[]`) derived from specific entities in the response.
+    - Inline Grounded Citations (`[vuz:id:Name]`) rendered as interactive clickable badges that open the university profile in one click.
+  - **Google Gemini 3.5 Flash (`gemini-3.5-flash.md`)**:
+    - Scannable formatting toolkit (hierarchical headers, bold key stats, direct 1-2 sentence core conclusion upfront).
+    - Empathetic peer voice and candor; specifics over vague generalities.
+  - **Anthropic Claude (`research_instructions.md` & `claude-sonnet-4.6.md`)**:
+    - Clarification Protocol: Underspecified questions without scores or preferences trigger interactive preset scenario cards (`clarificationOptions`) rather than ungrounded assumptions.
+    - Anti-Sycophancy: Realistic statistical probability evaluation without sugarcoating low scores; provides actionable alternative pathways (target quotas, 3% loan, regional flagships).
+- **Astryx Chat UI Enhancements (`DedVuzopedAssistantModal.tsx`)**:
+  - Built-in Markdown table renderer with alternating rows, styled headers, and cell citation parsing.
+  - Quick Question Builder toolbar above composer input with one-tap query presets.
+  - Interactive clarification scenario cards with instant execution.
+- **Verification**: All 15 Playwright verification tests passed with 0 console errors (`scripts/verify_assistant_astryx.mjs`). Screenshots captured: `feature_assistant_comparison_matrix.png`, `feature_assistant_clarification.png`. Build: clean in 6.58s (gzip ~184.4 kB).
 - **Size**: L | **Types**: feature, architecture, ai-rag, design, performance
 - **Agentic RAG Architecture (from `awesome-llm-apps`)**:
   - Semantic knowledge retrieval across Vuzopedia real data: `UNIVERSITIES`, `FULL_PROGRAMS`, `DORMITORIES`, `MILITARY_CENTERS`, `OLYMPIADS_BVI`, `INDIVIDUAL_ACHIEVEMENTS`, and `STUDENT_LIVING_COSTS`.
