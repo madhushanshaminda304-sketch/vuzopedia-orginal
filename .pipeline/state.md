@@ -40,6 +40,25 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Advanced Assistant v4 (Artifacts Canvas, Live Web Search, Sessions History, Voice TTS & Prompt Optimizer)
+- **Size**: M | **Types**: feature, architecture, nlp, audio, canvas, ui
+- **Interactive Admission Artifact Canvas (`AdmissionArtifact`)**:
+  - Claude 3.5 & ChatGPT Canvas-inspired dedicated slide-out panel for complex admission strategies.
+  - Interactive checklists (`item.checked`) with real-time progress bar calculation (`N из M выполнено • X%`).
+  - Step-by-step roadmap timeline and Markdown synthesis box with 1-click clipboard export.
+- **Perplexity Pro Live Web Search Toggle**:
+  - Top action bar toggle (`🌐 Live Web Search: ВКЛ / ВЫКЛ`).
+  - Simulates and grounds real-time verification from official university admission portals (`priem.msu.ru`, `ba.hse.ru`, `mephi.ru`).
+- **Chat Sessions & Persistent History (Open-WebUI / ChatGPT Sessions)**:
+  - Sidebar drawer (`История консультаций`) storing multiple conversation sessions in `localStorage`.
+  - Auto-titling based on user queries, switching between active threads, deleting sessions, and `+ Новый диалог` reset.
+- **Text-to-Speech (TTS) Voice Narration**:
+  - Full speech synthesis integration via `window.speechSynthesis` with Russian language tuning (`ru-RU`).
+  - Speaker button (`Volume2` / `VolumeX`) on every assistant response with animated pulse indicators and stop/pause controls.
+- **Magic Prompt Enhancer (`enhanceStudentPrompt`)**:
+  - Interactive wand button (`Wand2`) in composer that expands brief student queries into complete, structured prompts.
+- **Verification**: All checks in `scripts/verify_advanced_assistant_v4.mjs` passed with 0 console errors. Screenshots: `feature_assistant_artifact_canvas.png`, `feature_assistant_web_search.png`, `feature_assistant_history_sessions.png`.
+
 ## Change 2026-11-11: Production RAG Architecture Upgrade (Open-WebUI, Dify, RAGFlow)
 - **Size**: L | **Types**: feature, architecture, rag, nlp, ui
 - **Patterns Borrowed from `c:\Users\DELL\Downloads\RAG`**:

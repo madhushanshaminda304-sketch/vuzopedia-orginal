@@ -37,6 +37,16 @@ import {
   Database,
   Search,
   ExternalLink,
+  Volume2,
+  VolumeX,
+  History,
+  Plus,
+  Trash2,
+  FileText,
+  CheckSquare,
+  ListTodo,
+  Wand2,
+  Globe,
 } from 'lucide-react';
 import {
   queryDedAssistant,
@@ -51,6 +61,8 @@ import {
   ClarificationOption,
   RetrievedCitationChunk,
   ExtractedQueryFilters,
+  AdmissionArtifact,
+  enhanceStudentPrompt,
 } from '../services/geminiService';
 import { University } from '../types';
 import { UNIVERSITIES } from '../data/mockData';
@@ -67,6 +79,16 @@ interface ToolCall {
   query: string;
   duration: string;
   status: 'running' | 'complete' | 'error';
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: string;
+  messages: AssistantMessage[];
+  activeMode: SpecialistMode;
+  activeScope: RAGScopeFilter;
+  useWebSearch: boolean;
 }
 
 interface AssistantMessage {
@@ -89,6 +111,7 @@ interface AssistantMessage {
   matchedUniversities?: University[];
   reasoningTrace?: string[];
   probability?: AdmissionProbability;
+  artifact?: AdmissionArtifact;
 }
 
 export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> = ({
@@ -136,6 +159,24 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     },
   ]);
 
+  const SESSIONS_STORAGE_KEY = 'vuzopedia_assistant_sessions_v4';
+
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+    try {
+      const saved = localStorage.getItem(SESSIONS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => `session-${Date.now()}`);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [useWebSearch, setUseWebSearch] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [activeArtifact, setActiveArtifact] = useState<AdmissionArtifact | null>(null);
+
   const [inputValue, setInputValue] = useState('');
   const [activeMode, setActiveMode] = useState<SpecialistMode>('all');
   const [activeScope, setActiveScope] = useState<RAGScopeFilter>('all');
@@ -158,6 +199,125 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Sync sessions to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+    } catch {}
+  }, [sessions]);
+
+  // Speech synthesis cleanup
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const stopSpeaking = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingMsgId(null);
+  };
+
+  const handleSpeak = (id: string, text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    if (speakingMsgId === id) {
+      stopSpeaking();
+      return;
+    }
+
+    stopSpeaking();
+
+    const cleanText = text
+      .replace(/\[vuz:[a-z0-9_-]+:([^\]]+)\]/g, '$1')
+      .replace(/\[web:[^\]]+\]/g, '')
+      .replace(/\[TOOL:[^\]]+\]/gi, '')
+      .replace(/\[ACTION:[^\]]+\]/gi, '')
+      .replace(/[#*`_~]/g, '')
+      .replace(/\|/g, ', ')
+      .replace(/\n+/g, ' ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 1.0;
+    utterance.pitch = 0.95;
+
+    const voices = window.speechSynthesis.getVoices();
+    const ruVoice = voices.find((v) => v.lang.startsWith('ru'));
+    if (ruVoice) utterance.voice = ruVoice;
+
+    utterance.onend = () => setSpeakingMsgId(null);
+    utterance.onerror = () => setSpeakingMsgId(null);
+
+    setSpeakingMsgId(id);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const createNewSession = () => {
+    stopSpeaking();
+    const newId = `session-${Date.now()}`;
+    setCurrentSessionId(newId);
+    setMessages([
+      {
+        id: `msg-welcome-${Date.now()}`,
+        sender: 'ded',
+        text: 'Здравствуй! Я готов ответить на любые вопросы о вузах, экзаменах и поступлении 2026 года!',
+        timestamp: 'Только что',
+        modelUsed: 'gemini',
+        suggestions: [
+          'Как рассчитать шансы по баллам ЕГЭ?',
+          'Сравни МГУ и ВШЭ по направлению IT',
+          'Составь пошаговый чек-лист поступления',
+        ],
+        followUps: [
+          'Как рассчитать шансы по баллам ЕГЭ?',
+          'Сравни МГУ и ВШЭ по направлению IT',
+        ],
+      },
+    ]);
+    setIsHistoryOpen(false);
+  };
+
+  const switchSession = (sessionId: string) => {
+    stopSpeaking();
+    const target = sessions.find((s) => s.id === sessionId);
+    if (target) {
+      setCurrentSessionId(target.id);
+      setMessages(target.messages);
+      setActiveMode(target.activeMode || 'all');
+      setActiveScope(target.activeScope || 'all');
+      setUseWebSearch(target.useWebSearch || false);
+      setIsHistoryOpen(false);
+    }
+  };
+
+  const deleteSession = (sessionId: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    if (currentSessionId === sessionId) {
+      createNewSession();
+    }
+  };
+
+  const toggleChecklistItem = (itemId: string) => {
+    if (!activeArtifact || !activeArtifact.checklistItems) return;
+    const updatedItems = activeArtifact.checklistItems.map((item) =>
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    );
+    const updatedArtifact: AdmissionArtifact = { ...activeArtifact, checklistItems: updatedItems };
+    setActiveArtifact(updatedArtifact);
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.artifact && m.artifact.id === activeArtifact.id ? { ...m, artifact: updatedArtifact } : m
+      )
+    );
+  };
 
   // Initialize SpeechRecognition if available in browser
   useEffect(() => {
@@ -293,7 +453,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         text,
         messages.map((m) => ({ sender: m.sender, text: m.text })),
         activeMode,
-        activeScope
+        activeScope,
+        useWebSearch
       );
 
       const dedMsg: AssistantMessage = {
@@ -315,9 +476,38 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         matchedUniversities: response.matchedUniversities,
         reasoningTrace: response.reasoningTrace,
         probability: response.probability,
+        artifact: response.artifact,
       };
 
-      setMessages((prev) => [...prev, dedMsg]);
+      const updatedMessages = [...messages, userMsg, dedMsg];
+      setMessages(updatedMessages);
+
+      // Auto update sessions
+      setSessions((prev) => {
+        const existingIdx = prev.findIndex((s) => s.id === currentSessionId);
+        const title =
+          existingIdx >= 0 && prev[existingIdx].title && !prev[existingIdx].title.startsWith('Новый')
+            ? prev[existingIdx].title
+            : text.slice(0, 36) + (text.length > 36 ? '...' : '');
+
+        const newSession: ChatSession = {
+          id: currentSessionId,
+          title,
+          updatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          messages: updatedMessages,
+          activeMode,
+          activeScope,
+          useWebSearch,
+        };
+
+        if (existingIdx >= 0) {
+          const copy = [...prev];
+          copy[existingIdx] = newSession;
+          return copy;
+        } else {
+          return [newSession, ...prev.slice(0, 19)];
+        }
+      });
     } catch (err) {
       console.error('Ded assistant error:', err);
       const errorMsg: AssistantMessage = {
@@ -547,6 +737,32 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
           {/* Action buttons */}
           <div className="flex items-center gap-1.5">
+            {/* Live Web Search Toggle (Perplexity Pro Web Mode) */}
+            <button
+              onClick={() => setUseWebSearch(!useWebSearch)}
+              className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${
+                useWebSearch
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-xs'
+                  : 'bg-white/10 hover:bg-white/20 text-white/80 border-white/15'
+              }`}
+              title={useWebSearch ? 'Поиск в реальном времени включён' : 'Включить поиск в реальном времени (Web Search)'}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{useWebSearch ? 'Live Web: ВКЛ' : 'Live Web'}</span>
+            </button>
+
+            {/* Sessions History button (Open-WebUI / ChatGPT Sessions) */}
+            <button
+              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+              className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition relative"
+              title="История консультаций"
+            >
+              <History className="w-4 h-4" />
+              {sessions.length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-400 ring-2 ring-slate-900" />
+              )}
+            </button>
+
             {/* Settings button */}
             <button
               onClick={() => {
@@ -561,9 +777,9 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
             {/* Restart button */}
             <button
-              onClick={restartChat}
+              onClick={createNewSession}
               className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition"
-              title="Очистить диалог"
+              title="Новый диалог"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -587,6 +803,71 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             </button>
           </div>
         </div>
+
+        {/* Sessions History Sidebar Drawer */}
+        {isHistoryOpen && (
+          <div className="absolute inset-y-0 left-0 z-40 w-72 sm:w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-slideRight">
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-white/10">
+              <span className="font-extrabold text-xs flex items-center gap-2">
+                <History className="w-4 h-4 text-blue-400" />
+                История консультаций ({sessions.length})
+              </span>
+              <button
+                onClick={() => setIsHistoryOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+              <button
+                onClick={createNewSession}
+                className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Новый диалог</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+              {sessions.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  Сохранённых диалогов пока нет. Задайте любой вопрос Деду Вузопеду!
+                </div>
+              ) : (
+                sessions.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => switchSession(s.id)}
+                    className={`p-2.5 rounded-xl text-xs cursor-pointer transition flex items-center justify-between group ${
+                      s.id === currentSessionId
+                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-bold border border-blue-200 dark:border-blue-800'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="truncate flex-1 pr-2">
+                      <span className="block truncate">{s.title}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        {s.updatedAt} • {s.messages.length} сообщ.
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSession(s.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 rounded transition"
+                      title="Удалить диалог"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* API Key Settings Drawer/Popover */}
         {isSettingsOpen && (
@@ -1005,6 +1286,32 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                     </div>
                   )}
 
+                  {/* Interactive Admission Artifact Canvas Trigger */}
+                  {m.artifact && (
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-800/90 dark:via-indigo-950/40 dark:to-slate-800/90 border border-blue-200/80 dark:border-indigo-800/60 shadow-xs flex items-center justify-between gap-3 animate-fadeIn my-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
+                            Интерактивный артефакт
+                          </span>
+                          <h5 className="font-bold text-xs text-slate-900 dark:text-white">
+                            {m.artifact.title}
+                          </h5>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveArtifact(m.artifact || null)}
+                        className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs shrink-0"
+                      >
+                        <span>Открыть холст</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Astryx Message Toolbar / Reactions (Assistant only) */}
                   {!isUser && (
                     <div className="flex items-center justify-between px-1 text-[11px] text-slate-400">
@@ -1022,6 +1329,23 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
                       </div>
 
                       <div className="flex items-center gap-1">
+                        {/* Voice TTS narration button */}
+                        <button
+                          onClick={() => handleSpeak(m.id, m.text)}
+                          className={`p-1 rounded-md transition ${
+                            speakingMsgId === m.id
+                              ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 animate-pulse'
+                              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800'
+                          }`}
+                          title={speakingMsgId === m.id ? 'Остановить озвучку' : 'Озвучить ответ Деда'}
+                        >
+                          {speakingMsgId === m.id ? (
+                            <VolumeX className="w-3.5 h-3.5" />
+                          ) : (
+                            <Volume2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+
                         {/* Copy button */}
                         <button
                           onClick={() => copyMessage(m.id, m.text)}
@@ -1132,6 +1456,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         <div className="px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
           <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">Быстрый вопрос:</span>
           {[
+            { icon: '📋', label: 'Чек-лист 2026', query: 'Составь пошаговый чек-лист и стратегию поступления на 2026 год' },
+            { icon: '⚡', label: '275 б. (IT)', query: 'У меня 275 баллов, куда поступить на программную инженерию с военной кафедрой в Москве?' },
             { icon: '🎯', label: 'Шансы с 250 б.', query: 'У меня 250 баллов, куда я могу поступить на бюджет в Москве?' },
             { icon: '⚖️', label: 'Сравнить МГУ и ВШЭ', query: 'Сравни МГУ и ВШЭ' },
             { icon: '🛡️', label: 'ВУЦ и нормативы', query: 'В каких вузах Москвы есть ВУЦ и какие нормативы физподготовки?' },
@@ -1166,6 +1492,19 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               {isDictating ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
             </button>
 
+            {/* Magic Prompt Enhancer Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const enriched = enhanceStudentPrompt(inputValue);
+                setInputValue(enriched);
+              }}
+              className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition shadow-xs"
+              title="✨ Улучшить и дополнить вопрос деталями"
+            >
+              <Wand2 className="w-4 h-4" />
+            </button>
+
             {/* Main Input Field */}
             <input
               type="text"
@@ -1197,6 +1536,172 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             </span>
           </div>
         </div>
+
+        {/* Interactive Admission Artifact Canvas Drawer / Side Panel (Claude & ChatGPT Canvas style) */}
+        {activeArtifact && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fadeIn">
+            <div data-testid="artifact-canvas-modal" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-slideUp">
+              {/* Canvas Header */}
+              <div className="p-4 px-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white flex items-center justify-between border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-extrabold text-sm text-white">
+                        {activeArtifact.title}
+                      </h4>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                        Интерактивный холст
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      {activeArtifact.summary}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  data-testid="close-artifact-canvas"
+                  onClick={() => setActiveArtifact(null)}
+                  className="p-1.5 rounded-xl hover:bg-white/10 text-white/80 hover:text-white transition"
+                  title="Закрыть холст"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Canvas Body */}
+              <div className="p-4 space-y-4 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-950/50">
+                {/* Checklist Section */}
+                {activeArtifact.checklistItems && (
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5 text-slate-900 dark:text-white">
+                        <CheckSquare className="w-4 h-4 text-emerald-500" />
+                        Готовность к поступлению
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        {activeArtifact.checklistItems.filter((i) => i.checked).length} из{' '}
+                        {activeArtifact.checklistItems.length} выполнено (
+                        {Math.round(
+                          (activeArtifact.checklistItems.filter((i) => i.checked).length /
+                            activeArtifact.checklistItems.length) *
+                            100
+                        )}
+                        %)
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                        style={{
+                          width: `${Math.round(
+                            (activeArtifact.checklistItems.filter((i) => i.checked).length /
+                              activeArtifact.checklistItems.length) *
+                              100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Checklist Items */}
+                    <div className="space-y-1.5 pt-1">
+                      {activeArtifact.checklistItems.map((item) => (
+                        <label
+                          key={item.id}
+                          className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                        >
+                          <input
+                            data-testid="artifact-checkbox"
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={() => toggleChecklistItem(item.id)}
+                            className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                          />
+                          <div className="flex-1 text-xs">
+                            <span
+                              className={`font-semibold ${
+                                item.checked
+                                  ? 'line-through text-slate-400 dark:text-slate-500'
+                                  : 'text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              {item.label}
+                            </span>
+                            {item.deadline && (
+                              <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
+                                Срок: {item.deadline}
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Steps Section */}
+                {activeArtifact.steps && (
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                    <h5 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <ListTodo className="w-4 h-4 text-blue-500" />
+                      Ключевые этапы стратегии
+                    </h5>
+                    <div className="space-y-2.5">
+                      {activeArtifact.steps.map((step) => (
+                        <div key={step.stepNumber} className="flex gap-3 text-xs">
+                          <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                            {step.stepNumber}
+                          </span>
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                              {step.title}
+                            </span>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                              {step.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Markdown Advice Box */}
+                {activeArtifact.markdownContent && (
+                  <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-slate-800/40 border border-blue-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-1">
+                    {renderFormattedText(activeArtifact.markdownContent)}
+                  </div>
+                )}
+              </div>
+
+              {/* Canvas Footer */}
+              <div className="p-3 bg-slate-100 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                <button
+                  onClick={() => {
+                    const text = `${activeArtifact.title}\n\n${activeArtifact.summary}\n\nЧек-лист:\n` +
+                      (activeArtifact.checklistItems?.map((i) => `[${i.checked ? 'X' : ' '}] ${i.label} (${i.deadline || ''})`).join('\n') || '');
+                    navigator.clipboard.writeText(text);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-200 text-slate-800 dark:text-white font-bold text-xs border border-slate-300 dark:border-slate-600 transition flex items-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Скопировать план</span>
+                </button>
+                <button
+                  onClick={() => setActiveArtifact(null)}
+                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+                >
+                  Готово
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Open-WebUI Style Citations & Sources Modal / Drawer */}
         {inspectedCitations && (
