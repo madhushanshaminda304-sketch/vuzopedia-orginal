@@ -3,7 +3,7 @@ import {
   Sparkles,
   Database,
   History,
-  Settings,
+  ShieldCheck,
   RotateCcw,
   Maximize2,
   Minimize2,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface AssistantHeaderProps {
-  activeKey: string;
+  isAiAvailable: boolean;
   sessionsCount: number;
   isHistoryOpen: boolean;
   isFullscreen: boolean;
@@ -23,7 +23,7 @@ interface AssistantHeaderProps {
 }
 
 export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
-  activeKey,
+  isAiAvailable,
   sessionsCount,
   isFullscreen,
   onToggleHistory,
@@ -47,20 +47,22 @@ export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
             <h3 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
               Дед Вузопед
             </h3>
-            {activeKey ? (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1">
+            {isAiAvailable ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1.5 shadow-sm">
                 <Sparkles className="w-3 h-3 text-emerald-300" />
                 Режим: Google Gemini
               </span>
             ) : (
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1.5 shadow-sm">
                 <Database className="w-3 h-3 text-blue-300" />
                 Режим: Локальный каталог
               </span>
             )}
           </div>
           <p className="text-[11px] text-slate-300">
-            Локальный каталог вузов и справочные правила приёма 2026
+            {isAiAvailable
+              ? 'Защищенный серверный API • Каталог вузов и правила приёма 2026'
+              : 'Автономный режим • Локальный каталог вузов и правила приёма 2026'}
           </p>
         </div>
       </div>
@@ -79,13 +81,13 @@ export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
           )}
         </button>
 
-        {/* Settings button */}
+        {/* Security & Server Status button */}
         <button
           onClick={onOpenSettings}
           className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition"
-          title="Настройки Gemini API"
+          title="Безопасность и серверный статус"
         >
-          <Settings className="w-4 h-4" />
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
         </button>
 
         {/* Restart button */}
@@ -101,16 +103,20 @@ export const AssistantHeader: React.FC<AssistantHeaderProps> = ({
         <button
           onClick={onToggleFullscreen}
           className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition hidden sm:flex"
-          title={isFullscreen ? 'Обычный режим' : 'На весь экран'}
+          title={isFullscreen ? 'Свернуть окно' : 'На весь экран'}
         >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          {isFullscreen ? (
+            <Minimize2 className="w-4 h-4" />
+          ) : (
+            <Maximize2 className="w-4 h-4" />
+          )}
         </button>
 
-        {/* Close button */}
+        {/* Close modal */}
         <button
           onClick={onClose}
-          className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/20 transition"
-          title="Закрыть окно"
+          className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition ml-1"
+          title="Закрыть консультанта"
         >
           <X className="w-5 h-5" />
         </button>

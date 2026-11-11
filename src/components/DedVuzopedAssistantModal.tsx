@@ -2,10 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowDown, Cpu } from 'lucide-react';
 import {
   queryAssistant,
-  getStoredApiKey,
-  setStoredApiKey,
-  resetStoredApiKey,
-  DEFAULT_GEMINI_KEY,
+  fetchServerAssistantStatus,
+  ServerAssistantStatus,
   SpecialistMode,
   RAGScopeFilter,
   AdmissionArtifact,
@@ -68,8 +66,27 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const [currentToolRunning, setCurrentToolRunning] = useState<string | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
 
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [apiKeyStatusMessage, setApiKeyStatusMessage] = useState<string | null>(null);
+  const [serverStatus, setServerStatus] = useState<ServerAssistantStatus | null>(null);
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
+
+  const refreshServerStatus = async () => {
+    setIsStatusLoading(true);
+    try {
+      const st = await fetchServerAssistantStatus();
+      setServerStatus(st);
+    } finally {
+      setIsStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        localStorage.removeItem('vuzopedia_gemini_api_key');
+      } catch {}
+      refreshServerStatus();
+    }
+  }, [isOpen]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -337,8 +354,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     }
   };
 
-  const activeKey = getStoredApiKey();
-  const isCustomKey = activeKey !== DEFAULT_GEMINI_KEY;
+  const isAiAvailable = serverStatus?.aiAvailable ?? false;
 
   if (!isOpen) return null;
 
@@ -353,15 +369,12 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       >
         {/* Header */}
         <AssistantHeader
-          activeKey={activeKey}
+          isAiAvailable={isAiAvailable}
           sessionsCount={sessions.length}
           isHistoryOpen={isHistoryOpen}
           isFullscreen={isFullscreen}
           onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
-          onOpenSettings={() => {
-            setApiKeyInput(isCustomKey ? activeKey : '');
-            setIsSettingsOpen(true);
-          }}
+          onOpenSettings={() => setIsSettingsOpen(true)}
           onRestart={createNewSession}
           onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
           onClose={onClose}
@@ -378,25 +391,12 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           onDeleteSession={deleteSession}
         />
 
-        {/* API Key Settings Drawer/Popover */}
+        {/* Server Status & Security Drawer */}
         <ApiKeySettingsModal
           isOpen={isSettingsOpen}
-          activeKey={activeKey}
-          isCustomKey={isCustomKey}
-          apiKeyInput={apiKeyInput}
-          apiKeyStatusMessage={apiKeyStatusMessage}
-          onApiKeyInputChange={setApiKeyInput}
-          onSave={() => {
-            setStoredApiKey(apiKeyInput);
-            setApiKeyStatusMessage('Ключ сохранен!');
-            setTimeout(() => setApiKeyStatusMessage(null), 2500);
-          }}
-          onReset={() => {
-            resetStoredApiKey();
-            setApiKeyInput('');
-            setApiKeyStatusMessage('Сброшено к ключу проекта!');
-            setTimeout(() => setApiKeyStatusMessage(null), 2500);
-          }}
+          status={serverStatus}
+          isLoading={isStatusLoading}
+          onRefresh={refreshServerStatus}
           onClose={() => setIsSettingsOpen(false)}
         />
 
@@ -497,7 +497,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           inputValue={inputValue}
           isTyping={isTyping}
           isDictating={isDictating}
-          activeKey={activeKey}
+          isAiAvailable={isAiAvailable}
           onInputChange={setInputValue}
           onSend={handleSend}
           onToggleDictation={toggleDictation}

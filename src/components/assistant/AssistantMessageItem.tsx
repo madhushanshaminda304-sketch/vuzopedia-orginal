@@ -136,6 +136,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
 
         {/* Chat Message Bubble */}
         <div
+          data-testid={isUser ? 'user-message' : 'assistant-message'}
           className={`rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-xs sm:text-sm leading-relaxed shadow-sm transition ${
             isUser
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-tr-xs'

@@ -40,6 +40,39 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Public Deployment Security, Zero Key Exposure & Server-Side Abuse Prevention
+- **Size**: M | **Types**: security, backend, architecture, upgrade
+- **Key Isolation & Zero-Exposure Architecture**:
+  - Removed `VITE_GEMINI_API_KEY` from all frontend bundles, `import.meta.env`, and client code.
+  - Eliminated client-side API key storage in `localStorage`. Automatically purges legacy `vuzopedia_gemini_api_key` entries.
+  - Secrets are stored exclusively in server environment configuration (`process.env.GEMINI_API_KEY`), never exposed to the browser or bundled in `dist/`.
+- **Standalone Production Server & Dev Middleware (`server/geminiProxy.mjs`, `server/index.mjs`, `vite.config.ts`)**:
+  - Pure native Node.js implementation (Node 18+) with zero external dependencies.
+  - Handles `POST /api/assistant/chat` and `GET /api/assistant/status`.
+  - Vite dev server middleware connects the same handler during development (`npm run dev`), while `server/index.mjs` provides a standalone production server (`npm start`).
+  - Added Cloudflare Pages Functions (`functions/api/assistant/chat.js` and `status.js`) for seamless deployment on Cloudflare Edge.
+- **Server-Side Validation & Sanitization**:
+  - Request body size capped at 64 KB (rejects oversized payloads with 413).
+  - Validates `prompt` (string, max 1000 chars), `history` (max 10 turns, max 1000 chars/msg), and `evidence` (max 8000 chars).
+  - Restricts models to a strict allowlist (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-2.5-flash`); rejects arbitrary model injections.
+  - Sanitizes all log strings and error responses to strip any raw key tokens (`[REDACTED_API_KEY]`).
+- **Abuse Prevention & Concurrency Controls**:
+  - In-memory sliding window rate limiter: enforces 15 RPM per client IP with `Retry-After` headers (matching the Gemini Free Tier 15 RPM allowance).
+  - Concurrency throttle: limits active in-flight Gemini calls to 2, rejecting excess with 429 `CONCURRENCY_LIMIT`.
+  - Configurable global usage cutoff (`AI_GLOBAL_DAILY_LIMIT=1500`, default 1,500 RPD for Google AI Studio Free Tier). When reached, responds with 503 `GLOBAL_USAGE_CUTOFF`.
+- **Graceful Local-Only Fallback & UI Transparency**:
+  - When the server key is missing, AI is disabled, or quota is exhausted, the assistant automatically and cleanly falls back to the local catalogue engine (`queryLocalEngine`).
+  - `AssistantHeader` and `ApiKeySettingsModal` display honest server status: `Режим: Google Gemini (защищенный сервер)` vs `Режим: Локальный каталог (офлайн/защищенный)` and a live daily usage meter.
+- **Zero-Cost Budget Contract**:
+  - Google AI Studio Free Tier: 15 RPM, 1,500 RPD, $0/month.
+  - Server runs with 0 new npm packages and 0 paid services.
+- **Verification**:
+  - `scripts/verify_secure_deployment.mjs`: All 6 test suites passed (0 failures, 0 console errors). Screenshot: `feature_assistant_secure_deployment.png`.
+  - `scripts/verify_evidence_system.mjs`: 13/13 passed.
+  - `scripts/verify_entity_matching_and_retrieval.mjs`: 13/13 passed.
+  - Production bundle check: 0 occurrences of secret key or `VITE_GEMINI_API_KEY` in `dist/`.
+  - TypeScript & Vite build: 0 errors.
+
 ## Change 2026-11-11: Trustworthy Evidence System and Provenance Tracking
 - **Size**: M | **Types**: feature, architecture, rag, integrity, provenance, ui
 - **Comprehensive Provenance Data Structure (`src/services/assistant/types.ts` & `evidenceSources.ts`)**:

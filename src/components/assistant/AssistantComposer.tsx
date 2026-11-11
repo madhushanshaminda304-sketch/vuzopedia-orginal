@@ -5,7 +5,7 @@ interface AssistantComposerProps {
   inputValue: string;
   isTyping: boolean;
   isDictating: boolean;
-  activeKey: string;
+  isAiAvailable: boolean;
   onInputChange: (val: string) => void;
   onSend: (text: string) => void;
   onToggleDictation: () => void;
@@ -27,7 +27,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
   inputValue,
   isTyping,
   isDictating,
-  activeKey,
+  isAiAvailable,
   onInputChange,
   onSend,
   onToggleDictation,
@@ -102,8 +102,8 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
         <div className="mt-2 px-1 flex items-center justify-between text-[11px] text-slate-400">
           <span>Нажмите Enter для отправки</span>
           <span className="flex items-center gap-1.5 text-[10px]">
-            <span className={`w-1.5 h-1.5 rounded-full ${activeKey ? 'bg-emerald-500' : 'bg-blue-400'}`} />
-            <span>{activeKey ? 'Google Gemini API • Каталог Вузопедии' : 'Локальный каталог • Офлайн-режим'}</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${isAiAvailable ? 'bg-emerald-500' : 'bg-blue-400'}`} />
+            <span>{isAiAvailable ? 'Google Gemini API • Каталог Вузопедии' : 'Локальный каталог • Офлайн-режим'}</span>
           </span>
         </div>
       </div>
