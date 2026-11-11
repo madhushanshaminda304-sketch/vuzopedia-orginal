@@ -210,6 +210,9 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                 }}
                 onClose={onCloseModal}
               />
+              {!m.toolCall?.duration && m.text && (
+                <span className="inline-block w-1.5 h-3.5 bg-blue-500 animate-pulse ml-1 align-middle" />
+              )}
 
               {/* AI disclaimer note */}
               {m.modelUsed === 'gemini' && (

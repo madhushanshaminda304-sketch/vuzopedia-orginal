@@ -290,3 +290,64 @@ export function interpretStudentQuery(
     softPreferences,
   };
 }
+
+/**
+ * Checks if a query is a supported factual lookup or deterministic tool action
+ * that can be answered immediately with high confidence using curated local records.
+ */
+export function isSupportedFactualLookup(
+  context: {
+    hasZeroMatches?: boolean;
+    isCredit?: boolean;
+    isOlympiads?: boolean;
+    isDorm?: boolean;
+    isMilitary?: boolean;
+    toolName?: string;
+    extractedFilters?: any;
+    matchedUniversities?: any[];
+    isUnderspecified?: boolean;
+    isComparison?: boolean;
+  },
+  prompt: string
+): boolean {
+  // 1. Conflicting criteria / zero matches -> immediate local explanation and alternatives
+  if (context.hasZeroMatches) return true;
+
+  const isCredit = Boolean(context.isCredit || context.toolName?.includes('кредит') || /кредит/i.test(prompt));
+  const isOlympiads = Boolean(context.isOlympiads || context.toolName?.includes('олимпиад') || /олимпиад/i.test(prompt));
+  const isDorm = Boolean(
+    context.isDorm ||
+    context.extractedFilters?.wantsDorm ||
+    context.toolName?.includes('Общежит') ||
+    /общежит|общаг/i.test(prompt)
+  );
+  const isMilitary = Boolean(
+    context.isMilitary ||
+    context.extractedFilters?.wantsMilitary ||
+    context.toolName?.includes('Воен') ||
+    /вуц|воен/i.test(prompt)
+  );
+
+  // 2. Specific regulatory tools with curated official policies
+  if (isCredit) return true;
+  if (isOlympiads) return true;
+
+  const matchedCount = context.matchedUniversities?.length ?? 0;
+
+  // 3. Dormitory or Military specific query for a single university
+  if ((isDorm || isMilitary) && matchedCount <= 1) {
+    return true;
+  }
+
+  // 4. Exact factual question for a single university (passing score, address, contact)
+  if (
+    matchedCount === 1 &&
+    !context.isUnderspecified &&
+    !context.isComparison
+  ) {
+    const isDirectFactQuery = /сколько|стоимость|проходной|балл|общежит|вуц|воен|адрес|метро|сайт|факультет|документ/i.test(prompt);
+    if (isDirectFactQuery) return true;
+  }
+
+  return false;
+}

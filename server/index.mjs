@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   handleAssistantChat,
+  handleAssistantStream,
   getAssistantStatus,
   getClientIp,
   DEFAULT_CONFIG,
@@ -127,6 +128,48 @@ export function createAssistantServer(config = serverConfig) {
 
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(result.body));
+      });
+
+      return;
+    }
+
+    // 2.5 Streaming endpoint (SSE)
+    if (pathname === '/api/assistant/stream') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Method Not Allowed' } }));
+        return;
+      }
+
+      let bodyData = '';
+      let bodyTooLarge = false;
+
+      req.on('data', (chunk) => {
+        bodyData += chunk;
+        if (bodyData.length > 65536) {
+          bodyTooLarge = true;
+          req.destroy();
+        }
+      });
+
+      req.on('end', async () => {
+        if (bodyTooLarge) {
+          res.writeHead(413, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Request payload exceeds 64 KB limit' } }));
+          return;
+        }
+
+        let parsedBody;
+        try {
+          parsedBody = JSON.parse(bodyData || '{}');
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: { code: 'INVALID_JSON', message: 'Malformed JSON payload' } }));
+          return;
+        }
+
+        const clientIp = getClientIp(req.headers, req.socket.remoteAddress);
+        await handleAssistantStream(parsedBody, clientIp, res, config);
       });
 
       return;

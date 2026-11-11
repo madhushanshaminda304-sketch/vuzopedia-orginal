@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, MicOff, Wand2, Send } from 'lucide-react';
+import { Mic, MicOff, Wand2, Send, Square } from 'lucide-react';
 
 interface AssistantComposerProps {
   inputValue: string;
@@ -8,6 +8,7 @@ interface AssistantComposerProps {
   isAiAvailable: boolean;
   onInputChange: (val: string) => void;
   onSend: (text: string) => void;
+  onStopGeneration?: () => void;
   onToggleDictation: () => void;
   onEnhancePrompt: () => void;
 }
@@ -30,6 +31,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
   isAiAvailable,
   onInputChange,
   onSend,
+  onStopGeneration,
   onToggleDictation,
   onEnhancePrompt,
 }) => {
@@ -88,15 +90,28 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
             className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           />
 
-          {/* Send Button */}
-          <button
-            onClick={() => onSend(inputValue)}
-            disabled={!inputValue.trim() || isTyping}
-            className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 transition shadow-md shadow-blue-500/20"
-            title="Отправить (Enter)"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {/* Send or Stop Button */}
+          {isTyping ? (
+            <button
+              type="button"
+              data-testid="ded-assistant-stop-btn"
+              onClick={onStopGeneration}
+              className="px-3.5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold transition shadow-md shadow-red-500/20 flex items-center gap-1.5 text-xs animate-pulse"
+              title="Остановить генерацию"
+            >
+              <Square className="w-3.5 h-3.5 fill-current" />
+              <span className="hidden sm:inline">Стоп</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onSend(inputValue)}
+              disabled={!inputValue.trim()}
+              className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 transition shadow-md shadow-blue-500/20"
+              title="Отправить (Enter)"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <div className="mt-2 px-1 flex items-center justify-between text-[11px] text-slate-400">

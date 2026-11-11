@@ -55,9 +55,10 @@ export async function queryDedAssistant(
   prompt: string,
   history: Array<{ sender: 'ded' | 'user'; text: string }> = [],
   mode: SpecialistMode = 'all',
-  scope: RAGScopeFilter = 'all'
+  scope: RAGScopeFilter = 'all',
+  options?: any
 ): Promise<GeneratedAssistantResponse> {
-  const resp = await queryAssistant(prompt, history, mode, scope);
+  const resp = await queryAssistant(prompt, history, mode, scope, options);
 
   const primaryAction = resp.validatedActions[0];
 

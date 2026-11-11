@@ -12,6 +12,7 @@ export const ACTION_TAB_DESCRIPTIONS: Record<ValidActionTab, string> = {
   budget: 'Калькулятор бюджета студента',
   target: 'Целевое обучение от предприятий',
   catalog: 'Каталог вузов России',
+  explain_more: 'Раскрыть подробнее с деталями и статистикой',
 };
 
 /**

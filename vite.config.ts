@@ -2,7 +2,7 @@ import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
-import { handleAssistantChat, getAssistantStatus, getClientIp } from './server/geminiProxy.mjs';
+import { handleAssistantChat, handleAssistantStream, getAssistantStatus, getClientIp } from './server/geminiProxy.mjs';
 
 // Load .env variables into process.env for the Vite development server
 const envPath = path.resolve(__dirname, '.env');
@@ -97,6 +97,48 @@ function assistantDevServerPlugin(): Plugin {
           return;
         }
 
+        if (pathname === '/api/assistant/stream' && req.method === 'POST') {
+          let bodyData = '';
+          let bodyTooLarge = false;
+
+          req.on('data', (chunk) => {
+            bodyData += chunk;
+            if (bodyData.length > 65536) {
+              bodyTooLarge = true;
+              req.destroy();
+            }
+          });
+
+          req.on('end', async () => {
+            if (bodyTooLarge) {
+              res.statusCode = 413;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload exceeds 64 KB limit' } }));
+              return;
+            }
+
+            let parsedBody = {};
+            try {
+              parsedBody = JSON.parse(bodyData || '{}');
+            } catch {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify({ error: { code: 'INVALID_JSON', message: 'Malformed JSON payload' } }));
+              return;
+            }
+
+            const clientIp = getClientIp(req.headers as any, req.socket.remoteAddress);
+            await handleAssistantStream(parsedBody, clientIp, res as any, {
+              apiKey: process.env.GEMINI_API_KEY || '',
+              aiEnabled: process.env.AI_ENABLED !== 'false',
+              globalDailyLimit: parseInt(process.env.AI_GLOBAL_DAILY_LIMIT || '1500', 10),
+              rateLimitPerMinute: parseInt(process.env.AI_RATE_LIMIT_PER_MINUTE || '15', 10),
+              maxConcurrency: parseInt(process.env.AI_MAX_CONCURRENCY || '2', 10),
+            });
+          });
+          return;
+        }
+
         next();
       });
     },
@@ -164,6 +206,48 @@ function assistantDevServerPlugin(): Plugin {
             res.statusCode = result.status;
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
             res.end(JSON.stringify(result.body));
+          });
+          return;
+        }
+
+        if (pathname === '/api/assistant/stream' && req.method === 'POST') {
+          let bodyData = '';
+          let bodyTooLarge = false;
+
+          req.on('data', (chunk) => {
+            bodyData += chunk;
+            if (bodyData.length > 65536) {
+              bodyTooLarge = true;
+              req.destroy();
+            }
+          });
+
+          req.on('end', async () => {
+            if (bodyTooLarge) {
+              res.statusCode = 413;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload exceeds 64 KB limit' } }));
+              return;
+            }
+
+            let parsedBody = {};
+            try {
+              parsedBody = JSON.parse(bodyData || '{}');
+            } catch {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify({ error: { code: 'INVALID_JSON', message: 'Malformed JSON payload' } }));
+              return;
+            }
+
+            const clientIp = getClientIp(req.headers as any, req.socket.remoteAddress);
+            await handleAssistantStream(parsedBody, clientIp, res as any, {
+              apiKey: process.env.GEMINI_API_KEY || '',
+              aiEnabled: process.env.AI_ENABLED !== 'false',
+              globalDailyLimit: parseInt(process.env.AI_GLOBAL_DAILY_LIMIT || '1500', 10),
+              rateLimitPerMinute: parseInt(process.env.AI_RATE_LIMIT_PER_MINUTE || '15', 10),
+              maxConcurrency: parseInt(process.env.AI_MAX_CONCURRENCY || '2', 10),
+            });
           });
           return;
         }

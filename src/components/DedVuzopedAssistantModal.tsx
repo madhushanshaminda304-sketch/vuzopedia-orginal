@@ -91,6 +91,16 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const activeAbortControllerRef = useRef<AbortController | null>(null);
+
+  const handleStopGeneration = () => {
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+      activeAbortControllerRef.current = null;
+    }
+    setIsTyping(false);
+    setCurrentToolRunning(null);
+  };
 
   // Sync sessions to localStorage
   useEffect(() => {
@@ -282,6 +292,14 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     });
   };
 
+  const handleNavigateTab = (tab: string) => {
+    if (tab === 'explain_more') {
+      handleSend('Расскажи подробнее с деталями и статистикой');
+    } else {
+      onNavigateTab(tab);
+    }
+  };
+
   const handleSend = async (textToSend: string) => {
     const text = textToSend.trim();
     if (!text || isTyping) return;
@@ -293,22 +311,47 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const streamMsgId = `ded-stream-${Date.now()}`;
+    const streamPlaceholder: AssistantMessage = {
+      id: streamMsgId,
+      sender: 'ded',
+      text: '',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      modelUsed: 'gemini',
+    };
+
+    setMessages((prev) => [...prev, userMsg, streamPlaceholder]);
     setInputValue('');
     setIsTyping(true);
-    setCurrentToolRunning('Поиск по локальному каталогу вузов Вузопедии...');
+    setCurrentToolRunning('Обработка запроса...');
+
+    const abortCtrl = new AbortController();
+    activeAbortControllerRef.current = abortCtrl;
 
     try {
       const response = await queryAssistant(
         text,
         messages.map((m) => ({ sender: m.sender, text: m.text })),
         activeMode,
-        activeScope
+        activeScope,
+        {
+          abortSignal: abortCtrl.signal,
+          onStreamChunk: (accumulated) => {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === streamMsgId ? { ...m, text: accumulated } : m))
+            );
+          },
+        }
       );
 
-      const dedMsg = createAssistantMessageFromResponse(response);
-      const updatedMessages = [...messages, userMsg, dedMsg];
-      setMessages(updatedMessages);
+      const finalMsg = {
+        ...createAssistantMessageFromResponse(response),
+        id: streamMsgId,
+      };
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === streamMsgId ? finalMsg : m))
+      );
 
       // Auto update sessions
       setSessions((prev) => {
@@ -318,6 +361,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             ? prev[existingIdx].title
             : text.slice(0, 36) + (text.length > 36 ? '...' : '');
 
+        const updatedMessages = [...messages, userMsg, finalMsg];
         const newSession: ChatSession = {
           id: currentSessionId,
           title,
@@ -338,7 +382,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     } catch (err) {
       console.error('Ded assistant error:', err);
       const errorMsg: AssistantMessage = {
-        id: `ded-err-${Date.now()}`,
+        id: streamMsgId,
         sender: 'ded',
         text: 'Произошла непредвиденная ошибка связи, но наш Калькулятор ЕГЭ и база вузов работают в штатном режиме!',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -347,8 +391,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         suggestions: ['Как оценить шансы по баллам?'],
         modelUsed: 'local',
       };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === streamMsgId ? errorMsg : m))
+      );
     } finally {
+      activeAbortControllerRef.current = null;
       setIsTyping(false);
       setCurrentToolRunning(null);
     }
@@ -436,7 +483,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               onCopy={() => copyMessage(m.id, m.text)}
               onFeedback={(type) => setFeedback(m.id, type)}
               onSendPrompt={handleSend}
-              onNavigateTab={onNavigateTab}
+              onNavigateTab={handleNavigateTab}
               onOpenArtifact={setActiveArtifact}
               onInspectCitations={(chunks, focusChunkId) => setInspectedCitations({ chunks, focusChunkId })}
               onSelectUniversity={onSelectUniversity}
@@ -444,8 +491,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             />
           ))}
 
-          {/* Typing / Agent Tool Execution Indicator */}
-          {isTyping && (
+          {/* Typing / Agent Tool Execution Indicator (only until first token arrives) */}
+          {isTyping && (!messages[messages.length - 1] || messages[messages.length - 1].text === '') && (
             <div className="flex items-start gap-3 animate-fadeIn">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center text-sm shrink-0 shadow-sm">
                 🧙‍♂️
@@ -500,6 +547,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           isAiAvailable={isAiAvailable}
           onInputChange={setInputValue}
           onSend={handleSend}
+          onStopGeneration={handleStopGeneration}
           onToggleDictation={toggleDictation}
           onEnhancePrompt={() => {
             const enriched = enhanceStudentPrompt(inputValue);

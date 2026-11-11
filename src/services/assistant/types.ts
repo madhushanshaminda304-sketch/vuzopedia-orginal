@@ -17,6 +17,7 @@ export const VALID_ACTION_TABS = [
   'achievements',
   'budget',
   'target',
+  'explain_more',
 ] as const;
 
 export type ValidActionTab = (typeof VALID_ACTION_TABS)[number];
