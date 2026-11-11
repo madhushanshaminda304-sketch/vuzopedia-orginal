@@ -1,6 +1,6 @@
 import { AssistantResponse, validateAssistantResponse } from './types';
 import { RetrievalContext } from './dataRetrieval';
-import { parseAndExtractActions } from './navigationActions';
+import { parseAndExtractActions, resolveAction } from './navigationActions';
 import { extractReferencedEntityIds } from './entityResolution';
 
 export interface ServerAssistantStatus {
@@ -79,7 +79,7 @@ function finalizeStreamResponse(
   }
 
   // Extract and validate [ACTION: ...] tags
-  const actionResult = parseAndExtractActions(cleanText);
+  const actionResult = parseAndExtractActions(cleanText, context.matchedUniversities);
   cleanText = actionResult.cleanText;
   let validatedActions = actionResult.actions;
 
@@ -91,11 +91,21 @@ function finalizeStreamResponse(
     validatedActions.push({
       tabId: 'explain_more' as any,
       label: '📖 Раскрыть подробнее',
+      canExecute: true,
     });
   }
 
   if (validatedActions.length === 0 && context.suggestedActionTab) {
-    validatedActions = [{ tabId: context.suggestedActionTab as any, label: context.suggestedActionLabel }];
+    const defaultAct = resolveAction(context.suggestedActionTab, context.suggestedActionLabel, context.matchedUniversities);
+    if (defaultAct) {
+      validatedActions.push(defaultAct);
+    } else {
+      validatedActions.push({
+        tabId: (context.suggestedActionTab || 'catalog') as any,
+        label: context.suggestedActionLabel || 'Открыть каталог',
+        canExecute: true,
+      });
+    }
   }
 
   // Extract referenced university IDs from generated text

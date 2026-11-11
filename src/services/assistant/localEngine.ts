@@ -1,6 +1,7 @@
 import { AssistantResponse, validateAssistantResponse, ValidatedAction } from './types';
 import { RetrievalContext } from './dataRetrieval';
 import { extractReferencedEntityIds } from './entityResolution';
+import { resolveAction } from './navigationActions';
 
 /**
  * Generates local grounded responses relying strictly on curated catalog records.
@@ -157,12 +158,21 @@ export function queryLocalEngine(
 
   const evidenceIds = context.citationChunks.map((c) => c.id);
 
-  const validatedActions: ValidatedAction[] = [
-    {
-      tabId: context.suggestedActionTab as any,
-      label: context.suggestedActionLabel,
-    },
-  ];
+  const resolvedAction = resolveAction(
+    context.suggestedActionTab,
+    context.suggestedActionLabel,
+    context.matchedUniversities
+  );
+
+  const validatedActions: ValidatedAction[] = resolvedAction
+    ? [resolvedAction]
+    : [
+        {
+          tabId: (context.suggestedActionTab || 'catalog') as any,
+          label: context.suggestedActionLabel || 'Открыть каталог вузов',
+          canExecute: true,
+        },
+      ];
 
   const rawPayload = {
     text: replyText,

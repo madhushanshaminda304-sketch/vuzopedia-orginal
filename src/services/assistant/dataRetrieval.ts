@@ -661,7 +661,7 @@ export function retrieveAssistantContext(
   reasoningTrace.push(`4. Отобрано ${citationChunks.length} справочных фрагментов из локального каталога.`);
 
   // 10. Navigation Action & Tool Metadata
-  const defaultAction = determineDefaultAction(query, filters, isComparisonQuery);
+  const defaultAction = determineDefaultAction(query, filters, isComparisonQuery, matchedUniversities);
   let toolName = 'Поиск по локальному каталогу Вузопедии';
   let toolQuery = `Параметры: город=${targetCity || 'все'}, IT=${Boolean(
     filters.direction?.includes('IT')

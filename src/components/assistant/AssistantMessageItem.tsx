@@ -14,7 +14,13 @@ import {
   ThumbsDown,
   Sparkles,
 } from 'lucide-react';
-import { AssistantMessage, AdmissionArtifact, RetrievedCitationChunk } from '../../services/assistant';
+import {
+  AssistantMessage,
+  AdmissionArtifact,
+  RetrievedCitationChunk,
+  AppAssistantAction,
+  resolveAction,
+} from '../../services/assistant';
 import { University } from '../../types';
 import { AssistantTextRenderer } from './AssistantTextRenderer';
 
@@ -31,6 +37,7 @@ interface AssistantMessageItemProps {
   onFeedback: (type: 'like' | 'dislike') => void;
   onSendPrompt: (prompt: string) => void;
   onNavigateTab: (tab: string) => void;
+  onExecuteAction?: (action: AppAssistantAction) => void;
   onOpenArtifact: (artifact: AdmissionArtifact) => void;
   onInspectCitations: (chunks: RetrievedCitationChunk[], focusChunkId?: string) => void;
   onSelectUniversity?: (vuz: University) => void;
@@ -50,6 +57,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
   onFeedback,
   onSendPrompt,
   onNavigateTab,
+  onExecuteAction,
   onOpenArtifact,
   onInspectCitations,
   onSelectUniversity,
@@ -307,18 +315,49 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
           )}
 
           {/* Contextual Action Button */}
-          {m.actionTab && (
+          {(m.action || m.actionTab) && (
             <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
-              <button
-                onClick={() => {
-                  onNavigateTab(m.actionTab!);
-                  if (onCloseModal) onCloseModal();
-                }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 transition shadow-md hover:scale-105 transform"
-              >
-                <span>{m.actionLabel || 'Перейти в раздел'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {m.canExecute === false ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    disabled
+                    title={m.disabledReason ? `Действие недоступно: ${m.disabledReason}` : 'Действие недоступно'}
+                    className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-75"
+                  >
+                    <span>{m.actionLabel || 'Действие недоступно'}</span>
+                  </button>
+                  {m.disabledReason && (
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                      ({m.disabledReason})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (m.action && onExecuteAction) {
+                      onExecuteAction(m.action);
+                    } else if (m.actionTab) {
+                      const resolved = resolveAction(m.actionTab);
+                      if (onExecuteAction && resolved?.action) {
+                        onExecuteAction(resolved.action);
+                      } else if (resolved?.tabId) {
+                        onNavigateTab(resolved.tabId);
+                        if (onCloseModal) onCloseModal();
+                      } else {
+                        onNavigateTab(m.actionTab);
+                        if (onCloseModal) onCloseModal();
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 transition shadow-md hover:scale-105 transform"
+                >
+                  <span>{m.actionLabel || 'Перейти в раздел'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -449,9 +488,18 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                   {alt.actionTab && (
                     <div className="pt-1">
                       <button
+                        type="button"
                         onClick={() => {
-                          onNavigateTab(alt.actionTab!);
-                          if (onCloseModal) onCloseModal();
+                          const resolved = resolveAction(alt.actionTab!);
+                          if (onExecuteAction && resolved?.action) {
+                            onExecuteAction(resolved.action);
+                          } else if (resolved?.tabId) {
+                            onNavigateTab(resolved.tabId);
+                            if (onCloseModal) onCloseModal();
+                          } else {
+                            onNavigateTab(alt.actionTab!);
+                            if (onCloseModal) onCloseModal();
+                          }
                         }}
                         className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1"
                       >

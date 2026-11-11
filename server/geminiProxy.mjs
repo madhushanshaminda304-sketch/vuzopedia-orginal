@@ -256,10 +256,15 @@ function buildSystemInstruction(evidence = '') {
 5. **Честная неполнота**:
    - Если данных нет в базе, прямо скажи об этом.
 6. **Инлайн-карточки вузов**: [vuz:<id>:<КраткоеНазвание>].
-7. **Инструменты и действия в конце ответа**:
-   [TOOL: <Название инструмента> | <Запрос>]
-   [ACTION: <tab_id> | <Название кнопки>]
-Доступные tab_id: calculator, programs, comparison, military, dorms, olympiads, credit, achievements, budget, target, catalog, explain_more.
+7. **Инструменты и целевые действия на сайте**:
+   Используй валидированные действия сайта в конце ответа:
+   - Сравнение конкретных вузов (не пустая страница!): [ACTION: compare:<id1>,<id2> | Сравнить вузы]
+   - Открытие карточки вуза: [ACTION: vuz:<id> | Подробнее о вузе]
+   - Добавление в приоритеты (до 5 вузов): [ACTION: shortlist_add:<id> | Добавить в мои приоритеты]
+   - Калькуляторы: [ACTION: calc:ege | Калькулятор ЕГЭ], [ACTION: calc:student_budget | Расчет расходов], [ACTION: calc:credit | Кредит 3%], [ACTION: calc:achievements | Достижения]
+   - Фильтры каталога: [ACTION: filter:city=Москва,dorm=1 | Вузы Москвы с общежитием]
+   - Переход по каноническим вкладкам: [ACTION: <tab_id> | <Название кнопки>]
+     Канонические tab_id: catalog, programs, compare, calculator, student_budget, dorms, military, olympiads, credit, achievements, target, spo, tracker, professions, explain_more.
 
 СПРАВОЧНЫЕ ДАННЫЕ КАТАЛОГА:
 ${evidence}`;

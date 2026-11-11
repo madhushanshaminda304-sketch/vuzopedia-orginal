@@ -1,4 +1,13 @@
 import { University } from '../../types';
+import {
+  APPLICATION_TABS,
+  ApplicationTab,
+  TAB_ALIASES,
+  AppAssistantAction,
+  resolveCanonicalTab,
+} from './actionRegistry';
+
+export * from './actionRegistry';
 
 export type ResponseMode = 'gemini' | 'local';
 
@@ -6,17 +15,10 @@ export type SpecialistMode = 'all' | 'calculator' | 'military' | 'finance' | 'ol
 export type RAGScopeFilter = 'all' | 'moscow' | 'spb' | 'it' | 'military' | 'olympiads';
 
 export const VALID_ACTION_TABS = [
-  'catalog',
-  'programs',
-  'calculator',
-  'comparison',
-  'military',
-  'dorms',
-  'olympiads',
-  'credit',
-  'achievements',
-  'budget',
-  'target',
+  ...APPLICATION_TABS,
+  'comparison', // legacy alias for 'compare'
+  'budget',     // legacy alias for 'student_budget'
+  'colleges',   // legacy alias for 'spo'
   'explain_more',
 ] as const;
 
@@ -26,6 +28,11 @@ export interface ValidatedAction {
   tabId: ValidActionTab;
   label: string;
   payload?: Record<string, any>;
+  action?: AppAssistantAction;
+  canExecute?: boolean;
+  disabledReason?: string;
+  requiresConfirmation?: boolean;
+  confirmationMessage?: string;
 }
 
 export interface AdmissionProbability {
@@ -272,22 +279,30 @@ export function validateAssistantResponse(input: any): AssistantResponse {
     ? input.referencedEntityIds.filter((id: any): id is string => typeof id === 'string')
     : [];
 
-  // Validate actions against allowed tabs
+  // Validate actions against allowed tabs and canonical aliases
   const validatedActions: ValidatedAction[] = [];
   if (Array.isArray(input.validatedActions)) {
     for (const a of input.validatedActions) {
       if (a && typeof a.tabId === 'string' && VALID_ACTION_TABS.includes(a.tabId as ValidActionTab)) {
+        const canonicalTab = (resolveCanonicalTab(a.tabId) || a.tabId) as ValidActionTab;
         validatedActions.push({
-          tabId: a.tabId as ValidActionTab,
+          tabId: canonicalTab,
           label: typeof a.label === 'string' && a.label.trim() ? a.label.trim() : 'Перейти в раздел',
           payload: typeof a.payload === 'object' ? a.payload : undefined,
+          action: a.action,
+          canExecute: a.canExecute !== false,
+          disabledReason: a.disabledReason,
+          requiresConfirmation: a.requiresConfirmation,
+          confirmationMessage: a.confirmationMessage,
         });
       }
     }
   } else if (typeof input.actionTab === 'string' && VALID_ACTION_TABS.includes(input.actionTab as ValidActionTab)) {
+    const canonicalTab = (resolveCanonicalTab(input.actionTab) || input.actionTab) as ValidActionTab;
     validatedActions.push({
-      tabId: input.actionTab as ValidActionTab,
+      tabId: canonicalTab,
       label: typeof input.actionLabel === 'string' && input.actionLabel.trim() ? input.actionLabel.trim() : 'Перейти в раздел',
+      canExecute: true,
     });
   }
 

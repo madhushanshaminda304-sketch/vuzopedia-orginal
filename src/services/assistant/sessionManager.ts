@@ -11,6 +11,7 @@ import {
   ExtractedQueryFilters,
   AdmissionProbability,
   AdmissionArtifact,
+  AppAssistantAction,
 } from './types';
 
 export const SESSIONS_STORAGE_KEY = 'vuzopedia_assistant_sessions_v4';
@@ -24,6 +25,11 @@ export interface AssistantMessage {
   toolCall?: ToolCall;
   actionTab?: string;
   actionLabel?: string;
+  action?: AppAssistantAction;
+  canExecute?: boolean;
+  disabledReason?: string;
+  requiresConfirmation?: boolean;
+  confirmationMessage?: string;
   suggestions?: string[];
   followUps?: string[];
   clarificationOptions?: ClarificationOption[];
@@ -173,6 +179,11 @@ export function createAssistantMessageFromResponse(
     timestamp: ts,
     response,
     toolCall: response.toolCall,
+    action: primaryAction?.action,
+    canExecute: primaryAction?.canExecute,
+    disabledReason: primaryAction?.disabledReason,
+    requiresConfirmation: primaryAction?.requiresConfirmation,
+    confirmationMessage: primaryAction?.confirmationMessage,
     actionTab: primaryAction?.tabId,
     actionLabel: primaryAction?.label,
     suggestions: response.suggestions,

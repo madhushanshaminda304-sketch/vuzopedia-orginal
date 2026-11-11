@@ -35,6 +35,12 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { UniversityDetailModal } from './components/UniversityDetailModal';
 import { DedVuzopedAssistantModal } from './components/DedVuzopedAssistantModal';
 import { Footer } from './components/Footer';
+import {
+  executeAppAssistantAction,
+  AppAssistantAction,
+  resolveCanonicalTab,
+  ApplicationTab,
+} from './services/assistant';
 import * as AssistantServices from './services/assistant';
 
 if (typeof window !== 'undefined') {
@@ -93,6 +99,25 @@ export const App: React.FC = () => {
     setTimeout(() => {
       setToastMessage((current) => (current === msg ? null : current));
     }, 2800);
+  };
+
+  const handleSelectTab = (tab: string) => {
+    const canonical = resolveCanonicalTab(tab);
+    if (canonical) {
+      setCurrentTab(canonical);
+    }
+  };
+
+  const handleExecuteAssistantAction = (action: AppAssistantAction): boolean => {
+    return executeAppAssistantAction(action, {
+      setCurrentTab: (tab: ApplicationTab) => setCurrentTab(tab),
+      setSelectedUniversityDetail: (u: University | null) => setSelectedVuzDetail(u),
+      setCompareList: (updater) => setCompareList(updater),
+      setFavorites: (updater) => setFavorites(updater),
+      setSelectedCity: (city) => setSelectedCity(city),
+      setIsAssistantOpen: (open) => setIsDedAssistantOpen(open),
+      showToast: (msg) => showToast(msg),
+    });
   };
 
   // Sync document title with currentTab
@@ -207,7 +232,7 @@ export const App: React.FC = () => {
       {/* Main Sticky Header */}
       <Header
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleSelectTab}
         selectedCity={selectedCity}
         onOpenCityModal={() => setIsCityModalOpen(true)}
         onOpenSearchModal={() => setIsSearchModalOpen(true)}
@@ -406,7 +431,8 @@ export const App: React.FC = () => {
       <DedVuzopedAssistantModal
         isOpen={isDedAssistantOpen}
         onClose={() => setIsDedAssistantOpen(false)}
-        onNavigateTab={setCurrentTab}
+        onNavigateTab={handleSelectTab}
+        onExecuteAction={handleExecuteAssistantAction}
         onSelectUniversity={(vuz) => {
           setSelectedVuzDetail(vuz);
           setIsDedAssistantOpen(false);
@@ -441,7 +467,7 @@ export const App: React.FC = () => {
 
       {/* Global Footer */}
       <Footer
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleSelectTab}
         onSelectCity={setSelectedCity}
         onOpenDedAssistant={() => setIsDedAssistantOpen(true)}
       />

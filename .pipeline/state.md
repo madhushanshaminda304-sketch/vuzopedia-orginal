@@ -260,3 +260,26 @@ profile: webapp
   - Created and executed `scripts/measure_assistant_responsiveness.mjs` verifying cache miss, cache hit (<25ms), SSE streaming TTFC vs TCT, Stop button early cancellation, browser instant fast-path, and Playwright DOM streaming.
   - All existing suites verified green: `verify_secure_deployment.mjs`, `verify_evidence_system.mjs`, `verify_entity_matching_and_retrieval.mjs`.
   - Screenshot captured: `.pipeline/after/feature_assistant_streaming_and_responsiveness.png`.
+
+## Change 2026-11-11: Central Typed Action Registry, Canonical Tab Routing & Safe Navigation
+- **Size**: M | **Types**: navigation, safety, architecture, ui, integration
+- **Inspected Route Discrepancies & Canonical Registry (`src/services/assistant/actionRegistry.ts`)**:
+  - Audited all 24 application views in `src/App.tsx`.
+  - Identified and eliminated broken route targets in the assistant (`comparison` -> `compare`, `budget` -> `student_budget`, `colleges` -> `spo`, `my_plan` -> `tracker`). Previously, clicking these invalid names resulted in a blank view.
+  - Created central typed action registry exporting `APPLICATION_TABS` (all 26 valid tabs), `TAB_ALIASES`, `APPLICATION_TAB_TITLES`, `resolveCanonicalTab`, and discriminated union `AppAssistantAction`.
+- **Implemented Validated Actions with Real Entity Parameters**:
+  - `compare_universities`: Validates university IDs against `UNIVERSITIES` catalog data. Pre-populates `compareList` so that "Compare MSU and HSE" opens `UniversityComparisonView` with the specified universities displayed side-by-side, rather than an empty comparison state. Empty comparison or invalid entities are marked `canExecute: false` with explanatory `disabledReason`.
+  - `open_university`: Validates university ID and opens the university detail modal.
+  - `open_program`: Validates program codes against `FULL_PROGRAMS` (e.g. `09.03.04` Программная инженерия) and navigates to `/programs`.
+  - `apply_catalog_filters`: Validates and applies criteria (city, dorm, military) and navigates to `/catalog`.
+  - `manage_shortlist`: Handles adding/removing up to 5 priority universities (`favorites`).
+  - `open_calculator`: Maps calculator types (`ege`, `credit`, `achievements`, `student_budget`) with parameters.
+  - `create_checklist`: Generates editable interactive checklist artifacts in the modal.
+- **Strict Parameter Validation & Security Guardrails**:
+  - Implemented `isSafeNavigationTarget`: strictly rejects `javascript:`, data URIs, script injection, directory traversal (`..`, `/`), external arbitrary links, and invalid routes.
+  - Reversible actions (tab navigation, filter application, comparison addition) execute smoothly; irreversible actions (e.g., removing a priority university) require explicit user confirmation with custom Russian prompt.
+  - Disabled actions render with `disabled` attribute, muted styling, and a tooltip explaining why the action cannot be performed.
+- **Verification & Test Suite (`scripts/verify_assistant_action_registry.mjs`)**:
+  - 16 / 16 tests passed with zero failures in headless Chrome.
+  - Verified tab canonicalization, entity validation, empty comparison rejection, security blocking, state handler execution, and end-to-end browser UI flow.
+  - Screenshot captured: `.pipeline/after/feature_assistant_action_registry.png`.

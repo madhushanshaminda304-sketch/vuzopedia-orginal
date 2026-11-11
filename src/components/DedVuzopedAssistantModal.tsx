@@ -15,6 +15,8 @@ import {
   loadSessions,
   saveSessions,
   createAssistantMessageFromResponse,
+  AppAssistantAction,
+  resolveAction,
 } from '../services/assistant';
 import { University } from '../types';
 import {
@@ -32,6 +34,7 @@ interface DedVuzopedAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateTab: (tab: string) => void;
+  onExecuteAction?: (action: AppAssistantAction) => boolean | void;
   onSelectUniversity?: (vuz: University) => void;
 }
 
@@ -39,6 +42,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   isOpen,
   onClose,
   onNavigateTab,
+  onExecuteAction,
   onSelectUniversity,
 }) => {
   const [messages, setMessages] = useState<AssistantMessage[]>([createInitialWelcomeMessage()]);
@@ -57,6 +61,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     chunks: RetrievedCitationChunk[];
     focusChunkId?: string;
   } | null>(null);
+  const [pendingConfirmationAction, setPendingConfirmationAction] = useState<AppAssistantAction | null>(null);
 
   const [inputValue, setInputValue] = useState('');
   const [activeMode, setActiveMode] = useState<SpecialistMode>('all');
@@ -292,11 +297,88 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     });
   };
 
+  const handleExecuteAction = (action: AppAssistantAction) => {
+    if (!action.canExecute) {
+      return;
+    }
+
+    if (action.requiresConfirmation) {
+      setPendingConfirmationAction(action);
+      return;
+    }
+
+    dispatchAction(action);
+  };
+
+  const dispatchAction = (action: AppAssistantAction) => {
+    if (action.type === 'explain_more') {
+      handleSend(action.prompt || 'Расскажи подробнее с деталями и статистикой');
+      return;
+    }
+
+    if (action.type === 'create_checklist') {
+      setActiveArtifact({
+        id: action.id,
+        type: 'checklist',
+        title: action.title,
+        summary: `Интерактивный чек-лист поступления (${action.items.length} пунктов)`,
+        checklistItems: action.items.map((item, idx) => ({
+          id: item.id || `item-${idx + 1}`,
+          label: item.text,
+          checked: !!item.checked,
+          priority: (item.category === 'essential' ? 'high' : 'medium') as 'high' | 'medium' | 'low',
+        })),
+      });
+      return;
+    }
+
+    if (onExecuteAction) {
+      const handled = onExecuteAction(action);
+      if (handled) {
+        onClose();
+        return;
+      }
+    }
+
+    // Default fallback handling if application handler wasn't provided or didn't handle
+    if (action.type === 'open_tab') {
+      onNavigateTab(action.tabId);
+      onClose();
+    } else if (action.type === 'compare_universities') {
+      onNavigateTab('compare');
+      onClose();
+    } else if (action.type === 'open_calculator') {
+      const tabMap: Record<string, string> = {
+        ege: 'calculator',
+        credit: 'credit',
+        achievements: 'achievements',
+        student_budget: 'student_budget',
+      };
+      onNavigateTab(tabMap[action.calculatorType] || 'calculator');
+      onClose();
+    } else if (action.type === 'open_program') {
+      onNavigateTab('programs');
+      onClose();
+    } else if (action.type === 'apply_catalog_filters') {
+      onNavigateTab('catalog');
+      onClose();
+    }
+  };
+
   const handleNavigateTab = (tab: string) => {
     if (tab === 'explain_more') {
       handleSend('Расскажи подробнее с деталями и статистикой');
     } else {
-      onNavigateTab(tab);
+      const resolved = resolveAction(tab);
+      if (resolved?.action) {
+        handleExecuteAction(resolved.action);
+      } else if (resolved?.tabId) {
+        onNavigateTab(resolved.tabId);
+        onClose();
+      } else {
+        onNavigateTab(tab);
+        onClose();
+      }
     }
   };
 
@@ -484,6 +566,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               onFeedback={(type) => setFeedback(m.id, type)}
               onSendPrompt={handleSend}
               onNavigateTab={handleNavigateTab}
+              onExecuteAction={handleExecuteAction}
               onOpenArtifact={setActiveArtifact}
               onInspectCitations={(chunks, focusChunkId) => setInspectedCitations({ chunks, focusChunkId })}
               onSelectUniversity={onSelectUniversity}
@@ -569,6 +652,54 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           onClose={() => setInspectedCitations(null)}
           onSelectUniversity={onSelectUniversity}
         />
+
+        {/* Action Confirmation Dialog for Irreversible Operations */}
+        {pendingConfirmationAction && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl shrink-0">
+                  ⚠️
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                    Подтверждение действия
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Это действие изменит сохраненные приоритеты.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300">
+                {pendingConfirmationAction.confirmationMessage || 'Подтвердите выполнение операции.'}
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingConfirmationAction(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const actionToRun = pendingConfirmationAction;
+                    setPendingConfirmationAction(null);
+                    if (actionToRun) {
+                      dispatchAction(actionToRun);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition shadow-sm"
+                >
+                  Подтвердить
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
