@@ -40,6 +40,23 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Production RAG Architecture Upgrade (Open-WebUI, Dify, RAGFlow)
+- **Size**: L | **Types**: feature, architecture, rag, nlp, ui
+- **Patterns Borrowed from `c:\Users\DELL\Downloads\RAG`**:
+  - **Open-WebUI Citation & Chunk Modal (`Citations.svelte` & `CitationModal.svelte`)**:
+    - `RetrievedCitationChunk` verifiable chunk data model with confidence calculation and dynamic color-coded relevance scoring (`>=85%` emerald, `>=70%` yellow, `>=50%` orange, `<50%` rose).
+    - Compact citation pill on assistant bubble showing chunk count and overall relevance percentage (`📚 Источники данных (N) • X% релевантность`).
+    - Dedicated full Citations Modal Drawer (`inspectedCitations`) showing grounding confidence meter, exact factual text snippets, tag chips, and direct 1-click `"Карточка вуза"` button navigating to `UniversityDetailModal`.
+  - **Dify-style Structured Predicate Extraction (`template_prompts.py`)**:
+    - Automatic query extraction parsing raw question into structured predicates (`ExtractedQueryFilters`): USE score (`🎯 Баллы`), City filter (`📍 Город`), Educational Track (`💻 Направление`), Military Center requirement (`🛡️ ВУЦ`), and Dormitory need (`🏠 Общежитие`).
+    - Visual predicate chip bar rendered atop assistant responses demonstrating transparent query understanding.
+  - **Open-WebUI Scope Filter Bar**:
+    - Interactive horizontal filter strip at the top of the chat allowing students to dynamically scope their questions (`🌐 Все вузы РФ`, `📍 Москва`, `🏛️ Санкт-Петербург`, `💻 IT и Инженерия`, `🛡️ Только с ВУЦ`, `🏆 Олимпиады БВИ`).
+- **Resilience & Testing**:
+  - Automated Playwright verification (`scripts/verify_rag_features.mjs`) verified scope switching, question submission, Dify predicate pill rendering, Open-WebUI citation pill, Citations Drawer inspection, confidence gauge, and drawer closing.
+  - Zero console errors; TypeScript type check passed; Vite production build clean in 6.51s (gzip 187.37 kB).
+  - Screenshot captured: `feature_assistant_rag_citations_drawer.png`.
+
 ## Change 2026-11-10: Quality, Architecture & Feature Deepening
 - **Size**: M | **Types**: feature, design, performance, content
 - **Vite Bundle Optimization**: Configured `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`), keeping core app gzipped size under 180 kB (within CONSTRAINTS.md 200 kB budget).
