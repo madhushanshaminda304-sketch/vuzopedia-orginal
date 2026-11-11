@@ -32,7 +32,7 @@ interface AssistantMessageItemProps {
   onSendPrompt: (prompt: string) => void;
   onNavigateTab: (tab: string) => void;
   onOpenArtifact: (artifact: AdmissionArtifact) => void;
-  onInspectCitations: (chunks: RetrievedCitationChunk[]) => void;
+  onInspectCitations: (chunks: RetrievedCitationChunk[], focusChunkId?: string) => void;
   onSelectUniversity?: (vuz: University) => void;
   onCloseModal?: () => void;
 }
@@ -202,6 +202,11 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
               <AssistantTextRenderer
                 content={m.text}
                 onSelectUniversity={onSelectUniversity}
+                onInspectChunk={(chunkId) => {
+                  if (m.citationChunks && m.citationChunks.length > 0) {
+                    onInspectCitations(m.citationChunks, chunkId);
+                  }
+                }}
                 onClose={onCloseModal}
               />
 

@@ -524,8 +524,15 @@ export function retrieveAssistantContext(
       return true;
     });
 
+    const asksForSpecificVuz =
+      /(?:в|про|о|об|для)\s+([а-яa-z\-]+)\s+(университет|институт|академи|вуз|колледж)/i.test(query) ||
+      /(гарвард|оксфорд|кембридж|стэнфорд|mit|harvard|oxford|cambridge|stanford|yale|сорбонн)/i.test(query);
+
     if (mentionedVuzes.length > 0) {
       matchedUniversities.push(...mentionedVuzes);
+    } else if (asksForSpecificVuz) {
+      // User specifically requested an institution, but it is not in our 12-university catalog
+      reasoningTrace.push('3. Запрошенный университет не найден в локальном каталоге 12 ведущих вузов.');
     } else if (candidates.length > 0) {
       // Sort and select top candidates
       if (rawScore) {

@@ -75,13 +75,45 @@ export interface AdmissionArtifact {
   markdownContent?: string;
 }
 
+export type VerificationStatus = 'verified' | 'unverified';
+
+/**
+ * Verifiable Evidence and Provenance Record for the assistant.
+ * Transparently attributes every claim to real catalog records or official statutes.
+ * Does NOT invent URLs, dates, or official endorsements.
+ */
 export interface RetrievedCitationChunk {
+  /** Unique Source ID (e.g. 'src-vuz-bmstu-admission', 'src-reg-credit-3pct') */
   id: string;
+  /** Primary source label for display */
   source: string;
+  /** Document / Resource Title */
+  documentTitle: string;
+  /** Title for backward compatibility / display header */
   title: string;
+  /** Publisher or institution owning the data */
+  publisher: string;
+  /** Real Source URL if actually known (e.g. u.website, official ministry portal) */
+  url?: string;
+  /** Relevant excerpt from document or catalog */
+  excerpt: string;
+  /** Backward compatibility snippet */
   snippet: string;
-  category: 'university' | 'program' | 'military' | 'dorm' | 'credit' | 'olympiad' | 'achievements';
+  /** Applicable admissions year (e.g. 2025 for historical cutoffs; 2026 for rules/quotas) */
+  applicableAdmissionsYear?: number | string;
+  /** Date the record was checked or verified from source, when known */
+  checkedDate?: string;
+  /** Verification status */
+  verificationStatus: VerificationStatus;
+  /** Whether the cutoffs in this chunk represent historical statistics rather than 2026 rules */
+  isHistoricalCutoff?: boolean;
+  /** Subject category */
+  category: 'university' | 'program' | 'military' | 'dorm' | 'credit' | 'olympiad' | 'achievements' | 'statute';
   categoryLabel?: string;
+  /** University ID reference if applicable */
+  vuzId?: string;
+  /** Structured fields extracted for grounding */
+  structuredFields?: Record<string, string | number | boolean | undefined>;
   metadata: {
     city?: string;
     minScore?: number;
@@ -91,7 +123,6 @@ export interface RetrievedCitationChunk {
     annualFee?: number;
     tags?: string[];
   };
-  vuzId?: string;
 }
 
 export interface ProgramMatch {
@@ -195,26 +226,49 @@ export interface AssistantResponse {
   alternatives?: AlternativeOption[];
   /** Ambiguous entity information when multiple universities could match */
   ambiguousEntity?: AmbiguousEntity;
+  /** Notice when user asks about facts not present in evidence */
+  unsupportedClaimsNotice?: string;
+  /** Explicit factual statement on citation limits (not absolute mathematical proof of future admission) */
+  citationValidationNotice?: string;
 }
 
 /**
  * Validate and sanitize untrusted assistant response data.
  * Protects frontend from malformed or incomplete model outputs.
+ * Verifies that returned evidence IDs genuinely exist in the supplied evidence.
  */
 export function validateAssistantResponse(input: any): AssistantResponse {
   if (!input || typeof input !== 'object') {
     return createSafeEmptyResponse('Не удалось сформировать ответ.');
   }
 
-  const text = typeof input.text === 'string' ? input.text : typeof input.reply === 'string' ? input.reply : '';
+  let text = typeof input.text === 'string' ? input.text : typeof input.reply === 'string' ? input.reply : '';
   const mode: ResponseMode = input.mode === 'gemini' ? 'gemini' : 'local';
+
+  const citationChunks: RetrievedCitationChunk[] = Array.isArray(input.citationChunks)
+    ? input.citationChunks
+    : [];
+
+  const validChunkIds = new Set(citationChunks.map((c) => c.id));
+
+  // Requirement 4: Validate that returned evidence IDs exist in the supplied evidence.
+  // Filter out any hallucinated IDs that do not exist in the retrieved evidence set.
+  const rawEvidenceIds = Array.isArray(input.evidenceIds)
+    ? input.evidenceIds.filter((id: any): id is string => typeof id === 'string')
+    : [];
+  const evidenceIds = rawEvidenceIds.filter((id: string) => validChunkIds.has(id));
+
+  // Also strip invalid [cite:invalid-id] tokens from text if the model hallucinated an unsupplied ID
+  text = text.replace(/\[cite:([a-zA-Z0-9_-]+)\]/g, (match: string, citedId: string) => {
+    if (validChunkIds.has(citedId)) {
+      return match;
+    }
+    // Remove citation tag for invalid/hallucinated ID
+    return '';
+  });
 
   const referencedEntityIds = Array.isArray(input.referencedEntityIds)
     ? input.referencedEntityIds.filter((id: any): id is string => typeof id === 'string')
-    : [];
-
-  const evidenceIds = Array.isArray(input.evidenceIds)
-    ? input.evidenceIds.filter((id: any): id is string => typeof id === 'string')
     : [];
 
   // Validate actions against allowed tabs
@@ -252,10 +306,6 @@ export function validateAssistantResponse(input: any): AssistantResponse {
 
   const reasoningTrace: string[] = Array.isArray(input.reasoningTrace)
     ? input.reasoningTrace.filter((s: any): s is string => typeof s === 'string')
-    : [];
-
-  const citationChunks: RetrievedCitationChunk[] = Array.isArray(input.citationChunks)
-    ? input.citationChunks
     : [];
 
   const matchedUniversities: University[] = Array.isArray(input.matchedUniversities)
@@ -313,6 +363,14 @@ export function validateAssistantResponse(input: any): AssistantResponse {
     matchedPrograms,
     alternatives,
     ambiguousEntity,
+    unsupportedClaimsNotice:
+      typeof input.unsupportedClaimsNotice === 'string' && input.unsupportedClaimsNotice.trim()
+        ? input.unsupportedClaimsNotice.trim()
+        : undefined,
+    citationValidationNotice:
+      typeof input.citationValidationNotice === 'string' && input.citationValidationNotice.trim()
+        ? input.citationValidationNotice.trim()
+        : 'Указание ссылок на источники отражает происхождение справочных сведений из локального каталога и не является гарантией зачисления в 2026 году.',
   };
 }
 

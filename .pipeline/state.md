@@ -40,6 +40,32 @@ profile: webapp
 ## Unresolved
 (None)
 
+## Change 2026-11-11: Trustworthy Evidence System and Provenance Tracking
+- **Size**: M | **Types**: feature, architecture, rag, integrity, provenance, ui
+- **Comprehensive Provenance Data Structure (`src/services/assistant/types.ts` & `evidenceSources.ts`)**:
+  - Upgraded `RetrievedCitationChunk` with authentic provenance fields: `id` (source ID), `documentTitle`, `publisher`, `url` (real domain from `u.website` or government portals), `applicableAdmissionsYear` (historical 2025 vs regulatory 2026), `checkedDate`, `excerpt`, `structuredFields`, and `verificationStatus` (`verified` vs `unverified`).
+  - No synthetic URLs, publication dates, or official endorsements. Legacy records without verifiable origin are flagged `unverified`.
+- **Selective Evidence Packaging (No Prompt Bloat)**:
+  - `buildEvidencePackage` filters out irrelevant institutional facts (e.g., omitting military VUC chunks when only hostel information was queried; omitting academic programs when general university rules were queried).
+- **Inline Evidence Badges & Interactive Provenance Drawer (`CitationsDrawer.tsx`, `AssistantTextRenderer.tsx`)**:
+  - Claims linked to evidence chunks via `[cite:chunk-id]` markdown tokens rendered as clickable badges (`[📖 chunk-id]`).
+  - Clicking any citation badge opens `CitationsDrawer` with auto-focus and scrolling to the selected chunk.
+  - Citations Drawer displays full provenance cards: Source ID, Publisher, Title, Year, Checked date, Excerpt, Structured Key-Values, and an external link button to the official verified website.
+  - Transparent integrity notice: clearly states that citation validation reflects database consistency and is not mathematical proof or admission guarantee.
+- **Strict Citation Validation & Hallucination Defense**:
+  - `validateAssistantResponse` filters model-generated `[cite:id]` tokens, stripping hallucinated citation IDs that were not present in the supplied evidence package.
+  - System prompt encloses data inside `<evidence_data>` tags and treats retrieved text strictly as untrusted data rather than system instructions (prompt injection mitigation).
+- **Historical Cutoff Clarity vs Current Rules**:
+  - Historical 2025 cutoff scores are explicitly flagged (`isHistoricalCutoff = true`) and labeled as retrospective statistics rather than guarantees for 2026 admissions.
+- **Honest Missing Information Disclosures**:
+  - Unknown or out-of-catalog institutions (such as foreign universities) are honestly reported as unavailable rather than substituted with unrelated Russian universities.
+- **Verification**:
+  - `scripts/verify_evidence_system.mjs`: 13/13 unit, integration, and Playwright tests passed (0 errors). Screenshot: `feature_assistant_trustworthy_evidence.png`.
+  - `scripts/verify_rag_features.mjs`: passed (0 errors). Screenshot: `feature_assistant_rag_citations_drawer.png`.
+  - `scripts/verify_entity_matching_and_retrieval.mjs`: 13/13 passed.
+  - `scripts/verify_advanced_assistant_v4.mjs`: passed (0 errors).
+  - TypeScript & Vite build: 0 errors.
+
 ## Change 2026-11-11: Correctness of Entity Matching, Negation, Programme Ranking & Alternatives
 - **Size**: M | **Types**: bugfix, nlp, retrieval, architecture, ui
 - **Bauman Alias Defect Fixed (`src/services/assistant/entityResolution.ts`)**:

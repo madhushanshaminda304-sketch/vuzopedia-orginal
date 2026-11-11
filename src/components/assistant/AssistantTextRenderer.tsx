@@ -5,6 +5,7 @@ import { UNIVERSITIES } from '../../data/mockData';
 interface AssistantTextRendererProps {
   content: string;
   onSelectUniversity?: (vuz: University) => void;
+  onInspectChunk?: (chunkId: string) => void;
   onClose?: () => void;
 }
 
@@ -12,13 +13,15 @@ interface AssistantTextRendererProps {
  * Parses markdown-like text tokens:
  * - Bold: **text**
  * - Inline university links: [vuz:id:Name]
+ * - Inline evidence citations: [cite:sourceId]
  */
 export function renderTextWithCitations(
   text: string,
   onSelectUniversity?: (vuz: University) => void,
+  onInspectChunk?: (chunkId: string) => void,
   onClose?: () => void
 ): React.ReactNode {
-  const parts = text.split(/(\[vuz:[a-z0-9_-]+:[^\]]+\]|\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\[vuz:[a-z0-9_-]+:[^\]]+\]|\[cite:[a-zA-Z0-9_-]+\]|\*\*[^*]+\*\*)/g);
 
   return parts.map((token, tIdx) => {
     if (token.startsWith('[vuz:') && token.endsWith(']')) {
@@ -50,6 +53,31 @@ export function renderTextWithCitations(
       }
     }
 
+    if (token.startsWith('[cite:') && token.endsWith(']')) {
+      const match = token.match(/\[cite:([a-zA-Z0-9_-]+)\]/);
+      if (match) {
+        const chunkId = match[1];
+        const label = chunkId.replace(/^src-/, '').replace(/^chunk-/, '');
+
+        return (
+          <button
+            key={tIdx}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onInspectChunk) onInspectChunk(chunkId);
+            }}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mx-0.5 rounded-full bg-slate-100 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-blue-950 text-slate-700 hover:text-blue-700 dark:text-slate-300 dark:hover:text-blue-300 border border-slate-300 dark:border-slate-700 hover:border-blue-400 text-[10px] font-mono font-bold transition align-baseline hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
+            title={`Открыть источник данных: ${chunkId}`}
+          >
+            <span className="text-[10px]">📖</span>
+            <span>{label}</span>
+          </button>
+        );
+      }
+    }
+
     if (token.startsWith('**') && token.endsWith('**')) {
       return (
         <strong key={tIdx} className="font-bold text-slate-900 dark:text-white">
@@ -73,6 +101,7 @@ export function renderTextWithCitations(
 export const AssistantTextRenderer: React.FC<AssistantTextRendererProps> = ({
   content,
   onSelectUniversity,
+  onInspectChunk,
   onClose,
 }) => {
   const lines = content.split('\n');
@@ -119,7 +148,7 @@ export const AssistantTextRenderer: React.FC<AssistantTextRendererProps> = ({
                 <tr>
                   {headerCells.map((h, hIdx) => (
                     <th key={hIdx} className="px-3.5 py-2.5 whitespace-nowrap">
-                      {renderTextWithCitations(h, onSelectUniversity, onClose)}
+                      {renderTextWithCitations(h, onSelectUniversity, onInspectChunk, onClose)}
                     </th>
                   ))}
                 </tr>
@@ -139,7 +168,7 @@ export const AssistantTextRenderer: React.FC<AssistantTextRendererProps> = ({
                             : 'text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        {renderTextWithCitations(cell, onSelectUniversity, onClose)}
+                        {renderTextWithCitations(cell, onSelectUniversity, onInspectChunk, onClose)}
                       </td>
                     ))}
                   </tr>
@@ -165,7 +194,7 @@ export const AssistantTextRenderer: React.FC<AssistantTextRendererProps> = ({
       cleanLine = line.replace(/^\s*#+\s*/, '');
     }
 
-    const parsedContent = renderTextWithCitations(cleanLine, onSelectUniversity, onClose);
+    const parsedContent = renderTextWithCitations(cleanLine, onSelectUniversity, onInspectChunk, onClose);
 
     if (isHeader) {
       elements.push(

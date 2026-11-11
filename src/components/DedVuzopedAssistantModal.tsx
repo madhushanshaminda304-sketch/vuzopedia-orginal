@@ -57,6 +57,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const [activeArtifact, setActiveArtifact] = useState<AdmissionArtifact | null>(null);
   const [inspectedCitations, setInspectedCitations] = useState<{
     chunks: RetrievedCitationChunk[];
+    focusChunkId?: string;
   } | null>(null);
 
   const [inputValue, setInputValue] = useState('');
@@ -437,7 +438,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
               onSendPrompt={handleSend}
               onNavigateTab={onNavigateTab}
               onOpenArtifact={setActiveArtifact}
-              onInspectCitations={(chunks) => setInspectedCitations({ chunks })}
+              onInspectCitations={(chunks, focusChunkId) => setInspectedCitations({ chunks, focusChunkId })}
               onSelectUniversity={onSelectUniversity}
               onCloseModal={onClose}
             />
