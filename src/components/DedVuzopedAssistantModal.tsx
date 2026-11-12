@@ -524,7 +524,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     try {
       const response = await queryAssistant(
         text,
-        messages.map((m) => ({ sender: m.sender, text: m.text })),
+        messages.map((m) => ({ sender: m.sender, text: m.text, guidance: m.response?.guidance?.state })),
         activeMode,
         activeScope,
         {
@@ -741,20 +741,20 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 animate-fadeIn">
               <button
                 type="button"
-                data-testid="starter-calc-btn"
+                data-testid="starter-guide-btn"
                 onClick={() =>
                   handleSend(
-                    'У меня 260 баллов (русский язык, профильная математика, информатика). Куда поступить на бюджет?'
+                    'Помоги выбрать программу'
                   )
                 }
                 className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition shadow-2xs group focus:ring-2 focus:ring-blue-500 outline-hidden"
               >
                 <div className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center gap-1.5">
                   <span>📊</span>
-                  <span>Оценить шансы по баллам</span>
+                  <span>Найти своё направление</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Подбор вузов и специальностей под ваши сданные предметы ЕГЭ
+                  Разберём интересы, образование, город и бюджет — по одному вопросу
                 </p>
               </button>
 
@@ -959,3 +959,4 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     </div>
   );
 };
+

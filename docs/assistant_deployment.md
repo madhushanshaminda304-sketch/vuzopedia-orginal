@@ -44,3 +44,18 @@ npm run build
 The suite runs the existing logic evaluation plus integration regressions for actual Pages handlers, client SSE parsing, partial streams, cache isolation, profile overrides, provenance, invalid credentials, and budget reservations. Shared reservations execute the actual SQL against SQLite across separate configurations. Pages functions are also bundled for a browser/Worker target to catch incorrect imports or Node-only dependencies.
 
 This is not a live Cloudflare runtime or Gemini quality test. Existing browser screenshot scripts remain separate; a full mobile/browser session-switch regression is not claimed by these checks.
+
+## Existing Workers deployment
+
+The repository also supports the existing
+`vuzopedia-orginal.madhushanshaminda304.workers.dev` site.
+Its Workers Builds integration uses `npm run build` and `npx wrangler deploy`.
+The root `wrangler.jsonc` now explicitly deploys `server/worker.mjs` alongside
+`dist`. API requests run through that entrypoint before the SPA asset fallback.
+Pages deployments can continue using the existing `functions` directory.
+
+With no Gemini key or usage database, the API truthfully reports local-only mode.
+The guided adviser and local catalogue answers still work. To enable Gemini on
+Workers, configure the same server secret and D1 table/binding described above
+on the Worker. Record the verified D1 database ID in deployment configuration
+before subsequent deployments; do not put a key in source or a VITE variable.

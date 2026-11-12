@@ -1,3 +1,5 @@
+import { guideProgrammeChoice, GuideHistoryTurn } from './programmeGuide';
+export * from './programmeGuide';
 import {
   AssistantResponse,
   ResponseMode,
@@ -50,7 +52,7 @@ export interface QueryAssistantOptions {
  */
 export async function queryAssistant(
   prompt: string,
-  history: Array<{ sender: 'ded' | 'user'; text: string }> = [],
+  history: GuideHistoryTurn[] = [],
   mode: SpecialistMode = 'all',
   scope: RAGScopeFilter = 'all',
   options?: QueryAssistantOptions
@@ -58,6 +60,8 @@ export async function queryAssistant(
   const startTime = performance.now();
   const checkCancelled = () => { if (options?.abortSignal?.aborted) throw new DOMException('Request cancelled', 'AbortError'); };
   checkCancelled();
+  const guided = guideProgrammeChoice(prompt, history);
+  if (guided) return guided;
 
   // 1. Ground-truth retrieval and intent analysis (with conversation history for anaphora resolution)
   const context = retrieveAssistantContext(prompt, mode, scope, history);

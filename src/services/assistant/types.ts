@@ -1,3 +1,4 @@
+import type { GuidanceView } from './programmeGuide';
 import { University } from '../../types';
 import {
   APPLICATION_TABS,
@@ -199,6 +200,7 @@ export interface ToolCall {
  * Guarantees validated data structure across both AI provider and local engine.
  */
 export interface AssistantResponse {
+  guidance?: GuidanceView;
   /** Core answer text (may include Markdown and [vuz:id:name] tokens) */
   text: string;
   /** Actual operating mode producing this answer */
