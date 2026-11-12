@@ -9,6 +9,9 @@ export interface ServerAssistantStatus {
   reason: string | null;
   dailyUsage?: number;
   dailyLimit?: number;
+  limitScope?: string;
+  rateLimitPerMinute?: number;
+  maxConcurrency?: number;
   freeTierPolicy?: string;
 }
 
@@ -26,6 +29,7 @@ export async function fetchServerAssistantStatus(): Promise<ServerAssistantStatu
 
   try {
     const res = await fetch('/api/assistant/status', {
+      signal: AbortSignal.timeout(4000),
       headers: { Accept: 'application/json' },
     });
     if (res.ok) {
@@ -36,6 +40,9 @@ export async function fetchServerAssistantStatus(): Promise<ServerAssistantStatu
         reason: data.reason || null,
         dailyUsage: data.dailyUsage,
         dailyLimit: data.dailyLimit,
+        limitScope: data.limitScope,
+        rateLimitPerMinute: data.rateLimitPerMinute,
+        maxConcurrency: data.maxConcurrency,
         freeTierPolicy: data.freeTierPolicy,
       };
       cachedServerStatus = { status, timestamp: now };
@@ -167,6 +174,8 @@ export async function callGeminiStreamingProvider(
   let accumulatedText = '';
   let modelUsed: string = 'gemini-3.8-flash';
   let isPartial = false;
+  let completed = false;
+  let streamFailure = false;
 
   const internalController = new AbortController();
   const forwardAbort = () => internalController.abort();
@@ -212,6 +221,26 @@ export async function callGeminiStreamingProvider(
     const reader = res.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
+    let eventType = '';
+    const processLine = (rawLine: string) => {
+      const line = rawLine.trim();
+      if (line.startsWith('event:')) { eventType = line.slice(6).trim(); return; }
+      if (!line) { eventType = ''; return; }
+      if (!line.startsWith('data:')) return;
+      try {
+        const data = JSON.parse(line.slice(5).trim());
+        if (typeof data.delta === 'string') {
+          accumulatedText += data.delta; onChunk?.(accumulatedText);
+        }
+        if (eventType === 'done' || data.done) {
+          completed = true;
+          if (typeof data.rawText === 'string') accumulatedText = data.rawText;
+          if (data.modelUsed) modelUsed = data.modelUsed;
+          isPartial = Boolean(data.partial);
+        }
+        if (eventType === 'error') streamFailure = true;
+      } catch { streamFailure = true; }
+    };
 
     while (true) {
       const { done, value } = await reader.read();
@@ -226,28 +255,12 @@ export async function callGeminiStreamingProvider(
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.startsWith('data:')) {
-          const jsonStr = line.slice(5).trim();
-          if (jsonStr) {
-            try {
-              const data = JSON.parse(jsonStr);
-              if (data.delta && typeof data.delta === 'string') {
-                accumulatedText += data.delta;
-                onChunk?.(accumulatedText);
-              }
-              if (data.done) {
-                if (data.modelUsed) modelUsed = data.modelUsed;
-                if (data.partial) isPartial = true;
-              }
-            } catch {
-              // ignore partial event json
-            }
-          }
-        }
-      }
+      for (const line of lines) processLine(line);
     }
+    buffer += decoder.decode();
+    if (buffer.trim()) processLine(buffer);
+    isPartial = isPartial || !completed || streamFailure;
+    if (isPartial && accumulatedText.trim()) accumulatedText += '\n\n*(Ответ прерван; сведения могут быть неполными.)*';
 
     clearTimeout(firstTokenTimeout);
 
@@ -341,3 +354,4 @@ export async function callGeminiProvider(
     return null;
   }
 }
+

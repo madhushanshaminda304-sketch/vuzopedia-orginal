@@ -19,7 +19,7 @@
  * 15. English, Sinhala, and Tamil input where supported
  * 
  * Uses mocked provider responses by default for zero quota consumption and offline safety.
- * Live API tests are optional and explicitly invoked via --live-api flag.
+ * This suite makes no live API calls; --live-api only validates configuration.
  */
 
 import {
@@ -49,7 +49,7 @@ const isLiveApiRequested = process.argv.includes('--live-api');
 
 console.log('================================================================');
 console.log('--- REPRESENTATIVE ASSISTANT QUALITY EVALUATION SUITE ---');
-console.log(`--- MODE: ${isLiveApiRequested ? 'LIVE API (Real Gemini Quota)' : 'MOCKED PROVIDER (Zero Quota, Offline-Safe)'} ---`);
+console.log(`--- MODE: ${isLiveApiRequested ? 'CONFIGURATION CHECK ONLY (No Live API Call)' : 'MOCKED PROVIDER (Zero Quota, Offline-Safe)'} ---`);
 console.log('================================================================\n');
 
 let passCount = 0;
@@ -85,7 +85,7 @@ async function runEvaluationSuite() {
   );
   assert(
     exactContext.citationChunks.length > 0 && exactContext.citationChunks.some((c) => c.publisher.includes('МГУ') || c.id.includes('mgu')),
-    'Retrieves authentic university evidence records without inventing cutoffs'
+    'Retrieves university catalogue records (provenance checked in regression suite)'
   );
 
   // -------------------------------------------------------------
@@ -347,28 +347,8 @@ async function runEvaluationSuite() {
   // Dimension 12: Interrupted Streaming
   // -------------------------------------------------------------
   console.log('\n--- 12. Interrupted Streaming ---');
-  const abortCtrl = new AbortController();
-  abortCtrl.abort();
-  assert(abortCtrl.signal.aborted, 'AbortController signal sets aborted: true immediately upon stop click');
-
-  // -------------------------------------------------------------
-  // Dimension 13: Session Switching Isolation
-  // -------------------------------------------------------------
-  console.log('\n--- 13. Session Switching Isolation ---');
-  const session1Id = 'session-test-1';
-  const session2Id = 'session-test-2';
-  let activeSessionId = session1Id;
-
-  // Simulate chunk arrival after session switched
-  let chunkApplied = false;
-  activeSessionId = session2Id; // Student switched session
-
-  const incomingChunkSessionId = session1Id;
-  if (incomingChunkSessionId === activeSessionId) {
-    chunkApplied = true;
-  }
-
-  assert(!chunkApplied, 'Tokens from Session 1 are strictly discarded if active session was changed to Session 2');
+  console.log('Streaming and cancellation are exercised by assistant_regressions.test.mjs against the actual provider and Pages handlers.');
+  console.log('Browser session-switch UI behaviour requires a separate browser regression run.');
 
   // -------------------------------------------------------------
   // Dimension 14: Invalid Actions and Entity IDs
@@ -433,7 +413,7 @@ async function runEvaluationSuite() {
     if (!liveKey) {
       console.log('⚠️ [SKIP LIVE API] No GEMINI_API_KEY found in process.env. Automated test consumed 0 quota.');
     } else {
-      console.log('Live GEMINI_API_KEY present; testing live assistant endpoint...');
+      console.log('GEMINI_API_KEY present; validating payload only (not a live API test).');
       try {
         const testPayload = {
           prompt: 'Привет! Расскажи кратко, какие документы нужны для поступления в 2026 году?',
@@ -461,3 +441,4 @@ runEvaluationSuite().catch((err) => {
   console.error('Fatal evaluation error:', err);
   process.exit(1);
 });
+

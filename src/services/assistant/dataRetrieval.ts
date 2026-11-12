@@ -133,9 +133,7 @@ export function searchAndRankPrograms(
       return true;
     });
 
-    if (filtered.length === 0) {
-      filtered = allCandidatePrograms;
-    }
+
   }
 
   // 4. Rank programmes
@@ -261,36 +259,36 @@ export function createAdmissionArtifact(
       ? {
           id: 'item-exam-spo',
           label: 'Уточнить программы внутренних вступительных испытаний для выпускников СПО',
-          deadline: 'До 10 июля 2026',
-          deadlineSource: 'Приказ Минобрнауки РФ №1076',
-          isDeadlineVerified: true,
+          deadline: 'Срок не проверен — уточните в приёмной комиссии',
+          deadlineSource: undefined,
+          isDeadlineVerified: false,
           checked: savedCheckedIds.includes('item-exam-spo'),
           priority: 'high' as const,
         }
       : {
           id: 'item-exam-ege',
           label: 'Сдать ЕГЭ и дождаться официальной публикации баллов на РЦОИ / Госуслугах',
-          deadline: 'До 20 июня 2026',
-          deadlineSource: 'График Рособрнадзора 2026',
-          isDeadlineVerified: true,
+          deadline: 'Срок не проверен — уточните в приёмной комиссии',
+          deadlineSource: undefined,
+          isDeadlineVerified: false,
           checked: savedCheckedIds.includes('item-exam-ege'),
           priority: 'high' as const,
         },
     {
       id: 'item-portfolio',
       label: 'Собрать подтверждающие документы для индивидуальных достижений (ГТО, медаль, олимпиады)',
-      deadline: 'До 20 июня 2026',
-      deadlineSource: 'Приказ Минобрнауки РФ №1076',
-      isDeadlineVerified: true,
+      deadline: 'Срок не проверен — уточните в приёмной комиссии',
+      deadlineSource: undefined,
+      isDeadlineVerified: false,
       checked: savedCheckedIds.includes('item-portfolio'),
       priority: 'medium' as const,
     },
     {
       id: 'item-apply',
       label: 'Подать электронные заявления в выбранные вузы через суперсервис Госуслуг (до 5 вузов)',
-      deadline: '20 июня — 25 июля 2026',
-      deadlineSource: 'Приказ Минобрнауки РФ №1076',
-      isDeadlineVerified: true,
+      deadline: 'Срок не проверен — уточните в приёмной комиссии',
+      deadlineSource: undefined,
+      isDeadlineVerified: false,
       checked: savedCheckedIds.includes('item-apply'),
       priority: 'high' as const,
     },
@@ -299,9 +297,9 @@ export function createAdmissionArtifact(
           {
             id: 'item-dvi-spo',
             label: 'Сдать профильные вступительные экзамены в вузе',
-            deadline: '11 — 25 июля 2026',
-            deadlineSource: 'Расписание приёмной комиссии вуза',
-            isDeadlineVerified: true,
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
+            isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-dvi-spo'),
             priority: 'high' as const,
           },
@@ -310,9 +308,9 @@ export function createAdmissionArtifact(
           {
             id: 'item-dvi-creative',
             label: 'Пройти ДВИ (если выбраны направления с профильными или творческими испытаниями)',
-            deadline: '7 — 20 июля 2026',
-            deadlineSource: 'Регламент вуза',
-            isDeadlineVerified: true,
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
+            isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-dvi-creative'),
             priority: 'medium' as const,
           },
@@ -320,9 +318,9 @@ export function createAdmissionArtifact(
     {
       id: 'item-monitor',
       label: 'Отслеживать конкурсные списки и реальное прохождение по поданным оригиналам',
-      deadline: '27 июля — 2 августа 2026',
-      deadlineSource: 'Приказ Минобрнауки РФ №1076',
-      isDeadlineVerified: true,
+      deadline: 'Срок не проверен — уточните в приёмной комиссии',
+      deadlineSource: undefined,
+      isDeadlineVerified: false,
       checked: savedCheckedIds.includes('item-monitor'),
       priority: 'high' as const,
     },
@@ -331,9 +329,9 @@ export function createAdmissionArtifact(
           {
             id: 'item-loan-contract',
             label: 'Заключить договор на платное обучение и подать заявку на кредит Сбера 3%',
-            deadline: 'До 15 августа 2026',
-            deadlineSource: 'Постановление Правительства РФ №1448',
-            isDeadlineVerified: true,
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
+            isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-loan-contract'),
             priority: 'high' as const,
           },
@@ -342,9 +340,9 @@ export function createAdmissionArtifact(
           {
             id: 'item-original-submit',
             label: 'Подать согласие / оригинал документа об образовании на бюджет',
-            deadline: 'До 3 августа 2026 (12:00 МСК)',
-            deadlineSource: 'Приказ Минобрнауки РФ №1076',
-            isDeadlineVerified: true,
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
+            isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-original-submit'),
             priority: 'high' as const,
           },
@@ -352,9 +350,9 @@ export function createAdmissionArtifact(
     {
       id: 'item-admission-order',
       label: 'Проверить официальный приказ о зачислении на сайте университета',
-      deadline: '4 — 9 августа 2026',
-      deadlineSource: 'Приказ Минобрнауки РФ №1076',
-      isDeadlineVerified: true,
+      deadline: 'Срок не проверен — уточните в приёмной комиссии',
+      deadlineSource: undefined,
+      isDeadlineVerified: false,
       checked: savedCheckedIds.includes('item-admission-order'),
       priority: 'high' as const,
     },
@@ -363,8 +361,8 @@ export function createAdmissionArtifact(
           {
             id: 'item-dorm-application',
             label: 'Подать заявление и пакет документов на предоставление места в общежитии',
-            deadline: 'До 20 августа 2026',
-            deadlineSource: 'Внутренний регламент студенческого городка',
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
             isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-dorm-application'),
             priority: 'medium' as const,
@@ -376,8 +374,8 @@ export function createAdmissionArtifact(
           {
             id: 'item-military-vuc',
             label: 'Пройти военно-врачебную комиссию и сдать нормативы физподготовки для ВУЦ',
-            deadline: 'Сентябрь — октябрь 2026',
-            deadlineSource: 'ФЗ «О воинской обязанности и военной службе»',
+            deadline: 'Срок не проверен — уточните в приёмной комиссии',
+            deadlineSource: undefined,
             isDeadlineVerified: false,
             checked: savedCheckedIds.includes('item-military-vuc'),
             priority: 'medium' as const,
@@ -398,7 +396,7 @@ export function createAdmissionArtifact(
       ? 'Пошаговый план поступления в вуз на базе диплома колледжа с учетом внутренних экзаменов.'
       : isLoan
       ? 'План поступления на контракт с оформлением государственной субсидии на образовательный кредит 3%.'
-      : 'Официальный регламент приёмной кампании 2026: от сдачи экзаменов до издания приказов о зачислении.',
+      : 'Рабочий план поступления: от сдачи экзаменов до издания приказов о зачислении.',
     checklistItems: items,
     steps: [
       {
@@ -420,7 +418,7 @@ export function createAdmissionArtifact(
         status: 'pending',
       },
     ],
-    markdownContent: `## Памятка абитуриента 2026\n\n1. **Оригинал документа:** Для зачисления на бюджет критически важно предоставить оригинал (или электронную отметку на Госуслугах) строго до 3 августа 12:00 МСК.\n2. **Приоритеты:** Зачисление происходит по наивысшему приоритету, в который вы проходите по конкурсу.\n3. **Сроки:** Федеральные даты зафиксированы Приказом Минобрнауки РФ №1076; даты работы общежитий устанавливаются вузами индивидуально.`,
+    markdownContent: 'Даты и порядок подачи документов необходимо проверить в актуальных правилах выбранного вуза. Этот список — рабочий план, а не официальный регламент.',
   };
 }
 
@@ -508,6 +506,19 @@ export function retrieveAssistantContext(
   // 1. Interpret user query and extract preferences
   reasoningTrace.push('1. Извлечение ключевых параметров запроса (баллы ЕГЭ, город, требования к ВУЦ и общежитию).');
   const interpretation = interpretStudentQuery(query, mode, scope, history);
+  const profile = loadStudentProfile();
+  const merged = mergeProfileWithQueryFilters(interpretation.filters, profile, isHypotheticalQuery(query), query);
+  interpretation.filters = merged;
+  interpretation.rawScore = merged.score ?? null;
+  interpretation.targetCity = merged.city ?? null;
+  interpretation.wantsDorm = merged.wantsDorm;
+  interpretation.isDormHard = Boolean(merged.isDormHard);
+  interpretation.wantsMilitary = merged.wantsMilitary;
+  interpretation.isMilitaryHard = Boolean(merged.isMilitaryHard);
+  interpretation.wantsBudgetOnly = Boolean(merged.wantsBudgetOnly);
+  if (merged.score || merged.city || merged.preferredCities?.length || merged.direction || merged.wantsDorm || merged.maxAnnualFee !== undefined) {
+    interpretation.isUnderspecified = false;
+  }
   const {
     filters,
     isComparison,
@@ -613,6 +624,8 @@ export function retrieveAssistantContext(
       if (excludedCities.includes(u.city)) return false;
       // Target city
       if (targetCity && u.city !== targetCity) return false;
+      if (filters.preferredCities?.length && !filters.preferredCities.includes(u.city)) return false;
+      if (filters.maxAnnualFee !== undefined && !wantsBudgetOnly && u.minAnnualFee > filters.maxAnnualFee) return false;
       // Hard military requirement
       if (wantsMilitary === true && isMilitaryHard && !u.hasMilitaryDept) return false;
       // Hard dormitory requirement
@@ -711,7 +724,7 @@ export function retrieveAssistantContext(
         if (paidOptions.length > 0) {
           alternatives.push({
             title: `Платное отделение с кредитом под 3% годовых`,
-            description: `При сумме ${rawScore} баллов вы гарантированно проходите на платное отделение по конкурсу аттестатов/ЕГЭ (льготный кредит Сбера под 3%):`,
+            description: `При сумме ${rawScore} баллов можно проверить варианты платного обучения; зачисление не гарантировано по конкурсу аттестатов/ЕГЭ (льготный кредит Сбера под 3%):`,
             universities: paidOptions.slice(0, 2),
             actionTab: 'credit',
             actionLabel: 'Рассчитать платеж по кредиту 3%',
@@ -722,11 +735,11 @@ export function retrieveAssistantContext(
   }
 
   // 7. Search and Rank Academic Programmes using programme-level data
-  const matchedPrograms = searchAndRankPrograms(
+  const matchedPrograms = matchedUniversities.length === 0 ? [] : searchAndRankPrograms(
     filters.direction,
     rawScore,
-    matchedUniversities.length > 0 ? matchedUniversities : undefined
-  );
+    matchedUniversities
+  ).filter(p => filters.maxAnnualFee === undefined || wantsBudgetOnly || p.annualFee <= filters.maxAnnualFee);
 
   // 8. Build Evidence and Citations
   const { citationChunks, evidenceText } = buildEvidencePackage(
@@ -824,3 +837,4 @@ export function retrieveAssistantContext(
     hasZeroMatches,
   };
 }
+

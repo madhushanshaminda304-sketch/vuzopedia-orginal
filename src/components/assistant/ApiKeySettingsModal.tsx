@@ -73,9 +73,10 @@ export const ApiKeySettingsModal: React.FC<AssistantServerStatusModalProps> = ({
             Лимиты и защита от абуза
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-0.5">
-            <div>• <strong>15 RPM:</strong> ограничение частоты на IP</div>
-            <div>• <strong>2 потока:</strong> защита параллелизма</div>
-            <div>• <strong>Бюджет $0:</strong> Free Tier (без биллинга)</div>
+            <div>• <strong>{status?.rateLimitPerMinute ?? "—"} RPM:</strong> ограничение частоты на IP</div>
+            <div>• <strong>{status?.maxConcurrency ?? "—"} потока:</strong> защита параллелизма</div>
+            <div>• {status?.limitScope === "shared-durable" ? "Суточный лимит попыток: общий счётчик" : "Счётчик этого процесса: сбрасывается при перезапуске"}</div>
+            <div>• Квоты и стоимость провайдера проверяются отдельно.</div>
           </div>
         </div>
       </div>
@@ -105,3 +106,4 @@ export const ApiKeySettingsModal: React.FC<AssistantServerStatusModalProps> = ({
     </div>
   );
 };
+

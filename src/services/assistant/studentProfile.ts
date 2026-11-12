@@ -276,10 +276,11 @@ export function isHypotheticalQuery(prompt: string): boolean {
 export function mergeProfileWithQueryFilters(
   queryFilters: ExtractedQueryFilters,
   profile: StudentProfile,
-  isHypothetical = false
+  isHypothetical = false,
+  query = ''
 ): ExtractedQueryFilters {
   // If the query is hypothetical, strictly prioritize query filters for the current turn
-  if (isHypothetical) {
+  if (isHypothetical || /без (?:уч[её]та )?профиля|ignore (?:my )?profile/i.test(query)) {
     return { ...queryFilters };
   }
 
@@ -291,9 +292,15 @@ export function mergeProfileWithQueryFilters(
   }
 
   // City: if query did not specify city, use first confirmed profile location
-  if (!merged.city && profile.locationPreferences.length > 0) {
-    merged.city = profile.locationPreferences[0];
+  if (!merged.city && profile.locationPreferences.length > 0 && !/любой город|все города|any city/i.test(query)) {
+    const cities = profile.locationPreferences.filter(city => !merged.excludedCities?.includes(city));
+    merged.preferredCities = cities;
+    if (cities.length === 1) merged.city = cities[0];
   }
+  const fee = query.match(/(?:до|не более|бюджет)\s*(\d[\d ]*)\s*(?:руб|₽)/i);
+  if (fee) merged.maxAnnualFee = Number(fee[1].replace(/ /g, ''));
+  else if (!/без ограничения (?:стоимости|цены)|любой бюджет/i.test(query) && Number.isFinite(profile.maxAnnualFee)) merged.maxAnnualFee = profile.maxAnnualFee;
+  if (!merged.direction && profile.preferredStudyAreas.length) merged.direction = profile.preferredStudyAreas.join(', ');
 
   // Dormitory: if query did not specify dorm constraint, use profile need
   if (merged.wantsDorm === undefined && profile.accommodationNeed !== 'unspecified') {
@@ -302,12 +309,13 @@ export function mergeProfileWithQueryFilters(
   }
 
   // Military: if query did not specify military preference, use profile
-  if (merged.isMilitaryHard === undefined && profile.hasMilitaryPreference !== undefined) {
-    merged.isMilitaryHard = profile.hasMilitaryPreference;
+  if (merged.wantsMilitary === undefined && profile.hasMilitaryPreference !== undefined) {
+    merged.wantsMilitary = profile.hasMilitaryPreference;
+    merged.isMilitaryHard = false;
   }
 
   // Budget only: if profile states only_budget
-  if (merged.wantsBudgetOnly === undefined && profile.budgetConstraint === 'only_budget') {
+  if (!/платн|коммерческ|бюджет|paid|tuition/i.test(query) && profile.budgetConstraint === 'only_budget') {
     merged.wantsBudgetOnly = true;
   }
 
@@ -352,3 +360,4 @@ export function savePersistedChecklist(artifactId: string, checkedItemIds: strin
     console.warn('Failed to save checklist persistence:', err);
   }
 }
+

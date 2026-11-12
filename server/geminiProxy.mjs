@@ -5,7 +5,7 @@
  * - Real-time SSE Streaming (/api/assistant/stream) with stalled stream detection
  * - Zero API key exposure with sanitized logging
  * - Supported model allowlist (gemini-3.8-flash, gemini-flash-latest, gemini-2.5-flash-lite)
- * - Safe caching for reusable public lookups (non-personalized) with version invalidation
+ * - No shared caching of AI answers (conversation/evidence isolation)
  * - Rate limiting (15 RPM) & Concurrency throttle (max 2 active)
  * - Transient-only bounded retry policy (no retry on 4xx/auth/invalid payload)
  */
@@ -14,23 +14,21 @@ export const ALLOWED_MODELS = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3
 export const DEFAULT_MODEL = 'gemini-3.5-flash';
 export const CATALOG_DATA_VERSION = 'vuzopedia-2026.1';
 
+const runtimeEnv = typeof process !== 'undefined' ? process.env : {};
+
 export const DEFAULT_CONFIG = {
-  apiKey: process.env.GEMINI_API_KEY || '',
-  aiEnabled: process.env.AI_ENABLED !== 'false',
-  globalDailyLimit: parseInt(process.env.AI_GLOBAL_DAILY_LIMIT || '1500', 10),
-  rateLimitPerMinute: parseInt(process.env.AI_RATE_LIMIT_PER_MINUTE || '15', 10),
-  maxConcurrency: parseInt(process.env.AI_MAX_CONCURRENCY || '2', 10),
+  apiKey: runtimeEnv.GEMINI_API_KEY || '',
+  aiEnabled: runtimeEnv.AI_ENABLED !== 'false',
+  globalDailyLimit: parseInt(runtimeEnv.AI_GLOBAL_DAILY_LIMIT || '1500', 10),
+  rateLimitPerMinute: parseInt(runtimeEnv.AI_RATE_LIMIT_PER_MINUTE || '15', 10),
+  maxConcurrency: parseInt(runtimeEnv.AI_MAX_CONCURRENCY || '2', 10),
 };
 
-// In-memory rate limiting, concurrency and cache state
+// Per-process rate/concurrency counters; Pages uses durable attempt reservations.
 const ipRequestHistory = new Map();
 let activeConcurrentRequests = 0;
 let currentTrackingDay = new Date().toISOString().slice(0, 10);
 let dailyUsageCount = 0;
-
-// Safe Public Lookup Cache: Map<cacheKey, { rawText, modelUsed, timestamp }>
-const publicLookupCache = new Map();
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
  * Resets or updates daily usage tracker if UTC day changed
@@ -40,8 +38,21 @@ function checkDailyReset() {
   if (today !== currentTrackingDay) {
     currentTrackingDay = today;
     dailyUsageCount = 0;
-    publicLookupCache.clear();
   }
+}
+
+/** Reserve before EVERY upstream attempt, including retries and failed requests. */
+export async function reserveProviderAttempt(config = DEFAULT_CONFIG) {
+  checkDailyReset();
+  if (!Number.isSafeInteger(config.globalDailyLimit) || config.globalDailyLimit <= 0) return false;
+  if (config.reserveAttempt) {
+    try { return Boolean(await config.reserveAttempt(config.globalDailyLimit)); }
+    catch { return false; } // Fail closed when shared accounting is unavailable.
+  }
+  // Synchronous check/increment is atomic within this single Node process only.
+  if (dailyUsageCount >= config.globalDailyLimit) return false;
+  dailyUsageCount++;
+  return true;
 }
 
 /**
@@ -207,7 +218,7 @@ export function getAssistantStatus(config = DEFAULT_CONFIG) {
 
   const apiKeyPresent = Boolean(config.apiKey && config.apiKey.trim());
   const enabled = config.aiEnabled;
-  const underDailyLimit = dailyUsageCount < config.globalDailyLimit;
+  const underDailyLimit = config.reserveAttempt ? true : dailyUsageCount < config.globalDailyLimit;
 
   let mode = 'server_ai';
   let reason = null;
@@ -227,12 +238,15 @@ export function getAssistantStatus(config = DEFAULT_CONFIG) {
     aiAvailable: mode === 'server_ai',
     mode,
     reason,
-    dailyUsage: dailyUsageCount,
+    dailyUsage: config.reserveAttempt ? undefined : dailyUsageCount,
+    limitScope: config.reserveAttempt ? 'shared-durable' : 'process-local',
     dailyLimit: config.globalDailyLimit,
+    rateLimitPerMinute: config.rateLimitPerMinute,
+    maxConcurrency: config.maxConcurrency,
     dataVersion: CATALOG_DATA_VERSION,
     defaultModel: DEFAULT_MODEL,
     supportedModels: ALLOWED_MODELS,
-    freeTierPolicy: 'Google AI Studio Free Tier (Zero Cost Budget: 15 RPM / 1,500 RPD)',
+    freeTierPolicy: 'Application request cap; provider quotas and pricing are configured separately.',
   };
 }
 
@@ -294,7 +308,7 @@ export async function handleAssistantChat(
   }
 
   // 2. Check global admin enablement and daily cutoff
-  if (!config.aiEnabled || dailyUsageCount >= config.globalDailyLimit) {
+  if (!config.aiEnabled || (!config.reserveAttempt && dailyUsageCount >= config.globalDailyLimit)) {
     return {
       status: 503,
       body: {
@@ -322,24 +336,6 @@ export async function handleAssistantChat(
   }
 
   const { prompt, history, evidence, model } = validation.data;
-
-  // 4. Check safe public lookup cache (non-personalized queries only)
-  const isPersonalized = isPersonalizedQuery(prompt, history);
-  if (!isPersonalized) {
-    const cacheKey = getPublicLookupCacheKey(prompt, model);
-    const cached = publicLookupCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return {
-        status: 200,
-        body: {
-          rawText: cached.rawText,
-          modelUsed: cached.modelUsed,
-          serverProtected: true,
-          cached: true,
-        },
-      };
-    }
-  }
 
   // 5. Rate limiting per IP
   const rateCheck = checkRateLimit(clientIp, config.rateLimitPerMinute);
@@ -396,6 +392,9 @@ export async function handleAssistantChat(
 
       while (retryCount <= maxRetries) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${config.apiKey}`;
+          if (!(await reserveProviderAttempt(config))) {
+            return { status: 503, body: { error: { code: 'GLOBAL_USAGE_CUTOFF', message: 'AI request budget unavailable or exhausted.' } } };
+          }
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -430,7 +429,7 @@ export async function handleAssistantChat(
               const errText = await response.text().catch(() => '');
               const safeError = sanitizeLogString(errText, config.apiKey);
               console.warn(`[AssistantServer] Model ${currentModel} returned HTTP ${response.status} (no retry):`, safeError.slice(0, 100));
-              break;
+              return { status: response.status, body: { error: { code: 'PROVIDER_REQUEST_REJECTED', message: 'AI provider rejected the request.' } } };
             }
 
             // Upstream 5xx: retry once if budget allows
@@ -453,17 +452,6 @@ export async function handleAssistantChat(
             break;
           }
 
-          dailyUsageCount++;
-
-          // Cache public non-personalized lookups
-          if (!isPersonalized) {
-            const cacheKey = getPublicLookupCacheKey(prompt, currentModel);
-            publicLookupCache.set(cacheKey, {
-              rawText,
-              modelUsed: currentModel,
-              timestamp: Date.now(),
-            });
-          }
 
           return {
             status: 200,
@@ -530,7 +518,7 @@ export async function handleAssistantStream(
     return;
   }
 
-  if (!config.aiEnabled || dailyUsageCount >= config.globalDailyLimit) {
+  if (!config.aiEnabled || (!config.reserveAttempt && dailyUsageCount >= config.globalDailyLimit)) {
     httpResponse.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
     httpResponse.end(JSON.stringify({ error: { code: 'GLOBAL_USAGE_CUTOFF', message: 'Суточный лимит запросов к AI исчерпан.' } }));
     return;
@@ -545,25 +533,6 @@ export async function handleAssistantStream(
   }
 
   const { prompt, history, evidence, model } = validation.data;
-
-  // 2. Check public lookup cache (serve instant cached stream if available)
-  const isPersonalized = isPersonalizedQuery(prompt, history);
-  if (!isPersonalized) {
-    const cacheKey = getPublicLookupCacheKey(prompt, model);
-    const cached = publicLookupCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      httpResponse.writeHead(200, {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      });
-      httpResponse.write(`event: chunk\ndata: ${JSON.stringify({ delta: cached.rawText })}\n\n`);
-      httpResponse.write(`event: done\ndata: ${JSON.stringify({ rawText: cached.rawText, modelUsed: cached.modelUsed, cached: true })}\n\n`);
-      httpResponse.end();
-      return;
-    }
-  }
 
   // 3. Rate limiting & Concurrency check
   const rateCheck = checkRateLimit(clientIp, config.rateLimitPerMinute);
@@ -623,6 +592,7 @@ export async function handleAssistantStream(
       accumulatedText = '';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:streamGenerateContent?key=${config.apiKey}&alt=sse`;
 
+      if (!(await reserveProviderAttempt(config)) || clientDisconnected) break;
       const modelAbortController = new AbortController();
       activeModelAbort = modelAbortController;
 
@@ -672,7 +642,8 @@ export async function handleAssistantStream(
             continue;
           }
 
-          continue; // try next model for 5xx
+          if (upstreamRes.status < 500) break;
+          continue; // transient server failure before any output
         }
 
         const reader = upstreamRes.body.getReader();
@@ -703,7 +674,7 @@ export async function handleAssistantStream(
                   const delta = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
                   if (delta && typeof delta === 'string') {
                     accumulatedText += delta;
-                    httpResponse.write(`event: chunk\ndata: ${JSON.stringify({ delta })}\n\n`);
+                    await httpResponse.write(`event: chunk\ndata: ${JSON.stringify({ delta })}\n\n`);
                   }
                 } catch {
                   // ignore partial JSON parse
@@ -723,35 +694,26 @@ export async function handleAssistantStream(
       } catch (streamErr) {
         clearTimeout(ttftTimeout);
         if (stallTimeout) clearTimeout(stallTimeout);
-        console.warn(`[AssistantServer] Stream exception on ${currentModel}:`, streamErr.message);
+        console.warn(`[AssistantServer] Stream exception on ${currentModel}:`, sanitizeLogString(streamErr.message, config.apiKey));
+        // Never append a replacement model answer after already-visible text.
+        if (accumulatedText.trim() || clientDisconnected) break;
       } finally {
         activeModelAbort = null;
       }
     }
 
     if (successfulModel && accumulatedText.trim()) {
-      dailyUsageCount++;
 
-      // Cache if public non-personalized
-      if (!isPersonalized) {
-        const cacheKey = getPublicLookupCacheKey(prompt, successfulModel);
-        publicLookupCache.set(cacheKey, {
-          rawText: accumulatedText,
-          modelUsed: successfulModel,
-          timestamp: Date.now(),
-        });
-      }
-
-      httpResponse.write(`event: done\ndata: ${JSON.stringify({ rawText: accumulatedText, modelUsed: successfulModel })}\n\n`);
+      await httpResponse.write(`event: done\ndata: ${JSON.stringify({ rawText: accumulatedText, modelUsed: successfulModel })}\n\n`);
       httpResponse.end();
     } else {
       // Stream failed or aborted
       if (accumulatedText.trim()) {
         // Return partial result gracefully
-        httpResponse.write(`event: done\ndata: ${JSON.stringify({ rawText: accumulatedText, modelUsed: 'gemini-partial', partial: true })}\n\n`);
+        await httpResponse.write(`event: done\ndata: ${JSON.stringify({ rawText: accumulatedText, modelUsed: 'gemini-partial', partial: true })}\n\n`);
         httpResponse.end();
       } else {
-        httpResponse.write(`event: error\ndata: ${JSON.stringify({ code: 'STREAM_FAILED', message: 'Сбой потоковой генерации. Переключаюсь на локальный каталог.' })}\n\n`);
+        await httpResponse.write(`event: error\ndata: ${JSON.stringify({ code: 'STREAM_FAILED', message: 'Сбой потоковой генерации. Переключаюсь на локальный каталог.' })}\n\n`);
         httpResponse.end();
       }
     }
@@ -804,5 +766,5 @@ export function __resetProxyStateForTests() {
   ipRequestHistory.clear();
   activeConcurrentRequests = 0;
   dailyUsageCount = 0;
-  publicLookupCache.clear();
 }
+

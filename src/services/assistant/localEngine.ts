@@ -146,6 +146,10 @@ export function queryLocalEngine(
       '\n\n📋 *Сформирован интерактивный чек-лист абитуриента. Нажмите кнопку «Открыть холст» ниже для просмотра дорожной карты.*';
   }
 
+  if (context.citationChunks.some(c => c.verificationStatus !== 'verified')) {
+    replyText += '\n\n*Данные каталога не сверены с первичными документами. Перед решением проверьте актуальные условия в приёмной комиссии.*';
+  }
+
   // Extract referenced entity IDs
   const referencedEntityIds = extractReferencedEntityIds(replyText);
   if (context.matchedUniversities.length > 0) {
@@ -204,3 +208,4 @@ export function queryLocalEngine(
 
   return validateAssistantResponse(rawPayload);
 }
+

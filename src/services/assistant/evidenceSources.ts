@@ -16,18 +16,18 @@ export function createUniversityAdmissionChunk(u: University): RetrievedCitation
   return {
     id: `src-vuz-${u.id}-admission`,
     source: `${u.shortName} • Правила приёма и статистика прошлых лет`,
-    documentTitle: `Официальный справочник приёма: ${u.fullName}`,
+    documentTitle: `Каталожная запись: ${u.fullName}`,
     title: `${u.shortName} (${u.fullName}) • Бюджетные места и конкурс`,
     publisher: u.fullName,
     url,
     applicableAdmissionsYear: 2025,
-    checkedDate: url ? '2025-10-01' : undefined,
-    verificationStatus: url ? 'verified' : 'unverified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: true,
     excerpt,
     snippet: excerpt,
     category: 'university',
-    categoryLabel: url ? 'Официальный справочник' : 'Каталог (не верифицировано)',
+    categoryLabel: 'Каталог (не верифицировано)',
     structuredFields: {
       city: u.city,
       minBudgetScore2025: u.minBudgetScore,
@@ -65,8 +65,8 @@ export function createProgramCitationChunk(p: ProgramMatch, u?: University): Ret
     publisher: p.universityShort,
     url,
     applicableAdmissionsYear: 2025,
-    checkedDate: url ? '2025-10-01' : undefined,
-    verificationStatus: url ? 'verified' : 'unverified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: true,
     excerpt,
     snippet: excerpt,
@@ -106,8 +106,8 @@ export function createMilitaryChunk(u: University): RetrievedCitationChunk {
     publisher: `Минобороны РФ / ${u.fullName}`,
     url,
     applicableAdmissionsYear: 2026,
-    checkedDate: url ? '2025-10-01' : undefined,
-    verificationStatus: url ? 'verified' : 'unverified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: false,
     excerpt,
     snippet: excerpt,
@@ -143,8 +143,8 @@ export function createDormitoryChunk(u: University): RetrievedCitationChunk {
     publisher: u.fullName,
     url,
     applicableAdmissionsYear: 2026,
-    checkedDate: url ? '2025-10-01' : undefined,
-    verificationStatus: url ? 'verified' : 'unverified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: false,
     excerpt,
     snippet: excerpt,
@@ -179,8 +179,8 @@ export function createOlympiadsChunk(): RetrievedCitationChunk {
     publisher: 'Министерство науки и высшего образования РФ',
     url: 'https://minobrnauki.gov.ru',
     applicableAdmissionsYear: 2026,
-    checkedDate: '2025-09-01',
-    verificationStatus: 'verified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: false,
     excerpt,
     snippet: excerpt,
@@ -211,8 +211,8 @@ export function createCreditChunk(): RetrievedCitationChunk {
     publisher: 'Минобрнауки РФ / ПАО Сбербанк',
     url: 'https://www.sberbank.com/ru/person/credits/money/credit_education',
     applicableAdmissionsYear: 2026,
-    checkedDate: '2025-08-15',
-    verificationStatus: 'verified',
+    checkedDate: undefined,
+    verificationStatus: 'unverified',
     isHistoricalCutoff: false,
     excerpt,
     snippet: excerpt,
@@ -269,7 +269,7 @@ export function buildEvidencePackage(
   matchedPrograms: ProgramMatch[] = []
 ): { citationChunks: RetrievedCitationChunk[]; evidenceText: string } {
   const citationChunks: RetrievedCitationChunk[] = [];
-  const lines: string[] = ['<evidence_data>'];
+  const lines: string[] = ['<evidence_data>', 'Данные каталога не проверены по первичным документам. Ссылки на сайты не подтверждают эти факты. Не называй их официально проверенными.'];
 
   // Selective university filtering:
   // If specific university was targeted (via anaphora or direct mention), keep only targeted universities (max 2 for comparison, 1 for single entity).
@@ -360,7 +360,7 @@ export function buildEvidencePackage(
     const olyChunk = createOlympiadsChunk();
     citationChunks.push(olyChunk);
     lines.push(
-      `[DATA_RECORD id="${olyChunk.id}" year="2026" status="verified"]\n` +
+      `[DATA_RECORD id="${olyChunk.id}" year="2026" status="unverified"]\n` +
       `Нормативный акт: ${olyChunk.documentTitle}\n` +
       `Правило БВИ: РСОШ 1–3 уровней требуют 75+ баллов ЕГЭ по профилю. ВсОШ — зачисление без экзаменов без подтверждения баллами.\n` +
       `[cite:${olyChunk.id}]\n` +
@@ -373,7 +373,7 @@ export function buildEvidencePackage(
     const credChunk = createCreditChunk();
     citationChunks.push(credChunk);
     lines.push(
-      `[DATA_RECORD id="${credChunk.id}" year="2026" status="verified"]\n` +
+      `[DATA_RECORD id="${credChunk.id}" year="2026" status="unverified"]\n` +
       `Нормативный акт: ${credChunk.documentTitle}\n` +
       `Условия: ставка 3% годовых, во время учебы и 9 мес после — только проценты, основной долг — 15 лет после выпуска.\n` +
       `[cite:${credChunk.id}]\n` +
@@ -388,3 +388,4 @@ export function buildEvidencePackage(
     evidenceText: lines.join('\n'),
   };
 }
+

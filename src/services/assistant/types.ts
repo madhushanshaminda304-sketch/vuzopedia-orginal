@@ -167,6 +167,8 @@ export interface AmbiguousEntity {
 }
 
 export interface ExtractedQueryFilters {
+  preferredCities?: string[];
+  maxAnnualFee?: number;
   score?: number | null;
   city?: string | null;
   isCityHard?: boolean;
@@ -412,3 +414,4 @@ function createSafeEmptyResponse(message: string): AssistantResponse {
     matchedUniversities: [],
   };
 }
+

@@ -1,0 +1,177 @@
+import test, { after, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
+import { handleAssistantChat, handleAssistantStream, reserveProviderAttempt, getAssistantStatus, __resetProxyStateForTests, DEFAULT_CONFIG } from '../server/geminiProxy.mjs';
+import { pagesConfig } from '../server/pagesAdapter.mjs';
+import { onRequestPost as pagesStream } from '../functions/api/assistant/stream.js';
+import { onRequestPost as pagesChat } from '../functions/api/assistant/chat.js';
+import { onRequestGet as pagesStatus } from '../functions/api/assistant/status.js';
+
+const temp = await mkdtemp(path.join(tmpdir(), 'assistant-regressions-'));
+await build({ entryPoints: ['src/services/assistant/index.ts'], bundle: true, platform: 'node', format: 'esm', outfile: path.join(temp, 'client.mjs') });
+const client = await import(pathToFileURL(path.join(temp, 'client.mjs')).href);
+const originalFetch = globalThis.fetch;
+const config = { ...DEFAULT_CONFIG, apiKey: 'mock-only-key', globalDailyLimit: 100, maxConcurrency: 10, rateLimitPerMinute: 100 };
+afterEach(() => { globalThis.fetch = originalFetch; delete globalThis.window; delete globalThis.localStorage; __resetProxyStateForTests(); });
+after(() => rm(temp, { recursive: true, force: true }));
+
+function sqliteBinding() {
+  const db = new DatabaseSync(':memory:');
+  db.exec('CREATE TABLE assistant_daily_usage(day TEXT PRIMARY KEY, attempts INTEGER NOT NULL)');
+  return { db, prepare: sql => ({ bind: (...values) => ({ first: async () => db.prepare(sql).get(...values) || null }) }) };
+}
+function upstream(text, fail = false) {
+  let n = 0;
+  return new Response(new ReadableStream({ pull(c) {
+    if (n++ === 0) c.enqueue(new TextEncoder().encode('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }) + '\n\n'));
+    else if (fail) c.error(new Error('simulated provider disconnect'));
+    else c.close();
+  } }), { status: 200 });
+}
+function context(env, payload) {
+  const tasks = [];
+  return { env, tasks, waitUntil(p) { tasks.push(p); }, request: new Request('https://example.test/api/assistant/stream', { method: 'POST', headers: { 'cf-connecting-ip': 'test' }, body: JSON.stringify(payload) }) };
+}
+function profileStore(profile) {
+  const data = new Map([[client.PROFILE_STORAGE_KEY, JSON.stringify({ ...client.DEFAULT_STUDENT_PROFILE, ...profile })]]);
+  globalThis.localStorage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+  globalThis.window = { localStorage };
+}
+
+test('Pages handlers import and bundle without Node runtime dependencies', async () => {
+  for (const route of ['chat', 'status', 'stream']) {
+    await build({ entryPoints: [`functions/api/assistant/${route}.js`], bundle: true, platform: 'browser', format: 'esm', outfile: path.join(temp, `${route}.js`) });
+  }
+  const r = await pagesStatus({ env: {} });
+  assert.equal((await r.json()).aiAvailable, false);
+});
+
+test('Pages fails closed without shared accounting and rejects oversized bodies', async () => {
+  globalThis.fetch = () => { throw Error('Provider must not be called'); };
+  const c = context({ GEMINI_API_KEY: 'mock' }, { prompt: 'Explain admissions' });
+  assert.equal((await pagesChat(c)).status, 503);
+  const oversized = context({}, { prompt: 'x'.repeat(70000) });
+  assert.equal((await pagesChat(oversized)).status, 413);
+});
+
+test('same prompt in different conversations never shares an AI answer', async () => {
+  let calls = 0;
+  globalThis.fetch = async (_url, init) => {
+    calls++;
+    const evidence = JSON.parse(init.body).systemInstruction.parts[0].text;
+    return Response.json({ candidates: [{ content: { parts: [{ text: evidence.includes('University B') ? 'Answer B' : 'Answer A' }] } }] });
+  };
+  const a = await handleAssistantChat({ prompt: 'What about accommodation?', history: [{ sender: 'user', text: 'University A' }], evidence: 'University A' }, 'a', config);
+  const b = await handleAssistantChat({ prompt: 'What about accommodation?', history: [{ sender: 'user', text: 'University B' }], evidence: 'University B' }, 'b', config);
+  assert.equal(calls, 2); assert.equal(a.body.rawText, 'Answer A'); assert.equal(b.body.rawText, 'Answer B');
+});
+
+test('partial upstream failure does not append a replacement model answer', async () => {
+  let calls = 0; let text = '';
+  globalThis.fetch = async () => { calls++; return upstream('First partial answer.', true); };
+  await handleAssistantStream({ prompt: 'Explain university options' }, 'a', { writeHead() {}, on() {}, write(s) { text += s; }, end() {} }, config);
+  assert.equal(calls, 1); assert.match(text, /"partial":true/); assert.match(text, /First partial answer/);
+});
+
+test('real client consumes Pages SSE completion and partial metadata', async () => {
+  const binding = sqliteBinding(); let activeTasks = []; let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).startsWith('/api/')) {
+      const c = context({ GEMINI_API_KEY: 'mock', ASSISTANT_USAGE: binding }, JSON.parse(init.body));
+      const r = await pagesStream(c); activeTasks = c.tasks; return r;
+    }
+    calls++; return upstream('Partial answer with enough information to display.', true);
+  };
+  const response = await client.callGeminiStreamingProvider('Explain admissions', [], client.retrieveAssistantContext('МГУ'), performance.now());
+  await Promise.all(activeTasks);
+  assert.equal(calls, 1); assert.equal(response.toolCall.status, 'error'); assert.match(response.text, /Ответ прерван/);
+  binding.db.close();
+});
+
+test('client accepts done event across arbitrary transport chunk boundaries', async () => {
+  const wire = 'event: chunk\ndata: {"delta":"Hello"}\n\nevent: done\ndata: {"rawText":"Hello final","modelUsed":"mock"}\n\n';
+  let index = 0;
+  globalThis.fetch = async () => new Response(new ReadableStream({ pull(c) { if (index < wire.length) c.enqueue(new TextEncoder().encode(wire.slice(index, ++index))); else c.close(); } }));
+  const result = await client.callGeminiStreamingProvider('Explain', [], client.retrieveAssistantContext('МГУ'), performance.now());
+  assert.equal(result.text, 'Hello final'); assert.equal(result.toolCall.status, 'complete');
+});
+
+test('confirmed profile drives retrieval and current query overrides it', () => {
+  profileStore({ locationPreferences: ['Казань'], totalScore: 180, accommodationNeed: 'required', maxAnnualFee: 100000, confirmedAt: '2026-11-12' });
+  const r = client.retrieveAssistantContext('Посоветуй университеты');
+  assert.equal(r.extractedFilters.city, 'Казань'); assert.equal(r.extractedFilters.score, 180);
+  assert.equal(r.extractedFilters.wantsDorm, true); assert.equal(r.extractedFilters.maxAnnualFee, 100000);
+  assert(r.matchedUniversities.every(u => u.city === 'Казань' && u.hasDormitory && u.minAnnualFee <= 100000));
+  assert.deepEqual(r.matchedPrograms ?? [], []); // no unrelated programme fallback when no university matches
+  const override = client.retrieveAssistantContext('В Москве 270 баллов, общежитие не нужно, до 500000 рублей');
+  assert.equal(override.extractedFilters.city, 'Москва'); assert.equal(override.extractedFilters.score, 270);
+  assert.equal(override.extractedFilters.wantsDorm, false); assert.equal(override.extractedFilters.maxAnnualFee, 500000);
+});
+
+test('catalogue URLs do not manufacture verified evidence or checked dates', () => {
+  const r = client.retrieveAssistantContext('МГУ общежитие кредит олимпиады');
+  assert(r.citationChunks.length > 0);
+  for (const chunk of r.citationChunks) { assert.equal(chunk.verificationStatus, 'unverified'); assert.equal(chunk.checkedDate, undefined); }
+  assert(!r.evidence.includes('status="verified"'));
+  const artifact = client.createAdmissionArtifact();
+  assert(artifact.checklistItems.every(item => item.isDeadlineVerified === false && !item.checked));
+  assert(!artifact.markdownContent.includes('3 августа'));
+});
+
+test('shared daily cap is atomic across instances and refuses unavailable storage', async () => {
+  const binding = sqliteBinding();
+  const a = pagesConfig({ ASSISTANT_USAGE: binding, AI_GLOBAL_DAILY_LIMIT: '2' });
+  const b = pagesConfig({ ASSISTANT_USAGE: binding, AI_GLOBAL_DAILY_LIMIT: '2' });
+  const attempts = await Promise.all(Array.from({ length: 20 }, (_, i) => reserveProviderAttempt(i % 2 ? a : b)));
+  assert.equal(attempts.filter(Boolean).length, 2);
+  assert.equal(binding.db.prepare('SELECT attempts FROM assistant_daily_usage').get().attempts, 2);
+  assert.equal(await reserveProviderAttempt({ ...config, reserveAttempt: async () => { throw Error('offline'); } }), false);
+  const status = await pagesStatus({ env: { GEMINI_API_KEY: 'mock', ASSISTANT_USAGE: binding, AI_GLOBAL_DAILY_LIMIT: '2' } });
+  assert.equal((await status.json()).aiAvailable, false);
+  binding.db.close();
+});
+
+test('failed provider attempts consume budget and cannot retry past it', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return new Response('unavailable', { status: 503 }); };
+  await handleAssistantChat({ prompt: 'Explain admissions' }, 'a', { ...config, globalDailyLimit: 1 });
+  assert.equal(calls, 1); assert.equal(getAssistantStatus({ ...config, globalDailyLimit: 1 }).dailyUsage, 1);
+});
+
+test('invalid credentials do not trigger a fallback model request', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return new Response('invalid credentials', { status: 401 }); };
+  await handleAssistantChat({ prompt: 'Explain admissions' }, 'a', config);
+  assert.equal(calls, 1);
+});
+
+test('cancelled requests never start provider calls or replace cancellation with local answers', async () => {
+  let calls = 0; globalThis.fetch = async () => { calls++; throw Error('unexpected'); };
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(client.queryAssistant('Explain', [], 'all', 'all', { abortSignal: controller.signal }), { name: 'AbortError' });
+  assert.equal(calls, 0);
+});
+
+test('cancelling a Pages response aborts the active upstream stream without retrying', async () => {
+  const binding = sqliteBinding(); let aborted = false; let calls = 0;
+  globalThis.fetch = async (_url, init) => {
+    calls++;
+    return new Response(new ReadableStream({ start(controller) {
+      controller.enqueue(new TextEncoder().encode('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: 'Visible text' }] } }] }) + '\n\n'));
+      init.signal.addEventListener('abort', () => { aborted = true; controller.error(new DOMException('Stopped', 'AbortError')); }, { once: true });
+    } }));
+  };
+  const c = context({ GEMINI_API_KEY: 'mock', ASSISTANT_USAGE: binding }, { prompt: 'Explain university choices' });
+  const response = await pagesStream(c);
+  const reader = response.body.getReader();
+  assert.match(new TextDecoder().decode((await reader.read()).value), /Visible text/);
+  await reader.cancel();
+  await Promise.all(c.tasks);
+  assert.equal(aborted, true); assert.equal(calls, 1);
+  binding.db.close();
+});

@@ -56,6 +56,8 @@ export async function queryAssistant(
   options?: QueryAssistantOptions
 ): Promise<AssistantResponse> {
   const startTime = performance.now();
+  const checkCancelled = () => { if (options?.abortSignal?.aborted) throw new DOMException('Request cancelled', 'AbortError'); };
+  checkCancelled();
 
   // 1. Ground-truth retrieval and intent analysis (with conversation history for anaphora resolution)
   const context = retrieveAssistantContext(prompt, mode, scope, history);
@@ -67,6 +69,7 @@ export async function queryAssistant(
 
   // 3. Requirement 2: No provider request when configuration is missing
   const serverStatus = await fetchServerAssistantStatus();
+  checkCancelled();
   if (!serverStatus.aiAvailable) {
     return queryLocalEngine(prompt, startTime, context);
   }
@@ -88,6 +91,8 @@ export async function queryAssistant(
     console.warn('Gemini streaming provider encountered an issue; using local engine:', err);
   }
 
+  checkCancelled();
   // 5. Fallback to Local Engine
   return queryLocalEngine(prompt, startTime, context);
 }
+
