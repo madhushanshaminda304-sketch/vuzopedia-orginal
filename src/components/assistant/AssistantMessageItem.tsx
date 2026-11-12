@@ -1,3 +1,4 @@
+import { ProgrammeGuidancePanel } from './ProgrammeGuidancePanel';
 import React from 'react';
 import {
   Cpu,
@@ -63,6 +64,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
   onSelectUniversity,
   onCloseModal,
 }) => {
+  const guide = m.response?.guidance;
   const isUser = m.sender === 'user';
 
   return (
@@ -77,7 +79,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
 
       <div className="space-y-2 max-w-[92%] sm:max-w-[85%]">
         {/* Tool Call Component */}
-        {m.toolCall && (
+        {m.toolCall && !guide && (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden text-xs transition">
             <button
               onClick={onToggleTool}
@@ -165,7 +167,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                 ) : (
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
                     <span>📖</span>
-                    <span>Данные локального каталога</span>
+                    <span>{guide ? (guide.state.language === 'en' ? 'Programme adviser' : 'Подбор направления') : 'Данные локального каталога'}</span>
                   </span>
                 )}
               </div>
@@ -218,7 +220,8 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                 }}
                 onClose={onCloseModal}
               />
-              {!m.toolCall?.duration && m.text && (
+              {guide && <ProgrammeGuidancePanel guide={guide} onSelectUniversity={onSelectUniversity} onClose={onCloseModal} />}
+              {!m.response && m.id.startsWith('ded-stream-') && !m.toolCall?.duration && m.text && (
                 <span className="inline-block w-1.5 h-3.5 bg-blue-500 animate-pulse ml-1 align-middle" />
               )}
 
@@ -234,7 +237,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                 <div className="space-y-2 my-2.5 p-3 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 animate-fadeIn">
                   <div className="text-[11px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 mb-1.5">
                     <span>💡</span>
-                    <span>Выберите подходящий сценарий для точного расчёта:</span>
+                    <span>{guide ? (guide.state.language === 'en' ? 'Choose an option or type your answer' : 'Выберите вариант или напишите ответ') : 'Выберите подходящий сценарий для точного расчёта:'}</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {m.clarificationOptions.map((opt, optIdx) => (
@@ -251,7 +254,7 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
                             {opt.label}
                           </p>
                           <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                            {opt.prompt}
+                            {!guide && opt.prompt}
                           </p>
                         </div>
                       </button>
@@ -632,3 +635,4 @@ export const AssistantMessageItem: React.FC<AssistantMessageItemProps> = ({
     </div>
   );
 };
+

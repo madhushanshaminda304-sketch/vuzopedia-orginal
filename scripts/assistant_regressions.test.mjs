@@ -175,3 +175,116 @@ test('cancelling a Pages response aborts the active upstream stream without retr
   assert.equal(aborted, true); assert.equal(calls, 1);
   binding.db.close();
 });
+
+function journey() {
+  const history = [];
+  return {
+    history,
+    async say(text) {
+      const response = await client.queryAssistant(text, history);
+      history.push({ sender: 'user', text }, { sender: 'ded', text: response.text, guidance: response.guidance?.state });
+      return response;
+    }
+  };
+}
+function offlineOnly() {
+  globalThis.fetch = () => { throw new Error('Guidance must never make a network request'); };
+}
+async function completedGuide(location = 'Any location', budget = '400000 RUB') {
+  const j = journey();
+  for (const text of ['I want to find the right program for me', 'I know subjects I enjoy', 'Computing & problem-solving', 'School completed', location]) await j.say(text);
+  return { j, response: await j.say(budget) };
+}
+
+test('exact reported query starts guidance without a catalogue dump or network call', async () => {
+  offlineOnly();
+  const r = await journey().say('I want to find the right program for me');
+  assert.equal(r.guidance.state.stage, 'goal');
+  assert.equal(r.matchedUniversities.length, 0);
+  assert.equal(r.citationChunks.length, 0);
+  assert.equal(r.guidance.recommendations.length, 0);
+  assert.match(r.text, /career or subject/);
+});
+
+test('complete journey produces at most three grounded options within hard constraints', async () => {
+  offlineOnly();
+  const { response: r } = await completedGuide('Moscow');
+  assert.equal(r.guidance.state.stage, 'results');
+  assert.ok(r.guidance.recommendations.length > 0 && r.guidance.recommendations.length <= 3);
+  for (const result of r.guidance.recommendations) {
+    const u = client.UNIVERSITIES.find(u => u.id === result.universityId);
+    const p = u.programs.find(p => p.id === result.id);
+    assert.equal(result.city, 'Москва');
+    assert.ok(result.annualFee <= 400000);
+    assert.equal(result.annualFee, p.annualFee);
+    assert.match(result.requirements, /eligibility is not checked/);
+    assert.doesNotMatch(result.requirements, /math_prof/);
+  }
+  assert.ok(r.citationChunks.every(c => c.verificationStatus !== 'verified'));
+});
+
+test('unsupported location and impossible budget never silently relax filters', async () => {
+  offlineOnly();
+  for (const [location, budget] of [['Sri Lanka', '400000 RUB'], ['Germany', '400000 RUB'], ['Moscow', '1 RUB']]) {
+    const { response: r } = await completedGuide(location, budget);
+    assert.equal(r.guidance.recommendations.length, 0);
+    assert.match(r.text, /no exact matches/);
+  }
+});
+
+test('funded option works and avoids implying a guaranteed scholarship', async () => {
+  offlineOnly();
+  const { response: r } = await completedGuide('Any location', 'Funded places only');
+  assert.equal(r.guidance.state.stage, 'results');
+  assert.equal(r.guidance.state.freeOnly, true);
+  assert.ok(r.guidance.recommendations.length);
+  for (const item of r.guidance.recommendations) {
+    assert.ok(client.UNIVERSITIES.find(u => u.id === item.universityId).programs.find(p => p.id === item.id).budgetPlaces > 0);
+  }
+});
+
+test('budget editing, back, restart and pause preserve predictable state', async () => {
+  offlineOnly();
+  const { j } = await completedGuide();
+  assert.equal((await j.say('Too expensive')).guidance.state.stage, 'budget');
+  assert.equal((await j.say('100 USD')).guidance.state.stage, 'budget');
+  assert.equal((await j.say('200k')).guidance.state.stage, 'budget');
+  assert.equal((await j.say('200000 RUB')).guidance.state.maxFee, 200000);
+  assert.equal((await j.say('Back')).guidance.state.stage, 'budget');
+  assert.equal((await j.say('Start over')).guidance.state.areas.length, 0);
+  assert.equal((await j.say('Stop')).guidance.state.stage, 'paused');
+  assert.equal(client.guideProgrammeChoice('ordinary question', j.history), null);
+});
+
+test('saved response keeps state and independent sessions cannot leak answers', async () => {
+  offlineOnly();
+  const { j, response } = await completedGuide('Kazan');
+  const message = client.createAssistantMessageFromResponse(response);
+  assert.deepEqual(JSON.parse(JSON.stringify(message)).response.guidance, response.guidance);
+  const restored = JSON.parse(JSON.stringify(j.history));
+  assert.equal(client.guideProgrammeChoice('Change budget', restored).guidance.state.location, 'Казань');
+  assert.equal((await journey().say('Help me choose a programme')).guidance.state.location, undefined);
+});
+
+test('disliking coding excludes computing and skipped interests do not yield arbitrary options', async () => {
+  offlineOnly();
+  const { j } = await completedGuide();
+  const revised = await j.say("I don't like coding");
+  assert.equal(revised.guidance.state.stage, 'interests');
+  assert.ok(revised.guidance.state.excluded.includes('tech'));
+  assert.ok(!revised.clarificationQuestions.some(o => /Computing/.test(o.label)));
+  for (const answer of ['Skip', 'Skip', 'Skip']) await j.say(answer);
+  const result = await j.say('Skip');
+  assert.equal(result.guidance.recommendations.length, 0);
+  assert.match(result.text, /haven’t identified/);
+});
+
+test('Russian journey and factual detours retain conversation state', async () => {
+  offlineOnly();
+  const j = journey();
+  assert.equal((await j.say('Помоги выбрать программу')).guidance.state.language, 'ru');
+  await j.say('Знаю любимые предметы');
+  await j.say('Программирование и задачи');
+  assert.equal(client.guideProgrammeChoice('Сколько стоит обучение в МГУ?', j.history), null);
+  assert.equal((await j.say('Школа окончена')).guidance.state.stage, 'location');
+});
