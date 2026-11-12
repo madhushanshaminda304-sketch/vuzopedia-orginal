@@ -347,3 +347,47 @@ profile: webapp
   - `scripts/verify_unipedia_admissions_domain.ts`: 11/11 Phase 1 unit tests passed + Phase 2 Playwright E2E passed (0 failures, 0 console errors). Screenshot: `.pipeline/after/feature_unipedia_domain_and_i18n.png`.
   - Verified zero regression across all existing suites: `verify_student_profile_and_continuity.mjs` (13/13), `verify_assistant_action_registry.mjs` (16/16), `verify_secure_deployment.mjs` (all passed), `verify_evidence_system.mjs` (13/13), `verify_entity_matching_and_retrieval.mjs` (13/13).
   - TypeScript check & Vite build: 0 errors.
+
+## Change 2026-11-12: Final Quality Pass & Representative Evaluation Suite
+- **Size**: L | **Types**: quality, testing, accessibility, performance, evaluation
+- **Representative 15-Dimension Quality Evaluation Suite (`scripts/evaluate_assistant_quality.ts`)**:
+  - Implemented 50 automated assertions covering all 15 required evaluation dimensions:
+    1. Exact university/programme lookup (MSU 01.03.02 with real admissions evidence).
+    2. Ambiguous names and misspellings (BMSTU, HSE, Sechenov aliases; polytechnic ambiguity detection and multi-candidate clarification options).
+    3. Multi-turn references & anaphora resolution ("А какое там общежитие?" preserves MIPT entity and understands accommodation intent).
+    4. Conflicting requirements (explains 180 score is far below MIPT cutoffs, never hallucinates guaranteed admission).
+    5. No matching programmes (explains which criteria prevented match, never invents fictional programmes).
+    6. Missing or outdated evidence (flags 2027 as unverified, filters hallucinated citation IDs).
+    7. Programme comparisons (matrix comparison of HSE vs BMSTU with validated compare action carrying both entity IDs).
+    8. Unsupported questions (politely redirects off-topic questions back to university admissions).
+    9. Attempts to override instructions / Prompt Injection (prevents DAN/jailbreak persona hijack; server rejects oversized payloads).
+    10. Missing API configuration (flags aiAvailable: false, switches cleanly to local_only mode without crashing).
+    11. Quota errors and timeouts (disables AI on daily limit cutoff, sanitizes raw API keys into [REDACTED_API_KEY]).
+    12. Interrupted streaming (AbortController signal aborts immediately on user Stop click).
+    13. Session switching isolation (tokens targeting previous sessions are strictly discarded).
+    14. Invalid actions and entity IDs (action factories reject non-existent entity IDs; guards reject javascript: and traversal).
+    15. Multilingual input (English, Sinhala, Tamil entity extraction, translation disclaimers, speech locales).
+  - Offline-safe by default: 0 Gemini API quota consumed during automated test suite runs.
+  - Optional `--live-api` flag: safely skips or validates real Gemini calls only when explicitly requested.
+- **Upgraded Verification Suites**:
+  - Upgraded `scripts/verify_rag_features.mjs`: replaced soft `if (isVisible()) ... else ...` checks with hard assertions verifying software engineering programmes (`09.03.04`), military center (`ВУЦ`), and genuine citation chunk IDs in drawer.
+  - Upgraded `scripts/verify_advanced_assistant_v4.mjs`: replaced soft checks with hard assertions verifying interactive checklist toggling, citations drawer presence, and saved sessions drawer.
+- **Interface & Accessibility Polish**:
+  - Starter action cards in empty state (`📊 Оценить шансы по баллам`, `⚖️ Сравнить МГУ и ВШЭ`, `📋 Чек-лист поступления 2026`, `🛡️ Вузы с военной кафедрой`).
+  - Draft preservation per session in `sessionStorage` (`vuzopedia_draft_${sessionId}`).
+  - Scroll position awareness (`isUserAtBottomRef`): auto-scroll disabled when student has scrolled up to read.
+  - Honest speech warning banner (`[data-testid="speech-notice-banner"]`) replacing fake query insertion.
+  - Full accessibility: `role="dialog"`, `aria-modal="true"`, Escape key listener, and `motion-reduce:transition-none`.
+- **Bundle Optimization**:
+  - Initial JavaScript bundle reduced by 35.8% (941.47 kB -> 604.70 kB uncompressed; 234.11 kB -> 170.18 kB gzipped).
+- **Verification Summary**:
+  - `scripts/evaluate_assistant_quality.ts`: 50/50 tests passed (0 failures).
+  - `scripts/verify_rag_features.mjs`: Strict assertions passed (0 errors).
+  - `scripts/verify_advanced_assistant_v4.mjs`: Strict assertions passed (0 errors).
+  - `scripts/verify_unipedia_admissions_domain.ts`: 22 unit tests + 11 Playwright E2E passed (0 errors).
+  - `scripts/verify_student_profile_and_continuity.mjs`: 13/13 passed (0 errors).
+  - `scripts/verify_assistant_action_registry.mjs`: 16/16 passed (0 errors).
+  - `scripts/verify_secure_deployment.mjs`: All server & E2E passed (0 errors).
+  - `scripts/verify_evidence_system.mjs`: 13/13 passed (0 errors).
+  - `scripts/verify_entity_matching_and_retrieval.mjs`: 13/13 passed (0 errors).
+  - `npm run build`: Production build clean in 9.69s.

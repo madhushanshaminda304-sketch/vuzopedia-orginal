@@ -90,14 +90,26 @@ server.listen(PORT, async () => {
     }
     await page.waitForTimeout(1000);
 
-    // Step 5: Check Extracted Query Filters Chip Bar
+    // Step 5: Check Extracted Query Filters Chip Bar with hard assertion
     console.log('6. Checking Extracted Query Filters Bar...');
     const filterPill = page.locator('text=275 б.').first();
-    if (await filterPill.isVisible()) {
-      console.log('Verified: Extracted Query Filters Pill Bar rendered.');
-    } else {
-      console.log('Filter container found on message bubble.');
+    await filterPill.waitFor({ timeout: 8000 });
+    if (!(await filterPill.isVisible())) {
+      throw new Error('Assertion failed: 275 score filter chip is not visible');
     }
+    console.log('Verified: Extracted Query Filters Pill Bar strictly rendered.');
+
+    // Step 5.1: Verify grounded response content assertions (Software Engineering, Military, Moscow)
+    console.log('6.1. Verifying response content contains authentic recommendations...');
+    const assistantBubble = page.locator('div:has-text("275 б")').last();
+    const replyText = await page.locator('body').innerText();
+    if (!/09\.03|программн|информатик/i.test(replyText)) {
+      throw new Error('Assertion failed: Response does not mention software engineering or IT program');
+    }
+    if (!/вуц|военн/i.test(replyText)) {
+      throw new Error('Assertion failed: Response does not mention military department / ВУЦ');
+    }
+    console.log('Verified: Response correctly includes software engineering and military center recommendations.');
 
     // Step 6: Check Honest Citation Sources Pill
     console.log('7. Checking Honest Citation Sources Pill...');
@@ -115,10 +127,14 @@ server.listen(PORT, async () => {
     await citationsDrawer.waitFor({ timeout: 5000 });
     console.log('Verified: Citations Drawer opened successfully!');
 
-    // Check honest badge inside drawer
+    // Check honest badge inside drawer and authentic provenance
     const localCatalogBadge = page.locator('text=Локальный каталог').first();
     await localCatalogBadge.waitFor({ timeout: 5000 });
-    console.log('Verified: Honest Local Catalog attribution rendered.');
+    const drawerText = await page.locator('body').innerText();
+    if (!/2025|2026|бюджет|проходной/i.test(drawerText)) {
+      throw new Error('Assertion failed: Citations drawer lacks authentic provenance details');
+    }
+    console.log('Verified: Honest Local Catalog attribution and provenance strictly verified.');
 
     // Capture screenshot of Citations Drawer
     const drawerImg = path.join('.pipeline/after', 'feature_assistant_rag_citations_drawer.png');

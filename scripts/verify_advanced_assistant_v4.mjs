@@ -110,13 +110,12 @@ server.listen(PORT, async () => {
     await canvasTitle.waitFor({ timeout: 5000 });
     console.log('Verified: Interactive Artifact Canvas Drawer opened!');
 
-    // Toggle a checkbox inside canvas
+    // Toggle a checkbox inside canvas with strict assertion
     const firstCheckbox = page.locator('[data-testid="artifact-checkbox"]').first();
-    if (await firstCheckbox.isVisible()) {
-      await firstCheckbox.click();
-      await page.waitForTimeout(300);
-      console.log('Verified: Artifact checklist item toggled and state preserved.');
-    }
+    await firstCheckbox.waitFor({ timeout: 5000 });
+    await firstCheckbox.click();
+    await page.waitForTimeout(300);
+    console.log('Verified: Artifact checklist item toggled and state preserved strictly.');
 
     // Capture Canvas Screenshot
     const canvasImg = path.join('.pipeline/after', 'feature_assistant_artifact_canvas.png');
@@ -143,31 +142,29 @@ server.listen(PORT, async () => {
       await page.waitForTimeout(300);
     }
 
-    // Step 7: Test Honest Citations Drawer
+    // Step 7: Test Honest Citations Drawer with strict assertion
     console.log('7. Testing Honest Local Citations Drawer...');
     const citationPill = page.locator('button:has-text("материалы каталога")').last();
-    if (await citationPill.isVisible()) {
-      await citationPill.click();
-      await page.waitForTimeout(500);
+    await citationPill.waitFor({ timeout: 5000 });
+    await citationPill.click();
+    await page.waitForTimeout(500);
 
-      const catalogSourceBadge = page.locator('text=Локальный каталог').first();
-      if (await catalogSourceBadge.isVisible()) {
-        console.log('Verified: Honest Local Catalog grounding chunks verified!');
-      }
+    const catalogSourceBadge = page.locator('text=Локальный каталог').first();
+    await catalogSourceBadge.waitFor({ timeout: 5000 });
+    console.log('Verified: Honest Local Catalog grounding chunks verified strictly!');
 
-      const webImg = path.join('.pipeline/after', 'feature_assistant_web_search.png');
-      await page.screenshot({ path: webImg });
-      if (fs.existsSync(artifactDir)) {
-        fs.copyFileSync(webImg, path.join(artifactDir, 'feature_assistant_web_search.png'));
-      }
-      console.log('Captured: feature_assistant_web_search.png (updated honest citations)');
-
-      const closeCitationsBtn = page.locator('[data-testid="close-citations-modal"]').first();
-      await closeCitationsBtn.click();
-      await page.waitForTimeout(300);
+    const webImg = path.join('.pipeline/after', 'feature_assistant_web_search.png');
+    await page.screenshot({ path: webImg });
+    if (fs.existsSync(artifactDir)) {
+      fs.copyFileSync(webImg, path.join(artifactDir, 'feature_assistant_web_search.png'));
     }
+    console.log('Captured: feature_assistant_web_search.png (updated honest citations)');
 
-    // Step 8: Test Chat Sessions History Drawer
+    const closeCitationsBtn = page.locator('[data-testid="close-citations-modal"]').first();
+    await closeCitationsBtn.click();
+    await page.waitForTimeout(300);
+
+    // Step 8: Test Chat Sessions History Drawer with strict assertion
     console.log('8. Testing Sessions History Drawer...');
     const historyBtn = page.locator('button[title="История консультаций"]').first();
     await historyBtn.click();
@@ -175,7 +172,10 @@ server.listen(PORT, async () => {
 
     const historyDrawerTitle = page.locator('text=История консультаций');
     await historyDrawerTitle.waitFor({ timeout: 5000 });
-    console.log('Verified: History Sessions Drawer opened with saved session!');
+    if (!(await historyDrawerTitle.isVisible())) {
+      throw new Error('Assertion failed: History sessions drawer did not open');
+    }
+    console.log('Verified: History Sessions Drawer strictly verified open with saved session!');
 
     // Capture Sessions History Screenshot
     const historyImg = path.join('.pipeline/after', 'feature_assistant_history_sessions.png');
