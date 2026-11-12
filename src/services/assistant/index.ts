@@ -31,6 +31,8 @@ export * from './aiProvider';
 export * from './localEngine';
 export * from './sessionManager';
 export * from './studentProfile';
+export * from './domain';
+export * from './i18n';
 export { UNIVERSITIES } from '../../data/mockData';
 export { FULL_PROGRAMS } from '../../data/extendedData';
 

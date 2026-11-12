@@ -1,0 +1,93 @@
+import { AssistantDictionary } from './types';
+
+/**
+ * Natural Sinhala Localisation Resource
+ * Follows the natural-sinhala-writer guidelines for modern communicative UI Sinhala.
+ * Preserves official institution names, legislative acts, and course codes.
+ */
+export const siDictionary: AssistantDictionary = {
+  assistantName: 'උසස් අධ්‍යාපන සහායක (Ded Vuzoped)',
+  assistantSubtitle: 'ආරක්ෂිත සේවාදායක API • විශ්වවිද්‍යාල නාමාවලිය සහ 2026 ඇතුළත් වීමේ නීති',
+  assistantSubtitleLocal: 'Offline මාදිලිය • දේශීය නාමාවලිය සහ රෙගුලාසි',
+  modeAi: 'මාදිලිය: Google Gemini AI',
+  modeLocal: 'මාදිලිය: දේශීය නාමාවලිය',
+  myProfile: 'මගේ පැතිකඩ (Profile)',
+  consultationHistory: 'පෙර සංවාද විස්තර',
+  serverStatus: 'සේවාදායකයේ තත්ත්වය සහ සීමා',
+  newChat: 'නව සංවාදයක්',
+  fullscreen: 'සම්පූර්ණ තිරය',
+  exitFullscreen: 'සාමාන්‍ය තිරය',
+  close: 'වසන්න',
+
+  inputPlaceholder: 'කඩයිම් ලකුණු, සුදුසුකම්, නේවාසිකාගාර සහ පාඨමාලා ගැන විමසන්න...',
+  send: 'යොමු කරන්න',
+  stopGeneration: 'නවත්වා ගන්න',
+  enhancePrompt: 'ප්‍රශ්නය පැහැදිලි කරන්න',
+  startDictation: 'හඬ මඟින් විමසන්න',
+  stopDictation: 'හඬ පටිගත කිරීම නවත්වන්න',
+  speechNotSupported: 'ඔබගේ බ්‍රව්සරයේ හඬ හඳුනාගැනීමේ පහසුකම (Speech Recognition) ක්‍රියාත්මක නොවේ. කරුණාකර යතුරුපුවරුව භාවිත කරන්න.',
+  speechPermissionDenied: 'මයික්‍රෆෝනය භාවිත කිරීමට අවසර ලැබුණේ නැහැ. බ්‍රව්සර් සැකසුම් (Settings) වෙත ගොස් මයික්‍රෆෝනයට අවසර දෙන්න.',
+  speechLanguageUnavailable: 'තෝරාගත් භාෂාව සඳහා හඬ හඳුනාගැනීම ඔබගේ බ්‍රව්සරයේ සහාය දක්වන්නේ නැහැ.',
+
+  modeAll: 'සියලු විෂයයන්',
+  modeCalculator: 'කඩයිම් ලකුණු ගණනය',
+  modeMilitary: 'හමුදා පුහුණු අංශ (VUC)',
+  modeFinance: 'ගාස්තු සහ 3% ශිෂ්‍ය ණය',
+  modeOlympiads: 'ඔලිම්පියාඩ් සහ විශේෂ කුසලතා',
+
+  scopeAll: 'සියලු තොරතුරු',
+  scopeRules: '2026 ඇතුළත් වීමේ නීති',
+  scopePassingScores: 'පෙර වසරවල කඩයිම් ලකුණු',
+  scopeMilitary: 'පුහුණු මධ්‍යස්ථාන ලැයිස්තුව',
+  scopeDorm: 'නේවාසිකාගාර සහ පරිශ්‍ර',
+
+  profileModalTitle: 'අයදුම්කරුගේ පැතිකඩ (Profile)',
+  profileConfirmedBadge: 'තහවුරු කළ තොරතුරු',
+  profileSubtitle: 'පුද්ගලාරෝපිත උපදෙස් ලබාදීම සඳහා භාවිත කරන්නේ ඔබ සනාථ කළ තොරතුරු පමණි',
+  educationStatusLabel: 'අධ්‍යාපනික මට්ටම:',
+  subjectsAndScoresLabel: 'විභාග විෂයයන් සහ ප්‍රතිඵල:',
+  totalScoreLabel: 'එකතුව / Z-Score:',
+  noSubjectsYet: 'තවමත් විෂයයන් ඇතුළත් කර නැහැ. ඔබ පෙනී සිටි විෂයයන් සහ ලකුණු පහතින් එකතු කරන්න:',
+  addSubjectBtn: 'විෂයයක් එකතු කරන්න',
+  subjectAlreadyAdded: 'මෙම විෂය දැනටමත් ලැයිස්තුවට ඇතුළත් කර ඇත',
+  studyAreasLabel: 'කැමති අධ්‍යයන ක්ෂේත්‍ර:',
+  citiesLabel: 'කැමති නගර / දිස්ත්‍රික්ක:',
+  budgetLabel: 'පාඨමාලා ගාස්තු සහ මූල්‍ය ක්‍රමය:',
+  accommodationLabel: 'නේවාසිකාගාර අවශ්‍යතාව:',
+  militaryLabel: 'හමුදා පුහුණු අංශය (VUC)',
+  privacyNoticeTitle: 'දේශීය දත්ත ගබඩා කිරීමේ ප්‍රතිපත්තිය',
+  privacyNoticeBody: 'ඔබ ඇතුළත් කරන සියලු ලකුණු, විෂයයන් සහ සංවාද සටහන් සුරැකෙන්නේ ඔබගේ බ්‍රව්සරය (Local Storage) තුළ පමණි. මෙම තොරතුරු කිසිදු බාහිර වෙළෙඳ දැන්වීම් පද්ධතියකට හෝ AI පුහුණු කිරීම් සඳහා යොමු නොකෙරේ.',
+  saveProfileBtn: 'පැතිකඩ සුරකින්න',
+  cancelBtn: 'අවලංගු කරන්න',
+  clearProfileBtn: 'පැතිකඩ ඉවත් කරන්න',
+  resetAllBtn: 'සියලු දත්ත මකන්න',
+  savedNotification: 'පැතිකඩ සාර්ථකව සුරැකිණි!',
+  clearedNotification: 'පැතිකඩ තොරතුරු ඉවත් කරන ලදී',
+
+  roadmapTitle: '2026 විශ්වවිද්‍යාල ප්‍රවේශ සැලැස්ම',
+  checklistSummary: 'නිල ඇතුළත් වීමේ පියවර සටහන',
+  deadlineVerifiedOfficial: '✓ නිල රෙගුලාසි මඟින් තහවුරු කළ දිනය',
+  deadlineNotVerifiedInstitution: '⚠ දිනය තහවුරු කර නොමැත (ආයතනයෙන් විමසන්න)',
+  openChecklistBtn: 'පියවර ලැයිස්තුව බලන්න',
+  closeChecklistBtn: 'ලැයිස්තුව වසන්න',
+  originalDocumentsAlert: 'අවවාදයයි: සහතික කළ මුල් ලේඛන නිල අවසන් දිනයට පෙර ඉදිරිපත් කළ යුතුය.',
+
+  evidenceDrawerTitle: 'මූලාශ්‍ර ලේඛන සහ තහවුරු කිරීම්',
+  provenanceSubtitle: 'නියාමන ලේඛනවල උපුටා ගැනීම් සහ නාමාවලි වාර්තා',
+  sourceIdLabel: 'මූලාශ්‍ර අංකය:',
+  publisherLabel: 'ප්‍රකාශක / නියාමන අධිකාරිය:',
+  applicableYearLabel: 'අදාළ වසර:',
+  verifiedOfficialSource: 'තහවුරු කළ නිල මූලාශ්‍රය',
+  unverifiedSourceNotice: 'සැ.යු.: ඇතුළත් වීමේ පාලක මණ්ඩලයෙන් සෘජුව විමසිය යුතුය',
+  openOfficialSiteBtn: 'නිල වෙබ් අඩවියට පිවිසෙන්න',
+  noExternalUrl: 'නිල වෙබ් අඩවියක් සඳහන් කර නැත',
+  citationDisclaimer: 'මෙහි සත්‍යාපනය නාමාවලියේ ඇති නිල වාර්තා සමඟ ගැළපීම තහවුරු කරන නමුත්, ප්‍රවේශය සහතික කිරීමක් නොවේ.',
+
+  confirmActionTitle: 'ක්‍රියාව තහවුරු කරන්න',
+  confirmActionSubtitle: 'මෙමඟින් ඔබ සුරැකි තේරීම් වෙනස් වනු ඇත.',
+  confirmBtn: 'තහවුරු කරන්න',
+  singleClarificationPrompt: 'නිවැරදි පිළිතුරක් ලබාදීමට කරුණාකර මෙම කරුණ පැහැදිලි කරන්න:',
+  missingDataNotice: 'නිල දත්ත මේ වන විට ප්‍රසිද්ධ ලේඛනවල ලබාගත නොහැක.',
+
+  translationDisclaimer: 'භාෂා පරිවර්තනය AI තාක්ෂණය මඟින් සිදු කර ඇත. නිල ආයතන නම්, නීතිමය පනත් සහ පාඨමාලා අංක මුල් නීතිමය ආකාරයෙන්ම තබා ඇත.',
+};

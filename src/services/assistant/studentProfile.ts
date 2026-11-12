@@ -12,6 +12,7 @@
 
 import { ExtractedQueryFilters } from './types';
 import { SESSIONS_STORAGE_KEY } from './sessionManager';
+import { SupportedLanguage } from './i18n';
 
 export type EducationContext = 'school_11' | 'college_spo' | 'graduate_past_years' | 'bachelor';
 
@@ -35,9 +36,19 @@ export interface StudentProfile {
   hasMilitaryPreference?: boolean;
   shortlistedUniversities: string[];
   shortlistedPrograms: string[];
-  preferredLanguage: 'ru' | 'en';
+  preferredLanguage: SupportedLanguage;
   confirmedAt?: string;
   lastModifiedAt: string;
+
+  // UniPedia Multi-Domain / Sri Lankan Pathway Extensions
+  domainId?: string;
+  examYear?: number;
+  alStream?: string;
+  district?: string;
+  zScore?: number;
+  cgtScore?: number;
+  entryQualification?: string;
+  awardingInstitutionType?: string;
 }
 
 export interface PersistedChecklistState {
@@ -223,6 +234,17 @@ export function getProfileSummaryBadges(profile: StudentProfile): Array<{ id: st
 
   if (profile.hasMilitaryPreference) {
     badges.push({ id: 'military', label: 'ВУЦ: желательно', type: 'military' });
+  }
+
+  // UniPedia (Sri Lanka) Badges
+  if (profile.zScore !== undefined && profile.zScore !== null) {
+    badges.push({ id: 'z_score', label: `Z-Score: ${profile.zScore}`, type: 'score' });
+  }
+  if (profile.alStream) {
+    badges.push({ id: 'al_stream', label: `Stream: ${profile.alStream}`, type: 'edu' });
+  }
+  if (profile.district) {
+    badges.push({ id: 'district', label: `District: ${profile.district}`, type: 'location' });
   }
 
   return badges;

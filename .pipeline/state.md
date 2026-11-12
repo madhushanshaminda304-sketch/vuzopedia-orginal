@@ -311,3 +311,39 @@ profile: webapp
   - 16 / 16 tests passed with zero failures in headless Chrome.
   - Verified tab canonicalization, entity validation, empty comparison rejection, security blocking, state handler execution, and end-to-end browser UI flow.
   - Screenshot captured: `.pipeline/after/feature_assistant_action_registry.png`.
+
+## Change 2026-11-12: UniPedia Admissions Domain Layer, Multilingual Localisation & Performance Optimization
+- **Size**: M | **Types**: architecture, i18n, domain, voice, performance, ui
+- **Configurable Admissions-Domain Layer (`src/services/assistant/domain/`)**:
+  - Decoupled country-specific admissions rules from core orchestration engine via typed contract `AdmissionsDomainConfig`.
+  - Registered `russia_higher_education` (Order 1076, RUB currency, 2025 cutoff benchmarks) as default active domain, completely preserving existing Russian prototype without regressions.
+  - Implemented `unipedia_sri_lanka` domain adapter with:
+    - Dual Pathway Model:
+      1. UGC State University Quota Pathway: G.C.E. A/L stream, exam year, 25 administrative districts, 3-subject grades, Z-scores, Common General Test (CGT >= 30), 40% Merit / 55% District / 5% Underprivileged quota rules.
+      2. Private & Non-State Degree Pathway: SLQF 3/4 entry qualifications, Ministry-accredited vs UK/Aus transnational degrees, annual tuition in LKR, intake cycles.
+    - Currency: LKR (`Rs.` / `රු.`).
+    - Sourced Retrospective Benchmarking Contract: Official UGC cutoffs from annual handbooks reflect historical selection; never predicted as guaranteed admission. Missing data is left explicitly unavailable.
+- **Multilingual Localisation Architecture (`src/services/assistant/i18n/`)**:
+  - Full typed dictionaries across 4 languages: Russian (`ru`), English (`en`), Sinhala (`si`), and Tamil (`ta`).
+  - Sinhala translations follow `natural-sinhala-writer` guidelines (modern communicative register, natural phrasing, anti-calques).
+  - Explicit AI-assisted translation disclaimer (`translationDisclaimer`) displayed in non-Russian locales; official institution names, legislative acts, and course codes preserved in official legal form.
+  - Added language switcher dropdown in `AssistantHeader` (`🇷🇺 RU`, `🇬🇧 EN`, `🇱🇰 SI`, `🇱🇰 TA`).
+- **Honest Voice Controls & Speech State**:
+  - Dynamic Web Speech API locale switching (`ru-RU`, `en-US`, `si-LK`, `ta-LK`).
+  - Eliminated hardcoded defect where speech failure inserted fake question `Какие проходные баллы на IT в 2026 году?`.
+  - Displays localized honest warning banner (`[data-testid="speech-notice-banner"]`) explaining permission denial or language unavailability with dismiss button.
+- **Measurable Bundle Optimization & Lazy Loading (`src/App.tsx`)**:
+  - Lazy-loaded `DedVuzopedAssistantModal` and 20 secondary heavy views using `React.lazy` and `Suspense`.
+  - Initial JavaScript bundle dropped from 941.47 kB to 604.70 kB (-336.77 kB, **35.8% reduction in uncompressed JS**).
+  - Gzipped initial bundle dropped from 234.11 kB to 170.18 kB (-63.93 kB, **27.3% reduction in gzipped JS**).
+  - Eliminated Vite chunk size warnings.
+- **Draft Preservation & Unwanted Scroll Prevention (`DedVuzopedAssistantModal.tsx`)**:
+  - Unsent input drafts preserved per session in `sessionStorage` (`vuzopedia_draft_${sessionId}`).
+  - Added scroll position awareness (`isUserAtBottomRef`): auto-scroll disabled when student has scrolled up to read previous responses.
+  - Added quick starter action cards in empty/welcome state.
+- **Migration Boundary Document**:
+  - Created `docs/unipedia_migration_boundary.md` detailing reusable engine components vs verified Sri Lankan data UniPedia must supply.
+- **Verification Suites**:
+  - `scripts/verify_unipedia_admissions_domain.ts`: 11/11 Phase 1 unit tests passed + Phase 2 Playwright E2E passed (0 failures, 0 console errors). Screenshot: `.pipeline/after/feature_unipedia_domain_and_i18n.png`.
+  - Verified zero regression across all existing suites: `verify_student_profile_and_continuity.mjs` (13/13), `verify_assistant_action_registry.mjs` (16/16), `verify_secure_deployment.mjs` (all passed), `verify_evidence_system.mjs` (13/13), `verify_entity_matching_and_retrieval.mjs` (13/13).
+  - TypeScript check & Vite build: 0 errors.

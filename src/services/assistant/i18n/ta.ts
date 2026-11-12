@@ -1,0 +1,93 @@
+import { AssistantDictionary } from './types';
+
+/**
+ * Tamil Localisation Resource
+ * Natural contemporary Sri Lankan Tamil software UI phrasing.
+ * Preserves official institution names, legislative acts, and course codes.
+ */
+export const taDictionary: AssistantDictionary = {
+  assistantName: 'பல்கலைக்கழக சேர்க்கை உதவியாளர் (Ded Vuzoped)',
+  assistantSubtitle: 'பாதுகாப்பான சேவையக API • பல்கலைக்கழக விபரம் மற்றும் 2026 சேர்க்கை விதிகள்',
+  assistantSubtitleLocal: 'ஆஃப்லைன் முறைமை • உள்ளூர் கையேடு மற்றும் விதிமுறைகள்',
+  modeAi: 'முறைமை: Google Gemini AI',
+  modeLocal: 'முறைமை: உள்ளூர் விபரம்',
+  myProfile: 'எனது விபரம் (Profile)',
+  consultationHistory: 'முந்தைய உரையாடல்கள்',
+  serverStatus: 'சேவையக நிலை மற்றும் வரம்புகள்',
+  newChat: 'புதிய உரையாடல்',
+  fullscreen: 'முழுத்திரை',
+  exitFullscreen: 'சாதாரண திரை',
+  close: 'மூடுக',
+
+  inputPlaceholder: 'வெட்டுப்புள்ளிகள், தகுதிகள், விடுதிகள் மற்றும் பாடநெறிகள் பற்றி கேளுங்கள்...',
+  send: 'அனுப்புக',
+  stopGeneration: 'நிறுத்துக',
+  enhancePrompt: 'கேள்வியை தெளிவாக்குக',
+  startDictation: 'குரல் மூலம் கேட்க',
+  stopDictation: 'பதிவை நிறுத்துக',
+  speechNotSupported: 'உங்கள் உலாவியில் குரல் அறிதல் வசதி (Speech Recognition) செயல்படவில்லை. விசைப்பலகையைப் பயன்படுத்தவும்.',
+  speechPermissionDenied: 'மைக்ரோஃபோன் அணுகல் மறுக்கப்பட்டது. உலாவி அமைப்புகளில் அனுமதி வழங்கவும்.',
+  speechLanguageUnavailable: 'தேர்ந்தெடுக்கப்பட்ட மொழிக்கான குரல் அறிதல் உங்கள் உலாவியில் ஆதரிக்கப்படவில்லை.',
+
+  modeAll: 'அனைத்து தலைப்புகளும்',
+  modeCalculator: 'வெட்டுப்புள்ளி கணக்கீடு',
+  modeMilitary: 'இராணுவப் பயிற்சிப் பிரிவுகள் (VUC)',
+  modeFinance: 'கட்டணம் மற்றும் 3% கல்விக் கடன்',
+  modeOlympiads: 'ஒலிம்பியாட் மற்றும் நேரடி சேர்க்கை',
+
+  scopeAll: 'அனைத்து விபரங்களும்',
+  scopeRules: '2026 சேர்க்கை விதிமுறைகள்',
+  scopePassingScores: 'கடந்த கால வெட்டுப்புள்ளிகள்',
+  scopeMilitary: 'பயிற்சிப் பிரிவுகள் பட்டியல்',
+  scopeDorm: 'விடுதிகள் மற்றும் வளாகங்கள்',
+
+  profileModalTitle: 'விண்ணப்பதாரர் விபரம் (Profile)',
+  profileConfirmedBadge: 'உறுதிப்படுத்தப்பட்ட விபரங்கள்',
+  profileSubtitle: 'தனிப்பயனாக்கப்பட்ட ஆலோசனைகளுக்கு நீங்கள் உறுதிசெய்த விபரங்கள் மட்டுமே பயன்படுத்தப்படும்',
+  educationStatusLabel: 'கல்வி நிலை:',
+  subjectsAndScoresLabel: 'பாடங்கள் மற்றும் பரீட்சை முடிவுகள்:',
+  totalScoreLabel: 'மொத்தம் / Z-Score:',
+  noSubjectsYet: 'பாடங்கள் இன்னும் சேர்க்கப்படவில்லை. நீங்கள் தோற்றிய பாடங்கள் மற்றும் புள்ளிகளை கீழே சேர்க்கவும்:',
+  addSubjectBtn: 'பாடத்தைச் சேர்க்க',
+  subjectAlreadyAdded: 'இப்பாடம் ஏற்கனவே பட்டியலில் உள்ளது',
+  studyAreasLabel: 'விருப்பமான படிப்புப் புலங்கள்:',
+  citiesLabel: 'விருப்பமான நகரங்கள் / மாவட்டங்கள்:',
+  budgetLabel: 'கட்டணம் மற்றும் நிதியளிப்பு முறை:',
+  accommodationLabel: 'விடுதி வசதித் தேவை:',
+  militaryLabel: 'இராணுவப் பயிற்சிப் பிரிவு (VUC)',
+  privacyNoticeTitle: 'உள்ளக தரவுச் சேமிப்புக் கொள்கை',
+  privacyNoticeBody: 'நீங்கள் உள்ளிடும் அனைத்துப் புள்ளிகள், பாடங்கள் மற்றும் உரையாடல்கள் உங்கள் உலாவியில் (Local Storage) மட்டுமே சேமிக்கப்படும். இந்தத் தகவல்கள் வெளி அமைப்புகளுக்கோ விளம்பரங்களுக்கோ அனுப்பப்பட மாட்டாது.',
+  saveProfileBtn: 'விபரங்களைச் சேமிக்க',
+  cancelBtn: 'ரத்து செய்க',
+  clearProfileBtn: 'விபரங்களை அழிக்க',
+  resetAllBtn: 'அனைத்து தரவுகளையும் அழிக்க',
+  savedNotification: 'விபரங்கள் வெற்றிகரமாகச் சேமிக்கப்பட்டன!',
+  clearedNotification: 'விபரங்கள் அழிக்கப்பட்டன',
+
+  roadmapTitle: '2026 பல்கலைக்கழக சேர்க்கை வழிகாட்டி',
+  checklistSummary: 'அதிகாரப்பூர்வ சேர்க்கை படிநிலைகள்',
+  deadlineVerifiedOfficial: '✓ அதிகாரப்பூர்வ விதிகளால் உறுதிப்படுத்தப்பட்ட திகதி',
+  deadlineNotVerifiedInstitution: '⚠ திகதி உறுதிப்படுத்தப்படவில்லை (நிறுவனத்திடம் விசாரிக்கவும்)',
+  openChecklistBtn: 'படிநிலைப் பட்டியலைத் திறக்க',
+  closeChecklistBtn: 'பட்டியலை மூடுக',
+  originalDocumentsAlert: 'எச்சரிக்கை: அசல் சான்றிதழ்கள் அதிகாரப்பூர்வ இறுதித் திகதிக்கு முன் சமர்ப்பிக்கப்பட வேண்டும்.',
+
+  evidenceDrawerTitle: 'மூல ஆவணங்கள் மற்றும் சரிபார்ப்பு',
+  provenanceSubtitle: 'ஒழுங்குமுறை ஆவணங்களின் சான்றுகள் மற்றும் கையேடு பதிவுகள்',
+  sourceIdLabel: 'மூல அடையாள எண்:',
+  publisherLabel: 'வெளியீட்டாளர் / அதிகாரம்:',
+  applicableYearLabel: 'பொருந்தும் ஆண்டு:',
+  verifiedOfficialSource: 'சரிபார்க்கப்பட்ட அதிகாரப்பூர்வ மூலம்',
+  unverifiedSourceNotice: 'குறிப்பு: சேர்க்கை பிரிவிடம் நேரடியாக உறுதிப்படுத்தப்பட வேண்டும்',
+  openOfficialSiteBtn: 'அதிகாரப்பூர்வ இணையதளத்தைப் பார்வையிடுக',
+  noExternalUrl: 'அதிகாரப்பூர்வ தளம் குறிப்பிடப்படவில்லை',
+  citationDisclaimer: 'இங்குள்ள சரிபார்ப்பு பதிவேட்டு ஆவணங்களுடன் ஒப்பிடுவதை உறுதிப்படுத்துகிறது; எனினும் இது சேர்க்கைக்கான உத்தரவாதம் அல்ல.',
+
+  confirmActionTitle: 'செயலை உறுதிப்படுத்துக',
+  confirmActionSubtitle: 'இது நீங்கள் சேமித்த தேர்வுகளை மாற்றியமைக்கும்.',
+  confirmBtn: 'உறுதிப்படுத்துக',
+  singleClarificationPrompt: 'சரியான பதிலைப் பெற தயவுசெய்து இந்த முக்கிய விபரத்தைத் தெளிவுபடுத்தவும்:',
+  missingDataNotice: 'அதிகாரப்பூர்வ பொது ஆவணங்களில் இத்தகவல் தற்போது கிடைக்கவில்லை.',
+
+  translationDisclaimer: 'மொழிபெயர்ப்பு AI தொழில்நுட்பம் மூலம் உருவாக்கப்பட்டது. அதிகாரப்பூர்வ நிறுவனப் பெயர்கள், சட்டங்கள் மற்றும் குறியீடுகள் அசல் வடிவில் பேணப்படுகின்றன.',
+};

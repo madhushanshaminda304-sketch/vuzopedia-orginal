@@ -1,16 +1,20 @@
 import React from 'react';
-import { Mic, MicOff, Wand2, Send, Square } from 'lucide-react';
+import { Mic, MicOff, Wand2, Send, Square, AlertCircle, X } from 'lucide-react';
+import { SupportedLanguage, getDictionary } from '../../services/assistant';
 
 interface AssistantComposerProps {
   inputValue: string;
   isTyping: boolean;
   isDictating: boolean;
   isAiAvailable: boolean;
+  language?: SupportedLanguage;
+  speechNotice?: string | null;
   onInputChange: (val: string) => void;
   onSend: (text: string) => void;
   onStopGeneration?: () => void;
   onToggleDictation: () => void;
   onEnhancePrompt: () => void;
+  onDismissSpeechNotice?: () => void;
 }
 
 const QUICK_QUESTIONS = [
@@ -29,14 +33,43 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
   isTyping,
   isDictating,
   isAiAvailable,
+  language = 'ru',
+  speechNotice,
   onInputChange,
   onSend,
   onStopGeneration,
   onToggleDictation,
   onEnhancePrompt,
+  onDismissSpeechNotice,
 }) => {
+  const dict = getDictionary(language);
+
   return (
     <>
+      {/* Speech input unavailable / error notice */}
+      {speechNotice && (
+        <div
+          data-testid="speech-notice-banner"
+          className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 border-t border-amber-200 dark:border-amber-900/60 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-fadeIn"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="font-medium">{speechNotice}</span>
+          </div>
+          {onDismissSpeechNotice && (
+            <button
+              type="button"
+              data-testid="dismiss-speech-notice"
+              onClick={onDismissSpeechNotice}
+              className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition"
+              title="Закрыть"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Quick Question Builder Toolbar */}
       <div className="px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
         <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">Быстрый вопрос:</span>
@@ -57,13 +90,15 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
         <div className="flex items-center gap-2">
           {/* Dictation voice button */}
           <button
+            type="button"
+            data-testid="dictation-btn"
             onClick={onToggleDictation}
             className={`p-3 rounded-2xl border transition shadow-sm ${
               isDictating
                 ? 'bg-red-500 text-white border-red-500 animate-pulse'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
             }`}
-            title={isDictating ? 'Остановить запись' : 'Голосовой ввод'}
+            title={isDictating ? dict.stopDictation : dict.startDictation}
           >
             {isDictating ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           </button>
@@ -73,7 +108,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
             type="button"
             onClick={onEnhancePrompt}
             className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition shadow-xs"
-            title="✨ Улучшить и дополнить вопрос деталями"
+            title={dict.enhancePrompt}
           >
             <Wand2 className="w-4 h-4" />
           </button>
@@ -86,7 +121,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSend(inputValue)}
-            placeholder="Спросите о баллах ЕГЭ, сравните вузы или выберите готовый сценарий..."
+            placeholder={dict.inputPlaceholder}
             className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           />
 
@@ -97,17 +132,17 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
               data-testid="ded-assistant-stop-btn"
               onClick={onStopGeneration}
               className="px-3.5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold transition shadow-md shadow-red-500/20 flex items-center gap-1.5 text-xs animate-pulse"
-              title="Остановить генерацию"
+              title={dict.stopGeneration}
             >
               <Square className="w-3.5 h-3.5 fill-current" />
-              <span className="hidden sm:inline">Стоп</span>
+              <span className="hidden sm:inline">{dict.stopGeneration}</span>
             </button>
           ) : (
             <button
               onClick={() => onSend(inputValue)}
               disabled={!inputValue.trim()}
               className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 transition shadow-md shadow-blue-500/20"
-              title="Отправить (Enter)"
+              title={`${dict.send} (Enter)`}
             >
               <Send className="w-4 h-4" />
             </button>
@@ -118,7 +153,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
           <span>Нажмите Enter для отправки</span>
           <span className="flex items-center gap-1.5 text-[10px]">
             <span className={`w-1.5 h-1.5 rounded-full ${isAiAvailable ? 'bg-emerald-500' : 'bg-blue-400'}`} />
-            <span>{isAiAvailable ? 'Google Gemini API • Каталог Вузопедии' : 'Локальный каталог • Офлайн-режим'}</span>
+            <span>{isAiAvailable ? 'Google Gemini API • Режим консультанта' : 'Локальный каталог • Офлайн-режим'}</span>
           </span>
         </div>
       </div>

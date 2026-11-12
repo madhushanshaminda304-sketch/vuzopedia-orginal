@@ -207,7 +207,7 @@ async function runSecurityTests() {
     assert(true, 'Operating mode badge displayed: "Режим: Google Gemini"');
 
     // Click Shield button to open Security & Server Status Modal
-    const shieldBtn = page.locator('button[title="Безопасность и серверный статус"]');
+    const shieldBtn = page.locator('button[data-testid="server-status-btn"], button[title*="сервер"], button[title*="Безопасность"]').first();
     await shieldBtn.click();
     await page.waitForSelector('text=Безопасность и серверный статус AI');
     assert(true, 'Security and Server Status Modal opened');

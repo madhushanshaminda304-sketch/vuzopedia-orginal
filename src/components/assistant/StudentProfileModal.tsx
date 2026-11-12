@@ -23,11 +23,14 @@ import {
   saveStudentProfile,
   clearStudentProfile,
   clearAllAssistantData,
+  SupportedLanguage,
+  getDictionary,
 } from '../../services/assistant';
 
 interface StudentProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  language?: SupportedLanguage;
   onProfileUpdated?: (profile: StudentProfile) => void;
   onAllDataCleared?: () => void;
 }
@@ -68,15 +71,22 @@ const POPULAR_DIRECTIONS = [
 export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   isOpen,
   onClose,
+  language = 'ru',
   onProfileUpdated,
   onAllDataCleared,
 }) => {
   const [profile, setProfile] = useState<StudentProfile>(() => loadStudentProfile());
+  const [selectedDomain, setSelectedDomain] = useState<'russia' | 'unipedia'>(() =>
+    profile.domainId === 'unipedia_sri_lanka' ? 'unipedia' : 'russia'
+  );
+  const [unipediaPathway, setUnipediaPathway] = useState<'ugc' | 'private'>('ugc');
   const [newSubject, setNewSubject] = useState(AVAILABLE_SUBJECTS[0]);
   const [newScore, setNewScore] = useState<number>(75);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showResetAllConfirm, setShowResetAllConfirm] = useState(false);
   const [toastText, setToastText] = useState<string | null>(null);
+
+  const dict = getDictionary(language);
 
   useEffect(() => {
     if (isOpen) {
@@ -190,13 +200,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-white">Профиль абитуриента</h3>
+                <h3 className="font-extrabold text-base text-white">{dict.profileModalTitle}</h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 text-[10px] font-bold">
-                  Подтверждённые данные
+                  {dict.profileConfirmedBadge}
                 </span>
               </div>
               <p className="text-xs text-blue-100">
-                Только проверенные вами сведения, используемые для персональных рекомендаций
+                {dict.profileSubtitle}
               </p>
             </div>
           </div>
@@ -212,7 +222,226 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
         {/* Body Content */}
         <div className="p-5 overflow-y-auto space-y-6 flex-1 text-xs">
-          {/* Section 1: Education Context */}
+          {/* Admissions Domain Selector */}
+          <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+            <button
+              type="button"
+              data-testid="domain-russia-btn"
+              onClick={() => {
+                setSelectedDomain('russia');
+                setProfile((prev) => ({ ...prev, domainId: 'russia_higher_education' }));
+              }}
+              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition ${
+                selectedDomain === 'russia'
+                  ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🇷🇺</span>
+              <span>Россия (Вузопедия)</span>
+            </button>
+            <button
+              type="button"
+              data-testid="domain-unipedia-btn"
+              onClick={() => {
+                setSelectedDomain('unipedia');
+                setProfile((prev) => ({ ...prev, domainId: 'unipedia_sri_lanka' }));
+              }}
+              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition ${
+                selectedDomain === 'unipedia'
+                  ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🇱🇰</span>
+              <span>Sri Lanka (UniPedia)</span>
+            </button>
+          </div>
+
+          {selectedDomain === 'unipedia' ? (
+            /* UniPedia Sri Lanka Pathway Modeling */
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <button
+                  type="button"
+                  data-testid="unipedia-pathway-ugc"
+                  onClick={() => setUnipediaPathway('ugc')}
+                  className={`pb-1 font-bold text-xs transition border-b-2 -mb-2.5 px-2 ${
+                    unipediaPathway === 'ugc'
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  🏛️ UGC State University Quota
+                </button>
+                <button
+                  type="button"
+                  data-testid="unipedia-pathway-private"
+                  onClick={() => setUnipediaPathway('private')}
+                  className={`pb-1 font-bold text-xs transition border-b-2 -mb-2.5 px-2 ${
+                    unipediaPathway === 'private'
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  🏢 Private & Non-State Degrees
+                </button>
+              </div>
+
+              {unipediaPathway === 'ugc' ? (
+                <div className="space-y-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        G.C.E. A/L Examination Year:
+                      </label>
+                      <input
+                        type="number"
+                        data-testid="unipedia-exam-year-input"
+                        value={profile.examYear || 2024}
+                        onChange={(e) =>
+                          setProfile((p) => ({ ...p, examYear: parseInt(e.target.value, 10) || 2024 }))
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        A/L Stream:
+                      </label>
+                      <select
+                        data-testid="unipedia-stream-select"
+                        value={profile.alStream || 'physical_science'}
+                        onChange={(e) => setProfile((p) => ({ ...p, alStream: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      >
+                        <option value="physical_science">Physical Science (Maths)</option>
+                        <option value="biological_science">Biological Science</option>
+                        <option value="commerce">Commerce</option>
+                        <option value="arts">Arts</option>
+                        <option value="engineering_technology">Engineering Technology (ET)</option>
+                        <option value="biosystems_technology">Bio-systems Technology (BST)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Administrative District:
+                      </label>
+                      <select
+                        data-testid="unipedia-district-select"
+                        value={profile.district || 'colombo'}
+                        onChange={(e) => setProfile((p) => ({ ...p, district: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      >
+                        <option value="colombo">Colombo</option>
+                        <option value="gampaha">Gampaha</option>
+                        <option value="kalutara">Kalutara</option>
+                        <option value="kandy">Kandy</option>
+                        <option value="galle">Galle</option>
+                        <option value="matara">Matara</option>
+                        <option value="jaffna">Jaffna</option>
+                        <option value="batticaloa">Batticaloa</option>
+                        <option value="kurunegala">Kurunegala</option>
+                        <option value="badulla">Badulla</option>
+                        <option value="anuradhapura">Anuradhapura</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Official Z-Score:
+                      </label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        data-testid="unipedia-zscore-input"
+                        placeholder="e.g. 1.8421"
+                        value={profile.zScore ?? ''}
+                        onChange={(e) =>
+                          setProfile((p) => ({ ...p, zScore: parseFloat(e.target.value) || undefined }))
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Common General Test (CGT):
+                      </label>
+                      <input
+                        type="number"
+                        data-testid="unipedia-cgt-input"
+                        placeholder="min 30"
+                        value={profile.cgtScore ?? 35}
+                        onChange={(e) =>
+                          setProfile((p) => ({ ...p, cgtScore: parseInt(e.target.value, 10) || undefined }))
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                    <strong>Notice on UGC Quota Evaluation:</strong> State university admission in Sri Lanka is regulated by the UGC via a 40% National Merit, 55% District Quota, and 5% Underprivileged District allocation. Historical minimum Z-scores published in past handbooks reflect past competitive selection and are <em>never</em> guaranteed predictions of future cutoffs.
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Entry Qualification:
+                      </label>
+                      <select
+                        data-testid="unipedia-entry-qual-select"
+                        value={profile.entryQualification || 'al_local'}
+                        onChange={(e) => setProfile((p) => ({ ...p, entryQualification: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      >
+                        <option value="al_local">Local G.C.E. A/L</option>
+                        <option value="al_london">Cambridge / Edexcel A-Levels</option>
+                        <option value="foundation_slqf3">Recognized University Foundation (SLQF 3)</option>
+                        <option value="tvec_nvq">TVEC NVQ Level 4 / 5</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Awarding Institution Type:
+                      </label>
+                      <select
+                        data-testid="unipedia-awarding-body-select"
+                        value={profile.awardingInstitutionType || 'local_degree_awarding'}
+                        onChange={(e) => setProfile((p) => ({ ...p, awardingInstitutionType: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                      >
+                        <option value="local_degree_awarding">Sri Lankan Ministry Accredited Degree (e.g. SLIIT, NSBM, CINEC)</option>
+                        <option value="foreign_partner_uk_aus">Foreign Partner University (UK / Australia / Ireland)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Annual Tuition Budget (LKR):
+                    </label>
+                    <input
+                      type="number"
+                      data-testid="unipedia-budget-input"
+                      placeholder="e.g. 750000"
+                      value={profile.maxAnnualFee || ''}
+                      onChange={(e) =>
+                        setProfile((p) => ({ ...p, maxAnnualFee: parseInt(e.target.value, 10) || undefined }))
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Section 1: Education Context */}
           <div className="space-y-2">
             <label className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-blue-600" />
@@ -439,16 +668,23 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </label>
             </div>
           </div>
+            </>
+          )}
 
           {/* Section 5: Transparency & Privacy Notice (Requirement 11) */}
           <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 space-y-2">
             <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-bold">
               <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Политика локального хранения данных</span>
+              <span>{dict.privacyNoticeTitle}</span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Все введённые баллы, предметы и история диалогов сохраняются <strong>исключительно в вашем браузере (Local Storage)</strong> на этом устройстве. Данные не передаются на сторонние рекламные трекеры и не используются для обучения публичных моделей. Вы можете в любой момент изменить настройки или полностью удалить все записи.
+              {dict.privacyNoticeBody}
             </p>
+            {language !== 'ru' && (
+              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+                {dict.translationDisclaimer}
+              </div>
+            )}
             <div className="pt-1 flex items-center justify-between flex-wrap gap-2 text-[11px]">
               <span className="text-slate-500">
                 Ключ хранилища: <code className="font-mono text-[10px] bg-white dark:bg-slate-900 px-1 py-0.5 rounded">vuzopedia_student_profile_v1</code>
@@ -458,7 +694,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 onClick={() => setShowResetAllConfirm(true)}
                 className="text-red-600 hover:text-red-700 dark:text-red-400 font-bold hover:underline"
               >
-                Сбросить все локальные данные ассистента
+                {dict.resetAllBtn}
               </button>
             </div>
           </div>
@@ -492,7 +728,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 className="text-slate-500 hover:text-red-600 dark:text-slate-400 text-xs font-semibold flex items-center gap-1.5 transition"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Очистить профиль</span>
+                <span>{dict.clearProfileBtn}</span>
               </button>
             )}
           </div>
@@ -503,7 +739,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              Отмена
+              {dict.cancelBtn}
             </button>
             <button
               type="button"
@@ -512,7 +748,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Сохранить профиль</span>
+              <span>{dict.saveProfileBtn}</span>
             </button>
           </div>
         </div>

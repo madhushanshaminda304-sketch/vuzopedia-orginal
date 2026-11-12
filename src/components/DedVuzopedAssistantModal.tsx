@@ -23,6 +23,12 @@ import {
   savePersistedChecklist,
   loadPersistedChecklist,
   clearAllAssistantData,
+  SupportedLanguage,
+  getSavedLanguage,
+  saveLanguage,
+  getSpeechLocale,
+  t,
+  getDictionary,
 } from '../services/assistant';
 import { University } from '../types';
 import {
@@ -74,6 +80,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   const [pendingConfirmationAction, setPendingConfirmationAction] = useState<AppAssistantAction | null>(null);
 
   const [inputValue, setInputValue] = useState('');
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => getSavedLanguage());
+  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<SpecialistMode>('all');
   const [activeScope, setActiveScope] = useState<RAGScopeFilter>('all');
   const [isTyping, setIsTyping] = useState(false);
@@ -83,6 +91,8 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
   const [serverStatus, setServerStatus] = useState<ServerAssistantStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
+
+  const dict = getDictionary(currentLanguage);
 
   const refreshServerStatus = async () => {
     setIsStatusLoading(true);
@@ -104,11 +114,31 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     }
   }, [isOpen]);
 
+  // Draft preservation per session
+  useEffect(() => {
+    try {
+      const savedDraft = sessionStorage.getItem(`vuzopedia_draft_${currentSessionId}`);
+      if (savedDraft !== null) {
+        setInputValue(savedDraft);
+      } else {
+        setInputValue('');
+      }
+    } catch {}
+  }, [currentSessionId]);
+
+  const handleInputChange = (val: string) => {
+    setInputValue(val);
+    try {
+      sessionStorage.setItem(`vuzopedia_draft_${currentSessionId}`, val);
+    } catch {}
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
   const currentSessionIdRef = useRef<string>(currentSessionId);
+  const isUserAtBottomRef = useRef<boolean>(true);
 
   useEffect(() => {
     currentSessionIdRef.current = currentSessionId;
@@ -122,6 +152,29 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     setIsTyping(false);
     setCurrentToolRunning(null);
   };
+
+  // Keyboard navigation: Escape key closes active overlay or modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        if (activeArtifact) {
+          setActiveArtifact(null);
+        } else if (inspectedCitations) {
+          setInspectedCitations(null);
+        } else if (isProfileModalOpen) {
+          setIsProfileModalOpen(false);
+        } else if (isHistoryOpen) {
+          setIsHistoryOpen(false);
+        } else if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, activeArtifact, inspectedCitations, isProfileModalOpen, isHistoryOpen, isSettingsOpen, onClose]);
 
   // Sync sessions to localStorage
   useEffect(() => {
@@ -137,32 +190,51 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     };
   }, []);
 
-  // Web Speech API initialization for dictation
+  // Web Speech API initialization with dynamic language support & honest error states
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'ru-RU';
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = getSpeechLocale(currentLanguage);
 
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript) {
-            setInputValue((prev) => (prev ? `${prev} ${transcript}` : transcript));
-          }
-          setIsDictating(false);
-        };
+          recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript) {
+              setInputValue((prev) => {
+                const updated = prev ? `${prev} ${transcript}` : transcript;
+                try {
+                  sessionStorage.setItem(`vuzopedia_draft_${currentSessionIdRef.current}`, updated);
+                } catch {}
+                return updated;
+              });
+            }
+            setIsDictating(false);
+          };
 
-        recognition.onerror = () => setIsDictating(false);
-        recognition.onend = () => setIsDictating(false);
+          recognition.onerror = (e: any) => {
+            setIsDictating(false);
+            if (e?.error === 'not-allowed') {
+              setSpeechNotice(t('speechPermissionDenied', currentLanguage));
+            } else if (e?.error === 'language-not-supported') {
+              setSpeechNotice(t('speechLanguageUnavailable', currentLanguage));
+            } else {
+              setSpeechNotice(t('speechPermissionDenied', currentLanguage));
+            }
+          };
 
-        recognitionRef.current = recognition;
+          recognition.onend = () => setIsDictating(false);
+          recognitionRef.current = recognition;
+        } catch {
+          recognitionRef.current = null;
+        }
       }
     }
-  }, []);
+  }, [currentLanguage]);
 
   const stopSpeaking = () => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -264,14 +336,16 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
     } else {
       if (recognitionRef.current) {
         try {
+          recognitionRef.current.lang = getSpeechLocale(currentLanguage);
           recognitionRef.current.start();
           setIsDictating(true);
+          setSpeechNotice(null);
         } catch {
-          setInputValue('Какие проходные баллы на IT в 2026 году?');
           setIsDictating(false);
+          setSpeechNotice(t('speechPermissionDenied', currentLanguage));
         }
       } else {
-        setInputValue('Какие проходные баллы на IT в 2026 году?');
+        setSpeechNotice(t('speechNotSupported', currentLanguage));
       }
     }
   };
@@ -282,14 +356,18 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => scrollToBottom(false), 100);
+      // Only auto-scroll if the user is already at the bottom to avoid interrupting reading
+      if (isUserAtBottomRef.current) {
+        setTimeout(() => scrollToBottom(false), 50);
+      }
     }
   }, [isOpen, messages, isTyping]);
 
   const handleScroll = () => {
     if (!chatContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 80;
+    isUserAtBottomRef.current = isAtBottom;
     setShowScrollBottom(!isAtBottom);
   };
 
@@ -432,6 +510,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
 
     setMessages((prev) => [...prev, userMsg, streamPlaceholder]);
     setInputValue('');
+    try {
+      sessionStorage.removeItem(`vuzopedia_draft_${sendingSessionId}`);
+    } catch {}
+    isUserAtBottomRef.current = true;
+    setTimeout(() => scrollToBottom(false), 50);
     setIsTyping(true);
     setCurrentToolRunning('Обработка запроса...');
 
@@ -529,9 +612,14 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={dict.assistantName}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn"
+    >
       <div
-        className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 relative ${
+        className={`bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 relative motion-reduce:transition-none ${
           isFullscreen
             ? 'w-full h-full max-w-full max-h-full rounded-none'
             : 'w-full max-w-3xl h-[88vh] max-h-[850px]'
@@ -543,6 +631,11 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           sessionsCount={sessions.length}
           isHistoryOpen={isHistoryOpen}
           isFullscreen={isFullscreen}
+          language={currentLanguage}
+          onSelectLanguage={(lang) => {
+            setCurrentLanguage(lang);
+            saveLanguage(lang);
+          }}
           onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onRestart={createNewSession}
@@ -643,6 +736,81 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
             />
           ))}
 
+          {/* Quick Starter Cards for Empty / Welcome State */}
+          {messages.length <= 1 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 animate-fadeIn">
+              <button
+                type="button"
+                data-testid="starter-calc-btn"
+                onClick={() =>
+                  handleSend(
+                    'У меня 260 баллов (русский язык, профильная математика, информатика). Куда поступить на бюджет?'
+                  )
+                }
+                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition shadow-2xs group focus:ring-2 focus:ring-blue-500 outline-hidden"
+              >
+                <div className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center gap-1.5">
+                  <span>📊</span>
+                  <span>Оценить шансы по баллам</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Подбор вузов и специальностей под ваши сданные предметы ЕГЭ
+                </p>
+              </button>
+
+              <button
+                type="button"
+                data-testid="starter-compare-btn"
+                onClick={() =>
+                  handleSend('Сравни МГУ и ВШЭ по направлению программная инженерия')
+                }
+                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition shadow-2xs group focus:ring-2 focus:ring-blue-500 outline-hidden"
+              >
+                <div className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center gap-1.5">
+                  <span>⚖️</span>
+                  <span>Сравнить МГУ и ВШЭ</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Наглядное сравнение проходных баллов, мест и общежития
+                </p>
+              </button>
+
+              <button
+                type="button"
+                data-testid="starter-checklist-btn"
+                onClick={() =>
+                  handleSend('Составь пошаговый чек-лист и стратегию поступления на 2026 год')
+                }
+                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition shadow-2xs group focus:ring-2 focus:ring-blue-500 outline-hidden"
+              >
+                <div className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center gap-1.5">
+                  <span>📋</span>
+                  <span>Чек-лист поступления 2026</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Ключевые даты подачи согласий, оригиналов и этапы зачисления
+                </p>
+              </button>
+
+              <button
+                type="button"
+                data-testid="starter-military-btn"
+                onClick={() =>
+                  handleSend('В каких вузах Москвы есть военный учебный центр (ВУЦ)?')
+                }
+                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition shadow-2xs group focus:ring-2 focus:ring-blue-500 outline-hidden"
+              >
+                <div className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center gap-1.5">
+                  <span>🛡️</span>
+                  <span>Вузы с военной кафедрой</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Порядок отбора, нормативы и освобождение от призыва
+                </p>
+              </button>
+            </div>
+          )}
+
           {/* Typing / Agent Tool Execution Indicator (only until first token arrives) */}
           {isTyping && (!messages[messages.length - 1] || messages[messages.length - 1].text === '') && (
             <div className="flex items-start gap-3 animate-fadeIn">
@@ -697,7 +865,10 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
           isTyping={isTyping}
           isDictating={isDictating}
           isAiAvailable={isAiAvailable}
-          onInputChange={setInputValue}
+          language={currentLanguage}
+          speechNotice={speechNotice}
+          onDismissSpeechNotice={() => setSpeechNotice(null)}
+          onInputChange={handleInputChange}
           onSend={handleSend}
           onStopGeneration={handleStopGeneration}
           onToggleDictation={toggleDictation}
@@ -725,6 +896,7 @@ export const DedVuzopedAssistantModal: React.FC<DedVuzopedAssistantModalProps> =
         {/* Student Profile & Local Storage Governance Modal */}
         <StudentProfileModal
           isOpen={isProfileModalOpen}
+          language={currentLanguage}
           onClose={() => setIsProfileModalOpen(false)}
           onProfileUpdated={(updated) => setStudentProfile(updated)}
           onAllDataCleared={() => {

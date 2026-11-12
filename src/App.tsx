@@ -1,40 +1,118 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { UNIVERSITIES } from './data/mockData';
 import { University } from './types';
 import { EXTENDED_PROFESSIONS, ExtendedProfession } from './data/proforientData';
 import { Header } from './components/Header';
 import { UniversityCatalog } from './components/UniversityCatalog';
-import { EgeCalculatorView } from './components/EgeCalculatorView';
-import { CollegesView } from './components/CollegesView';
-import { SpecialtiesCatalogView } from './components/SpecialtiesCatalogView';
-import { ProfessionsCatalogView } from './components/ProfessionsCatalogView';
-import { TargetEducationView } from './components/TargetEducationView';
-import { FearMapView } from './components/FearMapView';
-import { BlacklistView } from './components/BlacklistView';
-import { RemoteEducationView } from './components/RemoteEducationView';
-import { CareerTestsView } from './components/CareerTestsView';
-import { ProforientByInterestsView } from './components/ProforientByInterestsView';
-import { ProforientByEgeView } from './components/ProforientByEgeView';
-import { ProforientBySubjectsView } from './components/ProforientBySubjectsView';
-import { ProforientKlimovView } from './components/ProforientKlimovView';
-import { ProforientOneOfTwoView } from './components/ProforientOneOfTwoView';
-import { ProgramsCatalogView } from './components/ProgramsCatalogView';
-import { DormitoriesView } from './components/DormitoriesView';
-import { MilitaryDeptView } from './components/MilitaryDeptView';
-import { ReviewsView } from './components/ReviewsView';
-import { OlympiadsView } from './components/OlympiadsView';
-import { CreditCalculatorView } from './components/CreditCalculatorView';
-import { AchievementsCalculatorView } from './components/AchievementsCalculatorView';
-import { StudentBudgetCalculatorView } from './components/StudentBudgetCalculatorView';
-import { MyPlanModal } from './components/MyPlanModal';
-import { UniversityComparisonView } from './components/UniversityComparisonView';
-import { CalendarAndGlossaryView } from './components/CalendarAndGlossaryView';
-import { ApplicationTrackerView } from './components/ApplicationTrackerView';
 import { CityModal } from './components/CityModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { UniversityDetailModal } from './components/UniversityDetailModal';
-import { DedVuzopedAssistantModal } from './components/DedVuzopedAssistantModal';
 import { Footer } from './components/Footer';
+
+// Lazy-loaded modal and views to keep initial bundle compact & responsive
+const DedVuzopedAssistantModal = lazy(() =>
+  import('./components/DedVuzopedAssistantModal').then((m) => ({
+    default: m.DedVuzopedAssistantModal,
+  }))
+);
+const EgeCalculatorView = lazy(() =>
+  import('./components/EgeCalculatorView').then((m) => ({ default: m.EgeCalculatorView }))
+);
+const CollegesView = lazy(() =>
+  import('./components/CollegesView').then((m) => ({ default: m.CollegesView }))
+);
+const SpecialtiesCatalogView = lazy(() =>
+  import('./components/SpecialtiesCatalogView').then((m) => ({
+    default: m.SpecialtiesCatalogView,
+  }))
+);
+const ProfessionsCatalogView = lazy(() =>
+  import('./components/ProfessionsCatalogView').then((m) => ({
+    default: m.ProfessionsCatalogView,
+  }))
+);
+const TargetEducationView = lazy(() =>
+  import('./components/TargetEducationView').then((m) => ({ default: m.TargetEducationView }))
+);
+const FearMapView = lazy(() =>
+  import('./components/FearMapView').then((m) => ({ default: m.FearMapView }))
+);
+const BlacklistView = lazy(() =>
+  import('./components/BlacklistView').then((m) => ({ default: m.BlacklistView }))
+);
+const RemoteEducationView = lazy(() =>
+  import('./components/RemoteEducationView').then((m) => ({ default: m.RemoteEducationView }))
+);
+const CareerTestsView = lazy(() =>
+  import('./components/CareerTestsView').then((m) => ({ default: m.CareerTestsView }))
+);
+const ProforientByInterestsView = lazy(() =>
+  import('./components/ProforientByInterestsView').then((m) => ({
+    default: m.ProforientByInterestsView,
+  }))
+);
+const ProforientByEgeView = lazy(() =>
+  import('./components/ProforientByEgeView').then((m) => ({ default: m.ProforientByEgeView }))
+);
+const ProforientBySubjectsView = lazy(() =>
+  import('./components/ProforientBySubjectsView').then((m) => ({
+    default: m.ProforientBySubjectsView,
+  }))
+);
+const ProforientKlimovView = lazy(() =>
+  import('./components/ProforientKlimovView').then((m) => ({ default: m.ProforientKlimovView }))
+);
+const ProforientOneOfTwoView = lazy(() =>
+  import('./components/ProforientOneOfTwoView').then((m) => ({
+    default: m.ProforientOneOfTwoView,
+  }))
+);
+const ProgramsCatalogView = lazy(() =>
+  import('./components/ProgramsCatalogView').then((m) => ({ default: m.ProgramsCatalogView }))
+);
+const DormitoriesView = lazy(() =>
+  import('./components/DormitoriesView').then((m) => ({ default: m.DormitoriesView }))
+);
+const MilitaryDeptView = lazy(() =>
+  import('./components/MilitaryDeptView').then((m) => ({ default: m.MilitaryDeptView }))
+);
+const ReviewsView = lazy(() =>
+  import('./components/ReviewsView').then((m) => ({ default: m.ReviewsView }))
+);
+const OlympiadsView = lazy(() =>
+  import('./components/OlympiadsView').then((m) => ({ default: m.OlympiadsView }))
+);
+const CreditCalculatorView = lazy(() =>
+  import('./components/CreditCalculatorView').then((m) => ({ default: m.CreditCalculatorView }))
+);
+const AchievementsCalculatorView = lazy(() =>
+  import('./components/AchievementsCalculatorView').then((m) => ({
+    default: m.AchievementsCalculatorView,
+  }))
+);
+const StudentBudgetCalculatorView = lazy(() =>
+  import('./components/StudentBudgetCalculatorView').then((m) => ({
+    default: m.StudentBudgetCalculatorView,
+  }))
+);
+const MyPlanModal = lazy(() =>
+  import('./components/MyPlanModal').then((m) => ({ default: m.MyPlanModal }))
+);
+const UniversityComparisonView = lazy(() =>
+  import('./components/UniversityComparisonView').then((m) => ({
+    default: m.UniversityComparisonView,
+  }))
+);
+const CalendarAndGlossaryView = lazy(() =>
+  import('./components/CalendarAndGlossaryView').then((m) => ({
+    default: m.CalendarAndGlossaryView,
+  }))
+);
+const ApplicationTrackerView = lazy(() =>
+  import('./components/ApplicationTrackerView').then((m) => ({
+    default: m.ApplicationTrackerView,
+  }))
+);
 import {
   executeAppAssistantAction,
   AppAssistantAction,
@@ -247,19 +325,26 @@ export const App: React.FC = () => {
 
       {/* Main View Area */}
       <main className="flex-1">
-        {currentTab === 'catalog' && (
-          <UniversityCatalog
-            universities={UNIVERSITIES}
-            selectedCity={selectedCity}
-            onOpenCityModal={() => setIsCityModalOpen(true)}
-            onOpenDetail={setSelectedVuzDetail}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            compareList={compareList}
-            onToggleCompare={toggleCompare}
-            onNavigateTab={setCurrentTab}
-          />
-        )}
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center p-16 text-slate-400 font-medium text-sm animate-pulse">
+              Загрузка раздела...
+            </div>
+          }
+        >
+          {currentTab === 'catalog' && (
+            <UniversityCatalog
+              universities={UNIVERSITIES}
+              selectedCity={selectedCity}
+              onOpenCityModal={() => setIsCityModalOpen(true)}
+              onOpenDetail={setSelectedVuzDetail}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+              compareList={compareList}
+              onToggleCompare={toggleCompare}
+              onNavigateTab={setCurrentTab}
+            />
+          )}
 
         {currentTab === 'programs' && (
           <ProgramsCatalogView
@@ -402,6 +487,7 @@ export const App: React.FC = () => {
             onNavigateTab={setCurrentTab}
           />
         )}
+        </Suspense>
       </main>
 
       {/* Modals & Overlays */}
@@ -428,24 +514,32 @@ export const App: React.FC = () => {
         onToggleCompare={toggleCompare}
       />
 
-      <DedVuzopedAssistantModal
-        isOpen={isDedAssistantOpen}
-        onClose={() => setIsDedAssistantOpen(false)}
-        onNavigateTab={handleSelectTab}
-        onExecuteAction={handleExecuteAssistantAction}
-        onSelectUniversity={(vuz) => {
-          setSelectedVuzDetail(vuz);
-          setIsDedAssistantOpen(false);
-        }}
-      />
+      {isDedAssistantOpen && (
+        <Suspense fallback={null}>
+          <DedVuzopedAssistantModal
+            isOpen={isDedAssistantOpen}
+            onClose={() => setIsDedAssistantOpen(false)}
+            onNavigateTab={handleSelectTab}
+            onExecuteAction={handleExecuteAssistantAction}
+            onSelectUniversity={(vuz) => {
+              setSelectedVuzDetail(vuz);
+              setIsDedAssistantOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
 
-      <MyPlanModal
-        isOpen={isMyPlanOpen}
-        onClose={() => setIsMyPlanOpen(false)}
-        savedProfessions={myPlanProfessions}
-        onRemoveProfession={removeMyPlan}
-        onNavigateTab={setCurrentTab}
-      />
+      {isMyPlanOpen && (
+        <Suspense fallback={null}>
+          <MyPlanModal
+            isOpen={isMyPlanOpen}
+            onClose={() => setIsMyPlanOpen(false)}
+            savedProfessions={myPlanProfessions}
+            onRemoveProfession={removeMyPlan}
+            onNavigateTab={setCurrentTab}
+          />
+        </Suspense>
+      )}
 
       {/* Floating Ded Vuzoped launcher for mobile & desktop */}
       <button
