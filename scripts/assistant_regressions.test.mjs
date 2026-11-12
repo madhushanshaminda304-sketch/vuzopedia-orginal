@@ -288,3 +288,31 @@ test('Russian journey and factual detours retain conversation state', async () =
   assert.equal(client.guideProgrammeChoice('Сколько стоит обучение в МГУ?', j.history), null);
   assert.equal((await j.say('Школа окончена')).guidance.state.stage, 'location');
 });
+
+test('Workers serves JSON API routes instead of the SPA fallback', async () => {
+  const { default: worker } = await import('../server/worker.mjs');
+  const env = { ASSETS: { fetch: () => new Response('<html>app</html>', { headers: { 'Content-Type': 'text/html' } }) } };
+  const ctx = { waitUntil() {} };
+  const status = await worker.fetch(new Request('https://example.test/api/assistant/status'), env, ctx);
+  assert.match(status.headers.get('content-type'), /application\/json/);
+  assert.equal((await status.json()).aiAvailable, false);
+  for (const route of ['chat', 'stream']) {
+    const r = await worker.fetch(new Request('https://example.test/api/assistant/' + route, { method: 'POST', body: JSON.stringify({prompt:'Hello'}) }), env, ctx);
+    assert.equal(r.status, 503);
+    assert.match(r.headers.get('content-type'), /application\/json/);
+  }
+  const unknown = await worker.fetch(new Request('https://example.test/api/missing'), env, ctx);
+  assert.equal(unknown.status, 404);
+  const wrongMethod = await worker.fetch(new Request('https://example.test/api/assistant/chat'), env, ctx);
+  assert.equal(wrongMethod.status, 405);
+  assert.equal(wrongMethod.headers.get('allow'), 'POST');
+  assert.equal(await (await worker.fetch(new Request('https://example.test/universities'), env, ctx)).text(), '<html>app</html>');
+});
+
+test('Workers entrypoint bundles for the edge and configuration gives APIs priority', async () => {
+  await build({ entryPoints: ['server/worker.mjs'], bundle: true, platform: 'browser', format: 'esm', outfile: path.join(temp, 'worker.mjs') });
+  const config = JSON.parse(await readFile('wrangler.jsonc', 'utf8'));
+  assert.equal(config.main, 'server/worker.mjs');
+  assert.ok(config.assets.run_worker_first.includes('/api/*'));
+  assert.equal(config.assets.binding, 'ASSETS');
+});
