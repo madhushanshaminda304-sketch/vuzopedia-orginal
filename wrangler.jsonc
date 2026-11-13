@@ -7,10 +7,28 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api", "/api/*"]
+    "run_worker_first": [
+      "/api",
+      "/api/*"
+    ]
   },
   "observability": {
     "enabled": true,
-    "traces": { "enabled": true }
+    "traces": {
+      "enabled": true
+    }
+  },
+  "d1_databases": [
+    {
+      "binding": "ASSISTANT_USAGE",
+      "database_name": "vuzopedia-assistant-usage",
+      "database_id": "55b2255d-34ce-4fa8-afbe-91e1b7b934d8",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "AI_GLOBAL_DAILY_LIMIT": "50",
+    "AI_RATE_LIMIT_PER_MINUTE": "5",
+    "AI_MAX_CONCURRENCY": "2"
   }
 }
